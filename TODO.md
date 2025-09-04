@@ -1,5 +1,7 @@
 # TODO / Roadmap
 
+運用ルール: 実装が終わったら本チェックリストの該当タスクを [ ] → [x] に更新し、同一コミット/PRに含めて反映する（AGENTS/README と整合）。
+
 本プロジェクトは TDD 方針で「Geometry Core」を先行実装し、その後にアプリ本体（Canvas/React）を構築します。詳細は `README.md` と `AGENTS.md` に準拠します。
 
 ---
