@@ -56,7 +56,7 @@ Phase 5: 次の題材（任意で拡張）
 ## Part A Milestone Tasks（TDD, file-scoped）
 
 M1 Setup & Acceptance（Red 準備まで）
-- [ ] install dependencies — `pnpm i` DoD: 依存が解決し `pnpm test` が起動する。
+- [x] install dependencies — `pnpm i` DoD: 依存が解決し `pnpm test` が起動する。
 - [x] tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test` が 0 テストで成功起動する。
 - [x] package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test` が Vitest を実行する。
 - [x] geometry types: define `Vec/Circle/IntersectResult` — `src/geom/types.ts` DoD: 型エラーなくインポートできる。
