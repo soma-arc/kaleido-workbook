@@ -103,3 +103,47 @@
 - (p,q,r)=(2,3,7等)で基本域に単色モチーフを深さDで展開
 - 共役スライダで見え方が連続に変化
 - PNG スクリーンショット出力
+
+---
+
+# AGENTS: 幾何ライブラリ開発ポリシー（TDD版）
+
+この文書は、AI/人間を含むコントリビュータが守る簡易ルールです。
+
+## 1. 基本方針
+- 我々は TDD (Red → Green → Refactor) で進める。
+- 受け入れテスト（acceptance）は人間が作成し、エージェントは変更しない。
+- エージェントは ユニットテスト／プロパティテストの追加 と 実装 を担う。
+
+## 2. 作業範囲
+- 触ってよい：`src/geom/**`, `tests/unit/**`, `tests/property/**`, `README.md`, `AGENTS.md`, `TODO.md`
+- 読み取り専用：`tests/acceptance/**`（理由：仕様ロック）
+- 触らない：ビルド／CI設定は別PRで合意のうえ実施
+
+## 3. 実装対象（最初のエピック）
+- 関数シグネチャ：`circleCircleIntersection(a: Circle, b: Circle): IntersectResult`
+- 型：`Vec {x,y}`, `Circle {c:Vec,r:number}`, `IntersectResult {kind:'none'|'tangent'|'two'|'concentric'|'coincident', points?: Vec[]}`
+- 交点2点は x→y の昇順で返す（安定ソート必須）
+
+## 4. テスト方針
+- 受け入れテスト（人間作成、変更不可）：代表6ケース（分離/外接/内接/二交点/同心/同一）
+- ユニットテスト（エージェント）：分類→座標の順で Red を作り、小刻みに Green 化
+- プロパティテスト（エージェント）：交点が両円を満たす、変換不変（回転・並進・一様スケール）、入力順対称
+- 近接数値は `toBeCloseTo(..., 12)` を基準。必要な許容誤差はテスト側が定義し、実装側はそれに従う
+
+## 5. コミット規約
+- 1ステップ = 「失敗するテスト追加」→「最小実装」→「リファクタ」
+- 例：`test(circle): add failing test for external tangent` → `feat(circle): pass external tangent` → `refactor(circle): clean helper`
+
+## 6. 禁止事項
+- `tests/acceptance/**` の変更、削除、緩和
+- 許容誤差の勝手な緩和や、判定条件の説明なしの改変
+- 実装をグリーンにするためのテスト改変
+
+## 7. Definition of Done
+- 受け入れテストが全てGreen
+- ユニット／プロパティテストがGreen（シード固定）
+- APIシグネチャと返却規約（順序・分類）がREADMEと一致
+
+メタ情報：
+- 本ドキュメントはTDD方針へのピボット（2025-09-04）を反映している。
