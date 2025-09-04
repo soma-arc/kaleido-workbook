@@ -1,0 +1,3 @@
+project_name: hyperbolic-plane-tile-poc
+# Adjust the language if needed: python, typescript, java, csharp, rust, go, ruby, cpp, php, swift, elixir, terraform, bash
+language: typescript
