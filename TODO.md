@@ -56,12 +56,12 @@ Phase 5: 次の題材（任意で拡張）
 ## Part A Milestone Tasks（TDD, file-scoped）
 
 M1 Setup & Acceptance（Red 準備まで）
-- [ ] tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test` が 0 テストで成功起動する。
-- [ ] package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test` が Vitest を実行する。
-- [ ] geometry types: define `Vec/Circle/IntersectResult` — `src/geom/types.ts` DoD: 型エラーなくインポートできる。
-- [ ] API skeleton: export `circleCircleIntersection(a: Circle, b: Circle)` — `src/geom/circle.ts` DoD: 署名どおりのスタブをエクスポート。
-- [ ] unit test (Red): none-case classification — `tests/unit/geom/circle.kind-none.test.ts` DoD: 現状実装で失敗する。
-- [ ] unit test (Red): tangent external-case classification — `tests/unit/geom/circle.kind-tangent.test.ts` DoD: 現状実装で失敗する。
+- [x] tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test` が 0 テストで成功起動する。
+- [x] package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test` が Vitest を実行する。
+- [x] geometry types: define `Vec/Circle/IntersectResult` — `src/geom/types.ts` DoD: 型エラーなくインポートできる。
+- [x] API skeleton: export `circleCircleIntersection(a: Circle, b: Circle)` — `src/geom/circle.ts` DoD: 署名どおりのスタブをエクスポート。
+- [x] unit test (Red): none-case classification — `tests/unit/geom/circle.kind-none.test.ts` DoD: 現状実装で失敗する。
+- [x] unit test (Red): tangent external-case classification — `tests/unit/geom/circle.kind-tangent.test.ts` DoD: 現状実装で失敗する。
 
 M2 Kind 判定（ユニット, Red→Green）
 - [ ] kind none (Green): implement none detection — `src/geom/circle.ts` DoD: none テストが通る（他は未着手でも可）。
