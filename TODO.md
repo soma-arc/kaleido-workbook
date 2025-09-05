@@ -76,7 +76,7 @@ M2 Kind 判定（ユニット, Red→Green）
 - [x] unit test (Red): concentric-case — `tests/unit/geom/circle.kind-concentric.test.ts` DoD: 現状実装で失敗する。
  - [x] kind concentric (Green): implement concentric detection — `src/geom/circle.ts` DoD: concentric テストが通る。
 - [x] unit test (Red): coincident-case — `tests/unit/geom/circle.kind-coincident.test.ts` DoD: 現状実装で失敗する。
-- [ ] kind coincident (Green): implement coincident detection — `src/geom/circle.ts` DoD: coincident テストが通る。
+ - [x] kind coincident (Green): implement coincident detection — `src/geom/circle.ts` DoD: coincident テストが通る。
 - [ ] refactor: extract kind guards — `src/geom/circle.ts` DoD: 振る舞い不変でテスト緑のまま。
 
 M3 座標計算（ユニット, Red→Green）
