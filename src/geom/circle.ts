@@ -23,6 +23,6 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
         return { kind: "tangent" };
     }
 
-    // Other cases (two / concentric / coincident) not implemented yet in M2
-    throw new Error("Classification beyond none/tangent not implemented");
+    // Proper intersection (two points)
+    return { kind: "two" };
 }

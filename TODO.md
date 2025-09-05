@@ -72,7 +72,7 @@ M2 Kind 判定（ユニット, Red→Green）
 - [x] kind none (Green): implement none detection — `src/geom/circle.ts` DoD: none テストが通る（他は未着手でも可）。
 - [x] kind tangent (Green): implement tangent detection — `src/geom/circle.ts` DoD: tangent テストが通る。
 - [x] unit test (Red): two-case classification — `tests/unit/geom/circle.kind-two.test.ts` DoD: 現状実装で失敗する。
-- [ ] kind two (Green): implement two classification — `src/geom/circle.ts` DoD: two テストが通る。
+ - [x] kind two (Green): implement two classification — `src/geom/circle.ts` DoD: two テストが通る。
 - [x] unit test (Red): concentric-case — `tests/unit/geom/circle.kind-concentric.test.ts` DoD: 現状実装で失敗する。
 - [ ] kind concentric (Green): implement concentric detection — `src/geom/circle.ts` DoD: concentric テストが通る。
 - [x] unit test (Red): coincident-case — `tests/unit/geom/circle.kind-coincident.test.ts` DoD: 現状実装で失敗する。
