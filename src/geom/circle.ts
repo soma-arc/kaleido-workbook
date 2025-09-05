@@ -13,6 +13,12 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const rsum2 = rsum * rsum;
     const rdiff2 = rdiff * rdiff;
 
+    // Same center: concentric/coincident handled separately
+    if (d2 === 0) {
+        if (a.r === b.r) return { kind: "coincident" };
+        return { kind: "concentric" };
+    }
+
     // Separated or contained without touching
     if (d2 > rsum2 || d2 < rdiff2) {
         return { kind: "none", points: [] };
