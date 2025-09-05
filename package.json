@@ -11,6 +11,7 @@
         "lint": "biome lint .",
         "format": "biome format --write .",
         "test": "vitest",
+        "test:sandbox": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
         "coverage": "vitest run --coverage"
     },
     "devDependencies": {
