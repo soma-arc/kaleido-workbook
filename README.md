@@ -125,6 +125,8 @@ hyperbolic-poc/
   - 制限のあるサンドボックス実行時は `pnpm test:sandbox` を使用
 
 ## コミットポリシー / ワークフロー
+- 1 task or checklist = 1 commit（粒度を厳格に維持）
+- 完了時は必ず同一コミットで `TODO.md` の該当チェックを [x] に更新
 - 小さなコミットを心がける（1 コミット = 1 目的）
 - コミット前チェック（手動 or 自動）
   - `pnpm lint`（Biome）
