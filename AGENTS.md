@@ -92,9 +92,10 @@
 - コミット前に必ず以下を実行し成功させる
   - `pnpm lint`（Biome）
   - `pnpm format`（Biome；必要に応じ `--check` 運用）
-  - `pnpm test`（Vitest；必要に応じ `pnpm coverage`）
+  - `pnpm test`（通常環境） / `pnpm test:sandbox`（制限環境）
+  - 必要に応じて `pnpm coverage`
 - Git hooks（pre-commit）で上記を自動実行し、失敗時はコミットを拒否
-- pre-push では少なくとも `pnpm test`（coverage 含む）を実行
+- pre-push では少なくとも `pnpm test`（通常）または `pnpm test:sandbox`（制限環境）（coverage 含む）を実行
 - CI（GitHub Actions）でも同等のチェックを実施し、失敗時はマージ不可
 
 ## 受け入れ条件（PoC全体）

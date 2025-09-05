@@ -39,6 +39,8 @@ pnpm format
 
 # テスト（Vitest）
 pnpm test
+# サンドボックスやコンテナ等の制限環境ではこちらを使用
+pnpm test:sandbox
 
 # カバレッジ（Vitest, provider=v8）
 pnpm coverage
@@ -120,13 +122,15 @@ hyperbolic-poc/
 ## CI（最小）
 - GitHub Actions を利用
 - PR 時に `pnpm i`, `pnpm typecheck`, `pnpm lint`（Biome）, `pnpm test`（coverage v8） を実行
+  - 制限のあるサンドボックス実行時は `pnpm test:sandbox` を使用
 
 ## コミットポリシー / ワークフロー
 - 小さなコミットを心がける（1 コミット = 1 目的）
 - コミット前チェック（手動 or 自動）
   - `pnpm lint`（Biome）
   - `pnpm format`（Biome；`--check` 運用可）
-  - `pnpm test`（Vitest；必要に応じ `pnpm coverage`）
+  - `pnpm test`（通常環境） / `pnpm test:sandbox`（制限環境）
+  - 必要に応じて `pnpm coverage`
 - Git hooks（pre-commit / pre-push）で自動実行し、失敗時はブロック
 - CI でも同等チェックを実施し、失敗時はマージ不可
 
@@ -153,6 +157,8 @@ hyperbolic-poc/
 ```bash
 pnpm test
 pnpm test -- --watch
+# サンドボックス等の制限環境
+pnpm test:sandbox
 ```
 
 ## TDD の進め方（推奨）
