@@ -1,6 +1,7 @@
 # TODO / Roadmap
 
 運用ルール: 実装が終わったら本チェックリストの該当タスクを [ ] → [x] に更新し、同一コミット/PRに含めて反映する（AGENTS/README と整合）。
+追加ルール: 1 タスク完了ごとに単独コミットを作成（1 タスク = 1 コミット）。複数タスクをまとめない。例: `docs(todo): check M1 tests config`。
 
 本プロジェクトは TDD 方針で「Geometry Core」を先行実装し、その後にアプリ本体（Canvas/React）を構築します。詳細は `README.md` と `AGENTS.md` に準拠します。
 
