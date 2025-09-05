@@ -1,5 +1,5 @@
 # Node / pnpm
-node_modules/
+node_modules
 .pnpm-store/
 pnpm-debug.log*
 npm-debug.log*
@@ -25,5 +25,5 @@ coverage/
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/
-
+.vscode/*
+!.vscode/settings.json

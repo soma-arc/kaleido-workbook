@@ -1,0 +1,9 @@
+{
+    // Codex CLI VS Code extension workspace settings
+    // If keys differ in your extension version, adjust via Settings UI
+    // (Preferences: Open Settings) and Copy Setting as JSON.
+    "codex.approvalPolicy": "on-failure",
+    "codex.sandboxMode": "workspace-write",
+    "codex.networkAccess": "restricted"
+}
+
