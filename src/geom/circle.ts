@@ -5,5 +5,24 @@ import type { Circle, IntersectResult } from "./types";
  * API skeleton for TDD. Intentionally not implemented yet.
  */
 export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult {
-    throw new Error("Not implemented: circleCircleIntersection");
+    const dx = b.c.x - a.c.x;
+    const dy = b.c.y - a.c.y;
+    const d2 = dx * dx + dy * dy;
+    const rsum = a.r + b.r;
+    const rdiff = Math.abs(a.r - b.r);
+    const rsum2 = rsum * rsum;
+    const rdiff2 = rdiff * rdiff;
+
+    // Separated or contained without touching
+    if (d2 > rsum2 || d2 < rdiff2) {
+        return { kind: "none", points: [] };
+    }
+
+    // Tangent (external or internal)
+    if (d2 === rsum2 || d2 === rdiff2) {
+        return { kind: "tangent" };
+    }
+
+    // Other cases (two / concentric / coincident) not implemented yet in M2
+    throw new Error("Classification beyond none/tangent not implemented");
 }
