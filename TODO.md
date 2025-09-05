@@ -63,6 +63,9 @@ M1 Setup & Acceptance（Red 準備まで）
 - [x] API skeleton: export `circleCircleIntersection(a: Circle, b: Circle)` — `src/geom/circle.ts` DoD: 署名どおりのスタブをエクスポート。
 - [x] unit test (Red): none-case classification — `tests/unit/geom/circle.kind-none.test.ts` DoD: 現状実装で失敗する。
 - [x] unit test (Red): tangent external-case classification — `tests/unit/geom/circle.kind-tangent.test.ts` DoD: 現状実装で失敗する。
+- [x] Biome config: add 4-space formatter/linter — `biome.json` DoD: 4スペース/formatter有効の設定が反映される。
+- [x] Install Biome — `pnpm i -D @biomejs/biome` DoD: `pnpm biome --version` で確認できる。
+- [x] Run format — `pnpm format` DoD: 差分が整形されコミットされる。
 
 M2 Kind 判定（ユニット, Red→Green）
 - [ ] kind none (Green): implement none detection — `src/geom/circle.ts` DoD: none テストが通る（他は未着手でも可）。
