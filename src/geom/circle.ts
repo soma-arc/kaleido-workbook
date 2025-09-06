@@ -6,8 +6,16 @@ import type { Circle, IntersectResult, Vec } from "./types";
  */
 /**
  * circleCircleIntersection
- * Computes the intersection between two circles.
- * Branches are handled in this order:
+ * Computes the intersection between two circles using the standard algebraic derivation.
+ *
+ * Notation:
+ * - Let centers be A = a.c, B = b.c, radii r1 = a.r, r2 = b.r.
+ * - d = |AB|, u = (B - A) / d (unit direction from A to B).
+ * - aLen = (r1^2 - r2^2 + d^2) / (2d) is the signed distance from A to the foot point P on the chord line.
+ * - h^2 = r1^2 - aLen^2; if h = 0 the circles are tangent, if h > 0 there are two intersections.
+ * - The base point is P = A + aLen * u, and the offsets are ±h * R(u) where R rotates by +90°.
+ *
+ * Branch order:
  * - coincident / concentric (same center)
  * - none (separate or containment without touching)
  * - tangent (h == 0)
