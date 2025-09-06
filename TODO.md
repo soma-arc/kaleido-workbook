@@ -92,7 +92,7 @@ M4 プロパティテスト（Red→Green）
 - [x] property: residuals satisfy both equations — 実装は `tests/property/circle.properties.test.ts` に集約（seed固定, 200 runs）。
 - [x] robustness (Green): eps/clamp for residuals — `src/geom/circle.ts` DoD: h^2 微小負のゼロ化、同中心/分離・包含境界に許容（eps）を導入済。残差プロパティ（seed固定, numRuns=200）緑。
 - [x] property: input order symmetry — fast-checkの `tests/property/circle.properties.test.ts` に統合済（sortで昇順化し比較）。
-- [ ] symmetry (Green): normalize ordering — `src/geom/circle.ts` DoD: 対称性プロパティが緑。
+- [x] symmetry (Green): normalize ordering — `src/geom/circle.ts` DoD: `sortPointsAscXY` により常に x→y 昇順で返却、対称性プロパティが緑。
 - [ ] property (Red): transform invariance — `tests/property/circle.transform-invariance.property.test.ts` DoD: スケールで失敗。
 - [ ] invariance (Green): scale-aware tolerance — `src/geom/circle.ts` DoD: 変換不変プロパティが緑。
 
