@@ -88,7 +88,7 @@ M3 座標計算（ユニット, Red→Green）
 - [x] refactor: `distance`, `sortPointsAscXY` — `src/geom/circle.ts` DoD: テスト緑のまま関数抽出。
 
 M4 プロパティテスト（Red→Green）
-- [ ] property (Red): residuals satisfy both equations — `tests/property/circle.residual.property.test.ts` DoD: エッジで失敗する。
+- [x] property: residuals satisfy both equations — 実装は `tests/property/circle.properties.test.ts` に集約（seed固定, 200 runs）。
 - [ ] robustness (Green): eps/clamp for residuals — `src/geom/circle.ts` DoD: 残差プロパティ（seed固定, numRuns=200）が緑。
 - [ ] property (Red): input order symmetry — `tests/property/circle.symmetry.property.test.ts` DoD: 対称性で失敗/不安定。
 - [ ] symmetry (Green): normalize ordering — `src/geom/circle.ts` DoD: 対称性プロパティが緑。
