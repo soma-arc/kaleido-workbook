@@ -45,11 +45,10 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
 
     const rsum = a.r + b.r;
     const rdiff = Math.abs(a.r - b.r);
-    const rsum2 = rsum * rsum;
-    const rdiff2 = rdiff * rdiff;
+    const epsR = 1e-12 * Math.max(1, rsum);
 
     // Early exit: separate or containment without touching
-    if (d2 > rsum2 || d2 < rdiff2) {
+    if (d > rsum + epsR || d < rdiff - epsR) {
         return { kind: "none", points: [] };
     }
 

@@ -90,7 +90,7 @@ M3 座標計算（ユニット, Red→Green）
 M4 プロパティテスト（Red→Green）
 - [x] property: migrate to fast-check (@fast-check/vitest) — 依存追加（`pnpm add -D fast-check @fast-check/vitest`）、`tests/property/circle.properties.test.ts` を `test.prop([...], {seed,numRuns})` + `fc.*` で置換、`vitest.setup.ts` に `fc.configureGlobal({ seed: 固定, numRuns: 200 })` を設定。DoD: 既存ループ削除・プロパティはfast-check駆動・全テストGreen（coverage v8維持）。
 - [x] property: residuals satisfy both equations — 実装は `tests/property/circle.properties.test.ts` に集約（seed固定, 200 runs）。
-- [ ] robustness (Green): eps/clamp for residuals — `src/geom/circle.ts` DoD: 残差プロパティ（seed固定, numRuns=200）が緑。
+- [x] robustness (Green): eps/clamp for residuals — `src/geom/circle.ts` DoD: h^2 微小負のゼロ化、同中心/分離・包含境界に許容（eps）を導入済。残差プロパティ（seed固定, numRuns=200）緑。
 - [ ] property (Red): input order symmetry — `tests/property/circle.symmetry.property.test.ts` DoD: 対称性で失敗/不安定。
 - [ ] symmetry (Green): normalize ordering — `src/geom/circle.ts` DoD: 対称性プロパティが緑。
 - [ ] property (Red): transform invariance — `tests/property/circle.transform-invariance.property.test.ts` DoD: スケールで失敗。
