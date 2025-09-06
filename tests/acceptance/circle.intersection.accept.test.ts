@@ -24,11 +24,11 @@ test("external tangent (B at (10,0), r=5) -> tangent @ (5,0)", () => {
     expect(r.points![0].y).toBeCloseTo(0, 12);
 });
 
-test("internal tangent (B at (2,0), r=3) -> tangent @ (3,0)", () => {
+test("internal tangent (B at (2,0), r=3) -> tangent @ (5,0)", () => {
     const B: Circle = { c: { x: 2, y: 0 }, r: 3 };
     const r = circleCircleIntersection(A, B);
     expect(r.kind).toBe("tangent");
-    expect(r.points![0].x).toBeCloseTo(3, 12);
+    expect(r.points![0].x).toBeCloseTo(5, 12);
     expect(r.points![0].y).toBeCloseTo(0, 12);
 });
 
