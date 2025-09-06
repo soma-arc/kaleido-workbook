@@ -10,4 +10,3 @@ describe("circleCircleIntersection kind: coincident", () => {
         expect(out.kind).toBe("coincident");
     });
 });
-

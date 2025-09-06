@@ -80,11 +80,11 @@ M2 Kind 判定（ユニット, Red→Green）
 - [ ] refactor: extract kind guards — `src/geom/circle.ts` DoD: 振る舞い不変でテスト緑のまま。
 
 M3 座標計算（ユニット, Red→Green）
-- [ ] unit test (Red): two points sample (r=5,r=5,d=8→(4,±3)) — `tests/unit/geom/circle.points-two.test.ts` DoD: 座標不一致で失敗する。
-- [ ] compute points (Green): circle-circle points — `src/geom/circle.ts` DoD: two-points テストが通る。
-- [ ] unit test (Red): tangent single point — `tests/unit/geom/circle.point-tangent.test.ts` DoD: 現状実装で失敗する。
-- [ ] compute tangent point (Green): ensure single-point — `src/geom/circle.ts` DoD: tangent 点テストが通る。
-- [ ] stable ordering (Green): x→y comparator — `src/geom/circle.ts` DoD: 昇順を検証するアサーションが通る。
+- [x] unit test (Red): two points sample (r=5,r=5,d=8→(4,±3)) — `tests/unit/geom/circle.points-two.test.ts` DoD: 座標不一致で失敗する。
+- [x] compute points (Green): circle-circle points — `src/geom/circle.ts` DoD: two-points テストが通る。
+- [x] unit test (Red): tangent single point — `tests/unit/geom/circle.point-tangent.test.ts` DoD: 現状実装で失敗する。
+- [x] compute tangent point (Green): ensure single-point — `src/geom/circle.ts` DoD: tangent 点テストが通る。
+- [x] stable ordering (Green): x→y comparator — `src/geom/circle.ts` DoD: 昇順を検証するアサーションが通る。
 - [ ] refactor: `distance`, `sortPointsAscXY` — `src/geom/circle.ts` DoD: テスト緑のまま関数抽出。
 
 M4 プロパティテスト（Red→Green）

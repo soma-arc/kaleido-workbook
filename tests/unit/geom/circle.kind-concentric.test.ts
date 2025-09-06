@@ -10,4 +10,3 @@ describe("circleCircleIntersection kind: concentric", () => {
         expect(out.kind).toBe("concentric");
     });
 });
-

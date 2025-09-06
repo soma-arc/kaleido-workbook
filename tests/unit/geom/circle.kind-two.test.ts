@@ -10,4 +10,3 @@ describe("circleCircleIntersection kind: two", () => {
         expect(out.kind).toBe("two");
     });
 });
-
