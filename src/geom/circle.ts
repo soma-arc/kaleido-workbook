@@ -37,7 +37,8 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const d2 = d * d;
 
     // Same-center guards
-    const sameCenter = d2 === 0;
+    const epsD = 1e-12 * Math.max(1, a.r + b.r);
+    const sameCenter = d <= epsD; // tolerant same-center check for underflow/scale invariance
     if (sameCenter) {
         return a.r === b.r ? { kind: "coincident" } : { kind: "concentric" };
     }
