@@ -21,10 +21,20 @@ import type { Circle, IntersectResult, Vec } from "./types";
  * - tangent (h == 0)
  * - two (h > 0), with stable x→y ordering
  */
+function distance(p: Vec, q: Vec): number {
+    return Math.hypot(p.x - q.x, p.y - q.y);
+}
+
+function sortPointsAscXY(pts: Vec[]): Vec[] {
+    return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
+}
+
 export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult {
     const dx = b.c.x - a.c.x;
     const dy = b.c.y - a.c.y;
-    const d2 = dx * dx + dy * dy;
+    // compute distance once via helper for clarity
+    const d = distance(a.c, b.c);
+    const d2 = d * d;
 
     // Same-center guards
     const sameCenter = d2 === 0;
@@ -43,7 +53,6 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     }
 
     // Compute intersection base using robust algebra
-    const d = Math.sqrt(d2);
     // Distance from a.c to the foot of the perpendicular from intersection points
     const aLen = (a.r * a.r - b.r * b.r + d2) / (2 * d);
     // Squared height from that foot to the actual intersection(s)
@@ -72,6 +81,6 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const ry = ux * h;
     const p1 = makePoint(px + rx, py + ry);
     const p2 = makePoint(px - rx, py - ry);
-    const points = [p1, p2].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
+    const points = sortPointsAscXY([p1, p2]);
     return { kind: "two", points };
 }

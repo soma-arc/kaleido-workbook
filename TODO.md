@@ -85,7 +85,7 @@ M3 座標計算（ユニット, Red→Green）
 - [x] unit test (Red): tangent single point — `tests/unit/geom/circle.point-tangent.test.ts` DoD: 現状実装で失敗する。
 - [x] compute tangent point (Green): ensure single-point — `src/geom/circle.ts` DoD: tangent 点テストが通る。
 - [x] stable ordering (Green): x→y comparator — `src/geom/circle.ts` DoD: 昇順を検証するアサーションが通る。
-- [ ] refactor: `distance`, `sortPointsAscXY` — `src/geom/circle.ts` DoD: テスト緑のまま関数抽出。
+- [x] refactor: `distance`, `sortPointsAscXY` — `src/geom/circle.ts` DoD: テスト緑のまま関数抽出。
 
 M4 プロパティテスト（Red→Green）
 - [ ] property (Red): residuals satisfy both equations — `tests/property/circle.residual.property.test.ts` DoD: エッジで失敗する。
