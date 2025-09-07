@@ -1,0 +1,38 @@
+# TODO Archive (2025-09-07)
+
+- install dependencies — `pnpm i` DoD: 依存が解決し `pnpm test` が起動する。
+- tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test`（制限環境では `pnpm test:sandbox`）が 0 テストで成功起動する。
+- package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test`（制限環境では `pnpm test:sandbox`）が Vitest を実行する。
+- geometry types: define `Vec/Circle/IntersectResult` — `src/geom/types.ts` DoD: 型エラーなくインポートできる。
+- API skeleton: export `circleCircleIntersection(a: Circle, b: Circle)` — `src/geom/circle.ts` DoD: 署名どおりのスタブをエクスポート。
+- unit test (Red): none-case classification — `tests/unit/geom/circle.kind-none.test.ts` DoD: 現状実装で失敗する。
+- unit test (Red): tangent external-case classification — `tests/unit/geom/circle.kind-tangent.test.ts` DoD: 現状実装で失敗する。
+- Biome config: add 4-space formatter/linter — `biome.json` DoD: 4スペース/formatter有効の設定が反映される。
+- Install Biome — `pnpm i -D @biomejs/biome` DoD: `pnpm biome --version` で確認できる。
+- Run format — `pnpm format` DoD: 差分が整形されコミットされる。
+- kind none (Green): implement none detection — `src/geom/circle.ts` DoD: none テストが通る（他は未着手でも可）。
+- kind tangent (Green): implement tangent detection — `src/geom/circle.ts` DoD: tangent テストが通る。
+- unit test (Red): two-case classification — `tests/unit/geom/circle.kind-two.test.ts` DoD: 現状実装で失敗する。
+- unit test (Red): concentric-case — `tests/unit/geom/circle.kind-concentric.test.ts` DoD: 現状実装で失敗する。
+- unit test (Red): coincident-case — `tests/unit/geom/circle.kind-coincident.test.ts` DoD: 現状実装で失敗する。
+- refactor: extract kind guards — `src/geom/circle.ts` DoD: 振る舞い不変でテスト緑のまま。
+- unit test (Red): two points sample (r=5,r=5,d=8→(4,±3)) — `tests/unit/geom/circle.points-two.test.ts` DoD: 座標不一致で失敗する。
+- compute points (Green): circle-circle points — `src/geom/circle.ts` DoD: two-points テストが通る。
+- unit test (Red): tangent single point — `tests/unit/geom/circle.point-tangent.test.ts` DoD: 現状実装で失敗する。
+- compute tangent point (Green): ensure single-point — `src/geom/circle.ts` DoD: tangent 点テストが通る。
+- stable ordering (Green): x→y comparator — `src/geom/circle.ts` DoD: 昇順を検証するアサーションが通る。
+- refactor: `distance`, `sortPointsAscXY` — `src/geom/circle.ts` DoD: テスト緑のまま関数抽出。
+- property: migrate to fast-check (@fast-check/vitest) — 依存追加（`pnpm add -D fast-check @fast-check/vitest`）、`tests/property/circle.properties.test.ts` を `test.prop([...], {seed,numRuns})` + `fc.*` で置換、`vitest.setup.ts` に `fc.configureGlobal({ seed: 固定, numRuns: 200 })` を設定。DoD: 既存ループ削除・プロパティはfast-check駆動・全テストGreen（coverage v8維持）。
+- property: residuals satisfy both equations — 実装は `tests/property/circle.properties.test.ts` に集約（seed固定, 200 runs）。
+- robustness (Green): eps/clamp for residuals — `src/geom/circle.ts` DoD: h^2 微小負のゼロ化、同中心/分離・包含境界に許容（eps）を導入済。残差プロパティ（seed固定, numRuns=200）緑。
+- property: input order symmetry — fast-checkの `tests/property/circle.properties.test.ts` に統合済（sortで昇順化し比較）。
+- symmetry (Green): normalize ordering — `src/geom/circle.ts` DoD: `sortPointsAscXY` により常に x→y 昇順で返却、対称性プロパティが緑。
+- property: transform invariance — fast-check の `tests/property/circle.properties.test.ts` に統合（translation/rotation/uniform scale）。seed固定, numRuns=200 でGreen。
+- invariance (Green): scale-aware tolerance — `src/geom/types.ts` の `defaultTol/tolValue/eqTol` を用い、`circle.ts` の同中心/境界比較に適用済。変換不変プロパティGreen。
+- tolerance surface centralize — `src/geom/types.ts`, `src/geom/circle.ts` DoD: `Tolerance/defaultTol/tolValue/eqTol` を導入し、同中心/境界比較に適用。全テスト緑。
+- radius/NaN guard & normalize — `src/geom/circle.ts` DoD: 非有限/非正の半径・座標をガード。半径はabs正規化、無効入力はkind none。全テスト緑。
+- JSDoc 数式と分岐根拠 — `src/geom/circle.ts` DoD: 定義/分類/数値注意点（tol, clamp,順序）をJSDocに追記。テスト緑。
+- test helpers dedup — `tests/property/*` DoD: 共通ヘルパを `tests/fixtures/geom.ts` に集約（sortPts/transform*）。テスト緑。
+- README sync（API/TDD/順序） — `README.md` DoD: テスト章を fast-check/seed/numRuns/env override/数値Tol の現状に同期。
+- AGENTS sync（DoD/禁止/範囲） — `AGENTS.md` DoD: fast-check採用・vitest.setup・DoD文言を更新。
+- TODO checkpoint 更新 — `TODO.md` DoD: 本チェック項目を更新。
