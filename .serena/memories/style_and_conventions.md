@@ -1,12 +1,20 @@
-# Style and Conventions
+# スタイルと規約
 
-- TypeScript: `strict: true`.
-- Lint/Format: Biome, 4-space indentation, semicolons enabled.
-- Naming: lowerCamelCase (functions/variables), UpperCamelCase (types/components).
-- Tests:
-  - TDD: Red → Green → Refactor.
-  - Acceptance tests under `tests/acceptance/**` are locked (agents must not modify).
-  - Numeric comparisons: `toBeCloseTo(value, 12)` as baseline unless stricter specified.
-  - Output contract: `kind` classification as enumerated; `points` sorted asc by x → y when two points.
-- Commits: small, focused messages; suggested tags: `feat`, `fix`, `refactor`, `test`, `docs`, `chore` with scope (e.g., `geom(circle)`).
-- 3-minute setup: `pnpm i && pnpm dev` should start quickly; keep changes incremental.
+- Lint/Format: Biome（4スペース、`biome.json` 準拠）。`pnpm lint` / `pnpm format`。
+- TypeScript: `strict` 前提（`tsconfig.json`）。
+- 命名: lowerCamelCase（変数/関数）、UpperCamelCase（型/コンポーネント）。
+- テスト方針: TDD（Red → Green → Refactor）。
+  - 受け入れテスト `tests/acceptance/**` はロック（AI/エージェントは変更不可）。
+  - 近接数値は `toBeCloseTo(..., 12)` を基準。
+  - `circleCircleIntersection` の返却規約（分類と点の昇順）は厳守。
+- プロパティテスト（fast-check）
+  - 既定: `seed=424242`, `numRuns=200`（`FC_SEED` / `FC_RUNS` で上書き）。
+  - 不変量: 両円を満たす／回転・並進・一様スケール不変／入力順対称。
+- 禁止事項（抜粋）
+  - `tests/acceptance/**` の変更・削除・緩和。
+  - 許容誤差や判定条件の無説明な改変。
+  - Green のための恣意的なテスト改変。
+- コミット規約（最小）
+  - 1 タスク = 1 コミット（束ねない）。
+  - pre-commit: `pnpm lint` / `pnpm format` / `pnpm test` を実行し失敗時ブロック。
+  - pre-push: 最低 `pnpm test`（または `pnpm test:sandbox`）。
