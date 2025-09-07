@@ -97,7 +97,7 @@ M4 プロパティテスト（Red→Green）
 - [ ] invariance (Green): scale-aware tolerance — `src/geom/circle.ts` DoD: 変換不変プロパティが緑。
 
 M5 ロバスト化 & リファクタ
-- [ ] tolerance surface centralize — `src/geom/types.ts`, `src/geom/circle.ts` DoD: tol を一元化し全テスト緑。
+- [x] tolerance surface centralize — `src/geom/types.ts`, `src/geom/circle.ts` DoD: `Tolerance/defaultTol/tolValue/eqTol` を導入し、同中心/境界比較に適用。全テスト緑。
 - [ ] radius/NaN guard & normalize — `src/geom/circle.ts` DoD: 異常値保護後も全テスト緑。
 - [ ] JSDoc 数式と分岐根拠 — `src/geom/circle.ts` DoD: 主要関数に JSDoc 追記、lint OK。
 - [ ] test helpers dedup — `tests/unit/geom/circle.points-two.test.ts`, `tests/property/*` DoD: 重複ヘルパ整理後もテスト緑。

@@ -23,3 +23,29 @@ export type IntersectResult = {
     kind: IntersectKind;
     points?: Vec[];
 };
+
+/**
+ * Numeric tolerance model for floating comparisons.
+ * - abs: absolute tolerance (baseline at ~1e-12)
+ * - rel: relative tolerance scaled by a problem-dependent scale (eg. r1+r2)
+ */
+export type Tolerance = {
+    abs: number;
+    rel: number;
+};
+
+export const defaultTol: Tolerance = { abs: 1e-12, rel: 1e-12 };
+
+/**
+ * Compute effective tolerance for a given scale.
+ */
+export function tolValue(scale: number, tol: Tolerance = defaultTol): number {
+    return tol.abs + tol.rel * Math.max(1, scale);
+}
+
+/**
+ * Equality within tolerance at a given scale.
+ */
+export function eqTol(a: number, b: number, scale: number, tol: Tolerance = defaultTol): boolean {
+    return Math.abs(a - b) <= tolValue(scale, tol);
+}

@@ -1,4 +1,5 @@
 import type { Circle, IntersectResult, Vec } from "./types";
+import { defaultTol, eqTol, tolValue } from "./types";
 
 /**
  * circleCircleIntersection
@@ -37,15 +38,15 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const d2 = d * d;
 
     // Same-center guards
-    const epsD = 1e-12 * Math.max(1, a.r + b.r);
-    const sameCenter = d <= epsD; // tolerant same-center check for underflow/scale invariance
+    const scale = a.r + b.r;
+    const sameCenter = eqTol(d, 0, scale, defaultTol); // tolerant same-center check
     if (sameCenter) {
         return a.r === b.r ? { kind: "coincident" } : { kind: "concentric" };
     }
 
-    const rsum = a.r + b.r;
+    const rsum = scale;
     const rdiff = Math.abs(a.r - b.r);
-    const epsR = 1e-12 * Math.max(1, rsum);
+    const epsR = tolValue(rsum, defaultTol);
 
     // Early exit: separate or containment without touching
     if (d > rsum + epsR || d < rdiff - epsR) {
