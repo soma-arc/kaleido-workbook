@@ -30,6 +30,29 @@ function sortPointsAscXY(pts: Vec[]): Vec[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
 }
 
+/**
+ * circleCircleIntersection
+ * Compute intersections of two circles via the classical formula.
+ *
+ * Definitions:
+ * - Centers/radii: A=a.c, B=b.c, r1=A.r, r2=B.r
+ * - Distance: d = |B - A| = hypot(dx, dy)
+ * - Unit direction: u = (B - A) / d = (ux, uy)
+ * - Foot along AB: aLen = (r1^2 - r2^2 + d^2) / (2d)
+ * - Height: h = sqrt(max(0, r1^2 - aLen^2))  // tiny negatives are clamped
+ * - Base point: P = A + aLen·u
+ * - Intersections: P ± h·R90(u) where R90(x,y)=(-y,x)
+ *
+ * Classification (with tolerance scaled by r1+r2):
+ * - same center → coincident if r1≈r2, else concentric
+ * - d > r1+r2 (+eps) or d < |r1-r2| (-eps) → none
+ * - h ≈ 0 → tangent (single point)
+ * - h > 0 → two (two points, sorted x→y ascending)
+ *
+ * Numeric notes:
+ * - Uses centralized tolerance helpers (defaultTol, tolValue, eqTol)
+ * - Guards/normalizes invalid inputs (non-finite coords/radius, non-positive radius)
+ */
 export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult {
     // Normalize/guard inputs
     const norm = (c: Circle): Circle | null => {
