@@ -98,7 +98,7 @@ M4 プロパティテスト（Red→Green）
 
 M5 ロバスト化 & リファクタ
 - [x] tolerance surface centralize — `src/geom/types.ts`, `src/geom/circle.ts` DoD: `Tolerance/defaultTol/tolValue/eqTol` を導入し、同中心/境界比較に適用。全テスト緑。
-- [ ] radius/NaN guard & normalize — `src/geom/circle.ts` DoD: 異常値保護後も全テスト緑。
+- [x] radius/NaN guard & normalize — `src/geom/circle.ts` DoD: 非有限/非正の半径・座標をガード。半径はabs正規化、無効入力はkind none。全テスト緑。
 - [ ] JSDoc 数式と分岐根拠 — `src/geom/circle.ts` DoD: 主要関数に JSDoc 追記、lint OK。
 - [ ] test helpers dedup — `tests/unit/geom/circle.points-two.test.ts`, `tests/property/*` DoD: 重複ヘルパ整理後もテスト緑。
 

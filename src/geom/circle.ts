@@ -31,21 +31,33 @@ function sortPointsAscXY(pts: Vec[]): Vec[] {
 }
 
 export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult {
-    const dx = b.c.x - a.c.x;
-    const dy = b.c.y - a.c.y;
+    // Normalize/guard inputs
+    const norm = (c: Circle): Circle | null => {
+        const { x, y } = c.c;
+        const r = Math.abs(c.r);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(r)) return null;
+        if (!(r > 0)) return null;
+        return { c: { x, y }, r };
+    };
+    const A = norm(a);
+    const B = norm(b);
+    if (!A || !B) return { kind: "none", points: [] };
+
+    const dx = B.c.x - A.c.x;
+    const dy = B.c.y - A.c.y;
     // compute distance once via helper for clarity
-    const d = distance(a.c, b.c);
+    const d = distance(A.c, B.c);
     const d2 = d * d;
 
     // Same-center guards
-    const scale = a.r + b.r;
+    const scale = A.r + B.r;
     const sameCenter = eqTol(d, 0, scale, defaultTol); // tolerant same-center check
     if (sameCenter) {
-        return a.r === b.r ? { kind: "coincident" } : { kind: "concentric" };
+        return A.r === B.r ? { kind: "coincident" } : { kind: "concentric" };
     }
 
     const rsum = scale;
-    const rdiff = Math.abs(a.r - b.r);
+    const rdiff = Math.abs(A.r - B.r);
     const epsR = tolValue(rsum, defaultTol);
 
     // Early exit: separate or containment without touching
@@ -55,9 +67,9 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
 
     // Compute intersection base using robust algebra
     // Distance from a.c to the foot of the perpendicular from intersection points
-    const aLen = (a.r * a.r - b.r * b.r + d2) / (2 * d);
+    const aLen = (A.r * A.r - B.r * B.r + d2) / (2 * d);
     // Squared height from that foot to the actual intersection(s)
-    let h2 = a.r * a.r - aLen * aLen;
+    let h2 = A.r * A.r - aLen * aLen;
     // Clamp tiny negatives due to rounding to zero
     if (h2 < 0 && h2 > -1e-15) h2 = 0;
     if (h2 < 0) {
@@ -68,8 +80,8 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const h = Math.sqrt(h2);
     const ux = dx / d;
     const uy = dy / d;
-    const px = a.c.x + aLen * ux;
-    const py = a.c.y + aLen * uy;
+    const px = A.c.x + aLen * ux;
+    const py = A.c.y + aLen * uy;
 
     const makePoint = (x: number, y: number): Vec => ({ x, y });
 
