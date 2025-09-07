@@ -155,13 +155,31 @@ hyperbolic-poc/
 ### 過去の暫定方針（非推奨）
 - 以前は「既存 JS を一次オラクルとして adapter で包む」「シャドー比較で差分収集」「開発時のみ残差チェックと JSONL 追記」といった戦術を採用していましたが、TDD 方針に統一したため現在は非推奨です。
 
-## テスト実行
+## テスト実行 / Property-based Testing
 ```bash
 pnpm test
 pnpm test -- --watch
 # サンドボックス等の制限環境
 pnpm test:sandbox
 ```
+
+### fast-check（@fast-check/vitest）
+- 本プロジェクトのプロパティテストは fast-check を利用しています。
+- 設定は `vitest.setup.ts` で一元化し、既定値は以下です。
+  - `seed = 424242`
+  - `numRuns = 200`
+- 実行時に環境変数で上書き可能です。
+
+```bash
+# シードと反復回数を変更して実行
+FC_SEED=1337 FC_RUNS=500 pnpm test:sandbox
+```
+
+### 数値安定（Tolerance）
+- 浮動小数の丸め誤差による境界不安定を抑えるため、許容誤差（Tolerance）を中央集約しています。
+- `src/geom/types.ts` に `Tolerance`, `defaultTol`, `tolValue`, `eqTol` を定義し、
+  `src/geom/circle.ts` の「同中心判定」「分離/包含境界」などで適用しています。
+- テスト側の比較は `toBeCloseTo(..., 12)` を基準にしています（必要に応じて厳格化可）。
 
 ## TDD の進め方（推奨）
 - 人間が `tests/acceptance/**` に代表 6 ケース（分離/外接/内接/二交点/同心/同一）を作成
