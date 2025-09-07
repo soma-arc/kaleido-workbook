@@ -100,7 +100,7 @@ M5 ロバスト化 & リファクタ
 - [x] tolerance surface centralize — `src/geom/types.ts`, `src/geom/circle.ts` DoD: `Tolerance/defaultTol/tolValue/eqTol` を導入し、同中心/境界比較に適用。全テスト緑。
 - [x] radius/NaN guard & normalize — `src/geom/circle.ts` DoD: 非有限/非正の半径・座標をガード。半径はabs正規化、無効入力はkind none。全テスト緑。
 - [x] JSDoc 数式と分岐根拠 — `src/geom/circle.ts` DoD: 定義/分類/数値注意点（tol, clamp,順序）をJSDocに追記。テスト緑。
-- [ ] test helpers dedup — `tests/unit/geom/circle.points-two.test.ts`, `tests/property/*` DoD: 重複ヘルパ整理後もテスト緑。
+- [x] test helpers dedup — `tests/property/*` DoD: 共通ヘルパを `tests/fixtures/geom.ts` に集約（sortPts/transform*）。テスト緑。
 
 M6 ドキュメント
 - [ ] README sync（API/TDD/順序） — `README.md` DoD: API 署名/返却規約/順序を最新に反映。
