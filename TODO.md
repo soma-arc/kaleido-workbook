@@ -103,9 +103,9 @@ M5 ロバスト化 & リファクタ
 - [x] test helpers dedup — `tests/property/*` DoD: 共通ヘルパを `tests/fixtures/geom.ts` に集約（sortPts/transform*）。テスト緑。
 
 M6 ドキュメント
-- [ ] README sync（API/TDD/順序） — `README.md` DoD: API 署名/返却規約/順序を最新に反映。
-- [ ] AGENTS sync（DoD/禁止/範囲） — `AGENTS.md` DoD: 現行方針と一致。
-- [ ] TODO checkpoint 更新 — `TODO.md` DoD: 進捗に合わせてチェック済みに更新。
+- [x] README sync（API/TDD/順序） — `README.md` DoD: テスト章を fast-check/seed/numRuns/env override/数値Tol の現状に同期。
+- [x] AGENTS sync（DoD/禁止/範囲） — `AGENTS.md` DoD: fast-check採用・vitest.setup・DoD文言を更新。
+- [x] TODO checkpoint 更新 — `TODO.md` DoD: 本チェック項目を更新。
 
 ---
 
