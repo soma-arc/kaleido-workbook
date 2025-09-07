@@ -1,0 +1,56 @@
+name: "Task"
+description: "Small, verifiable unit of work (1 task = 1 commit)"
+title: "[Task] <specific change>"
+labels: ["task"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep scope small. Follow commit policy: 1 task = 1 commit.
+
+  - type: textarea
+    id: done-definition
+    attributes:
+      label: Done Definition
+      description: What conditions must be true to call this done?
+      placeholder: |
+        - Tests green (incl. coverage v8)
+        - Lint/format pass (Biome, 4 spaces)
+        - README/TODO updated if needed
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps / Repro
+      description: Steps to implement or reproduce (if bug).
+      placeholder: |
+        1. Add failing unit test
+        2. Implement minimal change
+        3. Refactor
+    validations:
+      required: false
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: How will we verify? Commands, screenshots, or notes.
+      placeholder: |
+        - pnpm test
+        - pnpm lint && pnpm format --check
+        - Screenshot / short GIF
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Context, risks, or links.
+      placeholder: Related epic, docs/ROADMAP.md section, etc.
+    validations:
+      required: false
+

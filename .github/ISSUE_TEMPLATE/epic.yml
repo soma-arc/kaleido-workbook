@@ -1,0 +1,98 @@
+name: "Epic"
+description: "High-level initiative with scope, acceptance, and child issues"
+title: "[Epic] <concise objective>"
+labels: ["epic"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to define an Epic. Keep scope tight and acceptance measurable. Link child Tasks.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What outcome are we driving? Why now?
+      placeholder: e.g., "v0.1 Hyperbolic Tiling PoC MVP"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope-in
+    attributes:
+      label: In Scope
+      description: What is included? Bullet list.
+      placeholder: |
+        - Poincaré disk MVP rendering
+        - (p,q,r) basic domain tiling
+        - Geodesic from two boundary points
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope-out
+    attributes:
+      label: Out of Scope
+      description: What is explicitly excluded?
+      placeholder: |
+        - Production hardening
+        - WebGPU migration
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Clear, testable criteria to mark this Epic done.
+      placeholder: |
+        - README quick start under 3 minutes
+        - CI runs typecheck/biome/test (coverage v8)
+        - Boundary click → geodesic, snap visualized
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables
+      description: Artefacts produced (docs, demos, screenshots, etc.)
+      placeholder: |
+        - Demo GIF and PNG screenshot
+        - docs/ROADMAP.md updated
+        - Issue links to Tasks
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: External or internal dependencies/risks.
+      placeholder: |
+        - fast-check stability
+        - Canvas performance on target devices
+    validations:
+      required: false
+
+  - type: input
+    id: target-quarter
+    attributes:
+      label: Target Quarter
+      description: Rough target (e.g., 2025-Q4)
+      placeholder: 2025-Q4
+    validations:
+      required: false
+
+  - type: textarea
+    id: child-issues
+    attributes:
+      label: Child Issues
+      description: Link related Task issues (use - [ ] list to track).
+      placeholder: |
+        - [ ] #123 Task A
+        - [ ] #124 Task B
+    validations:
+      required: false
+
