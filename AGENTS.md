@@ -31,7 +31,7 @@
 ## DoD（Definition of Done）
 - 受け入れ・ユニット・プロパティが全て Green（coverage v8）
 - API シグネチャ/返却規約（順序・分類）が README と一致
-- TODO（スプリント）の該当項目を同一コミットで [x] に更新
+- PR が対象 Issue を `Closes #<number>` で関連付け、GitHub Project 上の該当アイテムが `Done` に遷移
 
 ## コミット/PR ポリシー（最小）
 - 1 タスク = 1 コミット（束ねない）
@@ -40,9 +40,9 @@
 - CI: typecheck / biome(lint/format-check) / test(coverage v8)
 
 ## 参照
-- docs/ROADMAP.md（Now/Next/Later）
+- docs/ROADMAP.md（Now/Next/Later の方向性）
 - README.md（クイックスタート/コマンド）
-- TODO.md（スプリントの Now/Next/Later。Issue を正とする）
+- GitHub Project（スプリントの Now/Next/Later のSSOT）/ Milestones（リリース管理）
 
 メタ: 本書は TDD 方針へのピボット（2025-09-04）を反映。
 メタ: Serena メモリを最新ルールに同期（2025-09-07）。
