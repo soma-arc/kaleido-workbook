@@ -6,4 +6,3 @@ const SEED = Number(process.env.FC_SEED ?? 424242);
 const NUM_RUNS = Number(process.env.FC_RUNS ?? 200);
 
 fc.configureGlobal({ seed: SEED, numRuns: NUM_RUNS });
-

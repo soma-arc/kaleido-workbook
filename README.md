@@ -27,8 +27,9 @@ pnpm test           # coverage provider: v8
 - 1 タスク = 1 コミット。pre-commit で lint/format/test を通す。
 
 ## リンク
-- docs/ROADMAP.md（中長期）
-- TODO.md（スプリントの Now/Next/Later）
+- docs/ROADMAP.md（中長期の方向性メモ）
+- GitHub Project（スプリントの Now/Next/Later のSSOT）
+- Milestones（リリース/期日管理）
 - AGENTS.md（作業範囲・禁止・DoD・TDD ルール）
 
 ライセンス: LICENSE

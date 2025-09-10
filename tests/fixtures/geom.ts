@@ -4,7 +4,13 @@ export function sortPts(pts: Vec[]): Vec[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
 }
 
-export function transformCircle(s: number, angle: number, tx: number, ty: number, c: Circle): Circle {
+export function transformCircle(
+    s: number,
+    angle: number,
+    tx: number,
+    ty: number,
+    c: Circle,
+): Circle {
     const ca = Math.cos(angle);
     const sa = Math.sin(angle);
     const x = c.c.x;
@@ -21,4 +27,3 @@ export function transformPoint(s: number, angle: number, tx: number, ty: number,
     const yr = s * (sa * p.x + ca * p.y) + ty;
     return { x: xr, y: yr };
 }
-

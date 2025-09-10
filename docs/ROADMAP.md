@@ -6,7 +6,7 @@
 - 粒度: 目的/必須/検収 を短文で明記（期日は四半期粒度）
 - 実装の正: Issue（Epic/Task テンプレート）を正とし、ここはガイドです
 
-## Now — v0.1 Hyperbolic Tiling PoC（2025-Q4）
+## Now — v0.1 Hyperbolic Tiling PoC
 - 目的: Poincaré 円板で最小の操作検証（(p,q,r)/ジオデシック/角度スナップ/群展開/共役/PNG）
 - 必須: TypeScript+React+Vite、Canvas 2D、Biome(4sp)、Vitest(coverage v8)、CI（typecheck/lint/test）
 - 検収: README クイックスタート3分以内、CI green、境界2点クリック→ジオデシック生成、スナップ可視化、(p,q,r)で深さD展開、共役スライダの連続変化、PNG出力
@@ -16,12 +16,12 @@
 - UI（角度ピッカー、(p,q,r)、深さ、共役ハンドル）
 - 幾何コア: circle×circle から開始（TDD、返却規約/昇順厳守）
 
-## Next — v0.2 Spherical Mode MVP（2026-Q1）
+## Next — v0.2 Spherical Mode MVP
 - 目的: 球面三角形を最小セットで描画し、ステレオ投影で表示する
 - 必須: 球面三角形のパラメタ化、ステレオ投影、最小UI切替（平面↔球面）
 - 検収: 代表ケースで球面ジオデシックが正しく表示され、切替が即時反映される
 
-## Later — 探索テーマ（2026-Q2+）
+## Later — 探索テーマ
 - 円反転群/共役可視化の強化（群語長の可視化、基本域の生成）
 - 外部エディタ連携（状態保存/読み込み、プリセットの共有）
 - WebGPU 検証（負荷の高い描画の移行可否、性能計測）

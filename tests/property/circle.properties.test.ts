@@ -19,20 +19,22 @@ function isTwoOrTangent(r: IntersectResult): r is IntersectResult & { points: Ve
     return (r.kind === "two" || r.kind === "tangent") && Array.isArray(r.points);
 }
 
-
 describe("circleCircleIntersection properties (fast-check)", () => {
-    test.prop([circleArb, circleArb])("points satisfy both circle equations (two/tangent)", (A, B) => {
-        const r = circleCircleIntersection(A, B);
-        if (!isTwoOrTangent(r)) return true;
-        for (const p of r.points!) {
-            const da = Math.hypot(p.x - A.c.x, p.y - A.c.y);
-            const db = Math.hypot(p.x - B.c.x, p.y - B.c.y);
-            // Precision baseline 1e-12 via toBeCloseTo(..., 12)
-            expect(da).toBeCloseTo(A.r, 12);
-            expect(db).toBeCloseTo(B.r, 12);
-        }
-        return true;
-    });
+    test.prop([circleArb, circleArb])(
+        "points satisfy both circle equations (two/tangent)",
+        (A, B) => {
+            const r = circleCircleIntersection(A, B);
+            if (!isTwoOrTangent(r)) return true;
+            for (const p of r.points!) {
+                const da = Math.hypot(p.x - A.c.x, p.y - A.c.y);
+                const db = Math.hypot(p.x - B.c.x, p.y - B.c.y);
+                // Precision baseline 1e-12 via toBeCloseTo(..., 12)
+                expect(da).toBeCloseTo(A.r, 12);
+                expect(db).toBeCloseTo(B.r, 12);
+            }
+            return true;
+        },
+    );
 
     test.prop([
         circleArb,
