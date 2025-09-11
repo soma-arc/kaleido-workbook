@@ -46,3 +46,17 @@
 
 メタ: 本書は TDD 方針へのピボット（2025-09-04）を反映。
 メタ: Serena メモリを最新ルールに同期（2025-09-07）。
+
+
+リポ内の次のSSOTを読んで遵守してください:
+ops/ai/prompts/v1/implement_issue.md # 実装フローの契約
+ops/ai/playbooks/v1/dev_flow.md # Storybook用スタイル/DoD/テスト規約
+実行:
+ISSUE_NUMBERを基準に、依存が無いことを確認 → ブランチ {BRANCH_PREFIX}/{ISSUE_NUMBER}-{slug} を作成
+storybook.md の規約に従ってコンポーネントのCSF3 stories/Controls/Docs/アクセシビリティ/Playテストを整備
+小さくコミット（Conventional Commits、末尾に Refs #<id>）、lint/typecheck/test緑化
+PR作成（テンプレを埋め、本文先頭に Closes #<id>）。レビュー依頼も行う
+残件があれば新Issue提案（Epic/Parentに紐付け）
+出力:
+使ったSSOTのパスとバージョン（先頭行のv表記）を明記
+作成ブランチ名／主要コミット件名／PR URL／残件の新Issue提案（タイトル＋1行）
