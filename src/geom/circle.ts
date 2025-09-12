@@ -1,4 +1,4 @@
-import type { Circle, IntersectResult, Vec } from "./types";
+import type { Circle, IntersectResult, Vec2 } from "./types";
 import { defaultTol, eqTol, tolValue } from "./types";
 import { distance, safeSqrt, perp90 } from "./math";
 
@@ -25,7 +25,7 @@ import { distance, safeSqrt, perp90 } from "./math";
  */
 // distance moved to math.ts
 
-function sortPointsAscXY(pts: Vec[]): Vec[] {
+function sortPointsAscXY(pts: Vec2[]): Vec2[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
 }
 
@@ -102,7 +102,7 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const px = A.c.x + aLen * ux;
     const py = A.c.y + aLen * uy;
 
-    const makePoint = (x: number, y: number): Vec => ({ x, y });
+    const makePoint = (x: number, y: number): Vec2 => ({ x, y });
 
     if (h === 0) {
         const p = makePoint(px, py);

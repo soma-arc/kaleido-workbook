@@ -1,8 +1,8 @@
 import { test, fc } from "@fast-check/vitest";
 import { invertUnit, invertInCircle } from "../../src/geom/inversion";
-import type { Circle, Vec } from "../../src/geom/types";
+import type { Circle, Vec2 } from "../../src/geom/types";
 
-const vecArb = fc.record({
+const vecArb: fc.Arbitrary<Vec2> = fc.record({
     x: fc.double({ min: -10, max: 10, noDefaultInfinity: true, noNaN: true }),
     y: fc.double({ min: -10, max: 10, noDefaultInfinity: true, noNaN: true }),
 });

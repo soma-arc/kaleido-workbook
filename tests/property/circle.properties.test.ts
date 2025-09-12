@@ -1,6 +1,6 @@
 import { test, fc } from "@fast-check/vitest";
 import { circleCircleIntersection } from "../../src/geom/circle";
-import type { Circle, IntersectResult, Vec } from "../../src/geom/types";
+import type { Circle, IntersectResult, Vec2 } from "../../src/geom/types";
 import { sortPts, transformCircle, transformPoint } from "../fixtures/geom";
 
 const range = 20;
@@ -15,7 +15,7 @@ const circleArb: fc.Arbitrary<Circle> = fc.record({
     r: fc.double({ min: 0.1, max: range, noDefaultInfinity: true, noNaN: true }),
 });
 
-function isTwoOrTangent(r: IntersectResult): r is IntersectResult & { points: Vec[] } {
+function isTwoOrTangent(r: IntersectResult): r is IntersectResult & { points: Vec2[] } {
     return (r.kind === "two" || r.kind === "tangent") && Array.isArray(r.points);
 }
 
