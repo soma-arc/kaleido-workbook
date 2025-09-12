@@ -1,9 +1,9 @@
-import type { Vec } from "./types";
+import type { Vec2 } from "./types";
 
 /**
  * Euclidean distance between two points.
  */
-export function distance(a: Vec, b: Vec): number {
+export function distance(a: Vec2, b: Vec2): number {
     return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
@@ -22,6 +22,6 @@ export function safeSqrt(x: number, eps = 1e-15): number {
 /**
  * Rotate a vector by +90 degrees: (x, y) -> (-y, x).
  */
-export function perp90(v: Vec): Vec {
+export function perp90(v: Vec2): Vec2 {
     return { x: -v.y, y: v.x };
 }

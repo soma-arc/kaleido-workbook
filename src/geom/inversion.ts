@@ -1,4 +1,4 @@
-import type { Circle, Vec } from "./types";
+import type { Circle, Vec2 } from "./types";
 import { defaultTol, tolValue } from "./types";
 
 /**
@@ -6,7 +6,7 @@ import { defaultTol, tolValue } from "./types";
  * For p = (x, y), p' = p / |p|^2. Points on the unit circle are fixed.
  * Near the origin (|p| ≈ 0), returns the input point unchanged to avoid infinities.
  */
-export function invertUnit(p: Vec): Vec {
+export function invertUnit(p: Vec2): Vec2 {
     const { x, y } = p;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return { x, y };
     const r2 = x * x + y * y;
@@ -20,7 +20,7 @@ export function invertUnit(p: Vec): Vec {
  * For p, define v = p - c, then p' = c + (r^2 / |v|^2) * v.
  * Points on the circle are fixed. Near the center (|v| ≈ 0), returns p unchanged.
  */
-export function invertInCircle(p: Vec, C: Circle): Vec {
+export function invertInCircle(p: Vec2, C: Circle): Vec2 {
     const vx = p.x - C.c.x;
     const vy = p.y - C.c.y;
     if (!Number.isFinite(vx) || !Number.isFinite(vy)) return { x: p.x, y: p.y };
@@ -30,4 +30,3 @@ export function invertInCircle(p: Vec, C: Circle): Vec {
     const k = (C.r * C.r) / d2;
     return { x: C.c.x + k * vx, y: C.c.y + k * vy };
 }
-

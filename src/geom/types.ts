@@ -1,12 +1,14 @@
 /**
- * 2D vector in Euclidean plane.
+ * 2Dベクトル（将来のVec3等に備えて公開名をVec2に統一）。
+ * 互換性維持のため `export type Vec = Vec2` を併記します。
  */
-export type Vec = { x: number; y: number };
+export type Vec2 = { x: number; y: number };
+export type Vec = Vec2;
 
 /**
  * Circle represented by center `c` and radius `r` (r > 0).
  */
-export type Circle = { c: Vec; r: number };
+export type Circle = { c: Vec2; r: number };
 
 /**
  * Intersection classification between two circles.
@@ -21,7 +23,7 @@ export type IntersectKind = "none" | "tangent" | "two" | "concentric" | "coincid
  */
 export type IntersectResult = {
     kind: IntersectKind;
-    points?: Vec[];
+    points?: Vec2[];
 };
 
 /**

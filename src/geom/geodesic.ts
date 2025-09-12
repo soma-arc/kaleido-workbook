@@ -1,18 +1,18 @@
-import type { Vec } from "./types";
+import type { Vec2 } from "./types";
 import { defaultTol, tolValue } from "./types";
 
-export type GeodesicCircle = { kind: "circle"; c: Vec; r: number };
-export type GeodesicDiameter = { kind: "diameter"; dir: Vec };
+export type GeodesicCircle = { kind: "circle"; c: Vec2; r: number };
+export type GeodesicDiameter = { kind: "diameter"; dir: Vec2 };
 export type Geodesic = GeodesicCircle | GeodesicDiameter;
 
-function isOpposite(a: Vec, b: Vec): boolean {
+function isOpposite(a: Vec2, b: Vec2): boolean {
     // a ≈ -b  <=>  |a + b| ≈ 0
     const s = { x: a.x + b.x, y: a.y + b.y };
     const eps = tolValue(1, defaultTol);
     return Math.hypot(s.x, s.y) <= eps;
 }
 
-function solveCenterFromDot1(a: Vec, b: Vec): Vec {
+function solveCenterFromDot1(a: Vec2, b: Vec2): Vec2 {
     // Solve for c such that a·c = 1 and b·c = 1
     const det = a.x * b.y - a.y * b.x;
     const eps = tolValue(1, defaultTol);
@@ -24,7 +24,7 @@ function solveCenterFromDot1(a: Vec, b: Vec): Vec {
     return { x: cx, y: cy };
 }
 
-function normalize(v: Vec): Vec {
+function normalize(v: Vec2): Vec2 {
     const n = Math.hypot(v.x, v.y);
     if (!(n > 0) || !Number.isFinite(n)) return { x: 1, y: 0 };
     return { x: v.x / n, y: v.y / n };
@@ -40,7 +40,7 @@ function normalize(v: Vec): Vec {
  * Constraints: a and b should lie on the unit circle and be distinct.
  * Degenerate inputs (a≈b, singular system) throw an Error.
  */
-export function geodesicFromBoundary(a: Vec, b: Vec): Geodesic {
+export function geodesicFromBoundary(a: Vec2, b: Vec2): Geodesic {
     if (!Number.isFinite(a.x) || !Number.isFinite(a.y) || !Number.isFinite(b.x) || !Number.isFinite(b.y)) {
         throw new Error("Non-finite boundary point");
     }
