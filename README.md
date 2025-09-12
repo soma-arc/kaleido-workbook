@@ -26,6 +26,10 @@ pnpm test           # coverage provider: v8
 - 幾何の最初の対象は circle×circle。返却規約（kind/points）と「2点は x→y 昇順」を厳守。
 - 1 タスク = 1 コミット。pre-commit で lint/format/test を通す。
 
+### 用語/型の統一
+- ベクトル型は `Vec2` を公開名として採用（旧 `Vec` は廃止）。
+- 主な幾何モジュール: `geom/circle.ts`（円×円交点）, `geom/geodesic.ts`（境界2点→直交円/直径）, `geom/inversion.ts`（円反転）, `geom/unit-disk.ts`（単位円ユーティリティ）。
+
 ## リンク
 - docs/ROADMAP.md（中長期の方向性メモ）
 - GitHub Project（スプリントの Now/Next/Later のSSOT）
