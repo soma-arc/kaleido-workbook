@@ -1,0 +1,12 @@
+import { describe, it, expect } from "vitest";
+import { safeSqrt } from "../../../src/geom/math";
+
+describe("math.safeSqrt", () => {
+    it("clamps small negative to 0", () => {
+        expect(safeSqrt(-1e-15)).toBe(0);
+    });
+
+    it("computes sqrt for positive numbers", () => {
+        expect(safeSqrt(4)).toBe(2);
+    });
+});

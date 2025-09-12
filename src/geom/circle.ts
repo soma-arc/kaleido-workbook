@@ -1,5 +1,6 @@
 import type { Circle, IntersectResult, Vec } from "./types";
 import { defaultTol, eqTol, tolValue } from "./types";
+import { distance, safeSqrt, perp90 } from "./math";
 
 /**
  * circleCircleIntersection
@@ -22,9 +23,7 @@ import { defaultTol, eqTol, tolValue } from "./types";
  * - tangent (h == 0)
  * - two (h > 0), with stable x→y ordering
  */
-function distance(p: Vec, q: Vec): number {
-    return Math.hypot(p.x - q.x, p.y - q.y);
-}
+// distance moved to math.ts
 
 function sortPointsAscXY(pts: Vec[]): Vec[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
@@ -92,15 +91,12 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     // Distance from a.c to the foot of the perpendicular from intersection points
     const aLen = (A.r * A.r - B.r * B.r + d2) / (2 * d);
     // Squared height from that foot to the actual intersection(s)
-    let h2 = A.r * A.r - aLen * aLen;
-    // Clamp tiny negatives due to rounding to zero
-    if (h2 < 0 && h2 > -1e-15) h2 = 0;
-    if (h2 < 0) {
+    const h2 = A.r * A.r - aLen * aLen;
+    const h = safeSqrt(h2);
+    if (Number.isNaN(h)) {
         // Numerically outside: treat as none
         return { kind: "none", points: [] };
     }
-
-    const h = Math.sqrt(h2);
     const ux = dx / d;
     const uy = dy / d;
     const px = A.c.x + aLen * ux;
@@ -113,10 +109,9 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
         return { kind: "tangent", points: [p] };
     }
 
-    const rx = -uy * h;
-    const ry = ux * h;
-    const p1 = makePoint(px + rx, py + ry);
-    const p2 = makePoint(px - rx, py - ry);
+    const nh = perp90({ x: ux, y: uy });
+    const p1 = makePoint(px + nh.x * h, py + nh.y * h);
+    const p2 = makePoint(px - nh.x * h, py - nh.y * h);
     const points = sortPointsAscXY([p1, p2]);
     return { kind: "two", points };
 }
