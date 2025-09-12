@@ -1,9 +1,7 @@
 /**
- * 2Dベクトル（将来のVec3等に備えて公開名をVec2に統一）。
- * 互換性維持のため `export type Vec = Vec2` を併記します。
+ * 2Dベクトル（公開名を Vec2 に統一・旧 Vec は廃止）。
  */
 export type Vec2 = { x: number; y: number };
-export type Vec = Vec2;
 
 /**
  * Circle represented by center `c` and radius `r` (r > 0).

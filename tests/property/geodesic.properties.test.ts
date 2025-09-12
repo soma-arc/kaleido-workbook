@@ -1,11 +1,11 @@
 import { test, fc } from "@fast-check/vitest";
 import { geodesicFromBoundary } from "../../src/geom/geodesic";
-import type { Vec } from "../../src/geom/types";
+import type { Vec2 } from "../../src/geom/types";
 
-const pt = (t: number): Vec => ({ x: Math.cos(t), y: Math.sin(t) });
-const add = (a: Vec, b: Vec): Vec => ({ x: a.x + b.x, y: a.y + b.y });
-const norm = (v: Vec): number => Math.hypot(v.x, v.y);
-const dot = (a: Vec, b: Vec): number => a.x * b.x + a.y * b.y;
+const pt = (t: number): Vec2 => ({ x: Math.cos(t), y: Math.sin(t) });
+const add = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y });
+const norm = (v: Vec2): number => Math.hypot(v.x, v.y);
+const dot = (a: Vec2, b: Vec2): number => a.x * b.x + a.y * b.y;
 const eps = (scale = 1) => 1e-12 * Math.max(1, scale);
 
 const angleArb = fc.double({

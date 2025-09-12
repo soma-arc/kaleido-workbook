@@ -1,6 +1,6 @@
-import type { Circle, Vec } from "../../src/geom/types";
+import type { Circle, Vec2 } from "../../src/geom/types";
 
-export function sortPts(pts: Vec[]): Vec[] {
+export function sortPts(pts: Vec2[]): Vec2[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));
 }
 
@@ -20,7 +20,7 @@ export function transformCircle(
     return { c: { x: xr, y: yr }, r: Math.abs(s) * c.r };
 }
 
-export function transformPoint(s: number, angle: number, tx: number, ty: number, p: Vec): Vec {
+export function transformPoint(s: number, angle: number, tx: number, ty: number, p: Vec2): Vec2 {
     const ca = Math.cos(angle);
     const sa = Math.sin(angle);
     const xr = s * (ca * p.x - sa * p.y) + tx;

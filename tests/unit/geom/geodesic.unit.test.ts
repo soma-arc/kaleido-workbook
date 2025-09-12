@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { geodesicFromBoundary } from "../../../src/geom/geodesic";
-import type { Vec } from "../../../src/geom/types";
+import type { Vec2 } from "../../../src/geom/types";
 
-const pt = (t: number): Vec => ({ x: Math.cos(t), y: Math.sin(t) });
-const dot = (a: Vec, b: Vec) => a.x * b.x + a.y * b.y;
-const norm2 = (v: Vec) => v.x * v.x + v.y * v.y;
+const pt = (t: number): Vec2 => ({ x: Math.cos(t), y: Math.sin(t) });
+const dot = (a: Vec2, b: Vec2) => a.x * b.x + a.y * b.y;
+const norm2 = (v: Vec2) => v.x * v.x + v.y * v.y;
 
 describe("geodesicFromBoundary", () => {
     it("returns circle kind for generic pair (not opposite)", () => {
