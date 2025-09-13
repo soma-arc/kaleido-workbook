@@ -25,8 +25,8 @@ export function invertInCircle(p: Vec2, C: Circle): Vec2 {
     const vy = p.y - C.c.y;
     if (!Number.isFinite(vx) || !Number.isFinite(vy)) return { x: p.x, y: p.y };
     const d2 = vx * vx + vy * vy;
-    const eps = tolValue(C.r, defaultTol);
-    if (d2 <= eps) return { x: p.x, y: p.y };
+    // Only treat the exact center as a special case; otherwise compute normally to preserve involution
+    if (d2 === 0) return { x: p.x, y: p.y };
     const k = (C.r * C.r) / d2;
     return { x: C.c.x + k * vx, y: C.c.y + k * vy };
 }
