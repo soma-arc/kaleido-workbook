@@ -39,4 +39,3 @@ export function snapBoundaryPoint(p: Vec2, N: number): Vec2 {
     const s = snapAngle(theta, N);
     return angleToBoundaryPoint(s);
 }
-

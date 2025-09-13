@@ -8,10 +8,11 @@ describe("circleCircleIntersection point: tangent single point", () => {
         const B: Circle = { c: { x: 10, y: 0 }, r: 5 };
         const out = circleCircleIntersection(A, B);
         expect(out.kind).toBe("tangent");
-        expect(out.points).toBeDefined();
-        expect(out.points!).toHaveLength(1);
-        expect(out.points![0].x).toBeCloseTo(5, 12);
-        expect(out.points![0].y).toBeCloseTo(0, 12);
+        const pts = out.points ?? [];
+        expect(pts.length).toBe(1);
+        const p0 = pts[0];
+        expect(p0.x).toBeCloseTo(5, 12);
+        expect(p0.y).toBeCloseTo(0, 12);
     });
 
     it("internal tangency -> (5,0)", () => {
@@ -19,9 +20,10 @@ describe("circleCircleIntersection point: tangent single point", () => {
         const B: Circle = { c: { x: 2, y: 0 }, r: 3 };
         const out = circleCircleIntersection(A, B);
         expect(out.kind).toBe("tangent");
-        expect(out.points).toBeDefined();
-        expect(out.points!).toHaveLength(1);
-        expect(out.points![0].x).toBeCloseTo(5, 12);
-        expect(out.points![0].y).toBeCloseTo(0, 12);
+        const pts = out.points ?? [];
+        expect(pts.length).toBe(1);
+        const p0 = pts[0];
+        expect(p0.x).toBeCloseTo(5, 12);
+        expect(p0.y).toBeCloseTo(0, 12);
     });
 });

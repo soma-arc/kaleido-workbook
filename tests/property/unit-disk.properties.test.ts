@@ -88,4 +88,3 @@ test("isOnUnitCircle tolerance behavior", () => {
     expect(isOnUnitCircle(inside)).toBe(true);
     expect(isOnUnitCircle(outside)).toBe(false);
 });
-

@@ -41,7 +41,12 @@ function normalize(v: Vec2): Vec2 {
  * Degenerate inputs (a≈b, singular system) throw an Error.
  */
 export function geodesicFromBoundary(a: Vec2, b: Vec2): Geodesic {
-    if (!Number.isFinite(a.x) || !Number.isFinite(a.y) || !Number.isFinite(b.x) || !Number.isFinite(b.y)) {
+    if (
+        !Number.isFinite(a.x) ||
+        !Number.isFinite(a.y) ||
+        !Number.isFinite(b.x) ||
+        !Number.isFinite(b.y)
+    ) {
         throw new Error("Non-finite boundary point");
     }
     // Equal endpoints guard
