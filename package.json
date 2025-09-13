@@ -8,7 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "typecheck": "tsc -p tsconfig.json",
-        "lint": "biome lint .",
+        "lint": "biome check .",
         "format": "biome format --write .",
         "test": "vitest",
         "test:sandbox": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
