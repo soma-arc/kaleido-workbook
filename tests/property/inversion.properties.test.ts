@@ -24,15 +24,12 @@ test.prop([vecArb])("invertUnit is an involution (except near origin)", (p) => {
     return close(back.x, p.x) && close(back.y, p.y);
 });
 
-test.prop([circleArb, vecArb])(
-    "invertInCircle is an involution (except near center)",
-    (C, p) => {
-        const dx = p.x - C.c.x;
-        const dy = p.y - C.c.y;
-        const d2 = dx * dx + dy * dy;
-        fc.pre(d2 > 1e-9);
-        const q = invertInCircle(p, C);
-        const back = invertInCircle(q, C);
-        return close(back.x, p.x) && close(back.y, p.y);
-    },
-);
+test.prop([circleArb, vecArb])("invertInCircle is an involution (except near center)", (C, p) => {
+    const dx = p.x - C.c.x;
+    const dy = p.y - C.c.y;
+    const d2 = dx * dx + dy * dy;
+    fc.pre(d2 > 1e-9);
+    const q = invertInCircle(p, C);
+    const back = invertInCircle(q, C);
+    return close(back.x, p.x) && close(back.y, p.y);
+});

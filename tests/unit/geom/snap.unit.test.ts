@@ -31,4 +31,3 @@ describe("snapBoundaryPoint", () => {
         // 45° is exact grid for N=8 but not for N=12; just sanity check normalization
     });
 });
-

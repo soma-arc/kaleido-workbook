@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { angleToBoundaryPoint, boundaryPointToAngle, isOnUnitCircle, normalizeOnUnitCircle } from "../../../src/geom/unit-disk";
+import {
+    angleToBoundaryPoint,
+    boundaryPointToAngle,
+    isOnUnitCircle,
+    normalizeOnUnitCircle,
+} from "../../../src/geom/unit-disk";
 
 const close = (a: number, b: number, d = 1e-12) => Math.abs(a - b) <= d;
 
