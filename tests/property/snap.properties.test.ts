@@ -1,10 +1,15 @@
-import { test, fc } from "@fast-check/vitest";
+import { fc, test } from "@fast-check/vitest";
 import { snapAngle, snapBoundaryPoint } from "../../src/geom/snap";
 import { angleToBoundaryPoint } from "../../src/geom/unit-disk";
 
 const TAU = 2 * Math.PI;
 
-const angleArb = fc.double({ min: -10 * Math.PI, max: 10 * Math.PI, noNaN: true, noDefaultInfinity: true });
+const angleArb = fc.double({
+    min: -10 * Math.PI,
+    max: 10 * Math.PI,
+    noNaN: true,
+    noDefaultInfinity: true,
+});
 const nArb = fc.integer({ min: 1, max: 64 });
 
 test.prop([angleArb, nArb])("periodicity: snapAngle(theta+2πk)=snapAngle(theta)", (theta, N) => {
@@ -14,11 +19,14 @@ test.prop([angleArb, nArb])("periodicity: snapAngle(theta+2πk)=snapAngle(theta)
     expect(b).toBeCloseTo(a, 12);
 });
 
-test.prop([angleArb, nArb])("idempotent: snapAngle(snapAngle(theta)) = snapAngle(theta)", (theta, N) => {
-    const a = snapAngle(theta, N);
-    const b = snapAngle(a, N);
-    expect(b).toBeCloseTo(a, 12);
-});
+test.prop([angleArb, nArb])(
+    "idempotent: snapAngle(snapAngle(theta)) = snapAngle(theta)",
+    (theta, N) => {
+        const a = snapAngle(theta, N);
+        const b = snapAngle(a, N);
+        expect(b).toBeCloseTo(a, 12);
+    },
+);
 
 test.prop([angleArb, nArb])("grid membership: result is a multiple of step", (theta, N) => {
     const step = TAU / N;
@@ -37,4 +45,3 @@ test.prop([angleArb, nArb])("snapBoundaryPoint corresponds to snapping angle", (
     expect(q.x).toBeCloseTo(expected.x, 12);
     expect(q.y).toBeCloseTo(expected.y, 12);
 });
-

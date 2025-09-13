@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { invertUnit, invertInCircle } from "../../../src/geom/inversion";
+import { describe, expect, it } from "vitest";
+import { invertInCircle, invertUnit } from "../../../src/geom/inversion";
 import type { Circle, Vec2 } from "../../../src/geom/types";
 
 const close = (a: number, b: number, d = 1e-12) => Math.abs(a - b) <= d;

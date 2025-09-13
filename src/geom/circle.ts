@@ -1,6 +1,6 @@
+import { distance, perp90, safeSqrt } from "./math";
 import type { Circle, IntersectResult, Vec2 } from "./types";
 import { defaultTol, eqTol, tolValue } from "./types";
-import { distance, safeSqrt, perp90 } from "./math";
 
 /**
  * circleCircleIntersection

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { snapAngle, snapBoundaryPoint } from "../../../src/geom/snap";
 
 const TAU = 2 * Math.PI;
@@ -31,4 +31,3 @@ describe("snapBoundaryPoint", () => {
         // 45° is exact grid for N=8 but not for N=12; just sanity check normalization
     });
 });
-

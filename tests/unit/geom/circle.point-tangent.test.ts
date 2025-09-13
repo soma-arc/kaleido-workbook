@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { circleCircleIntersection } from "../../../src/geom/circle";
 import type { Circle } from "../../../src/geom/types";
 

@@ -1,4 +1,4 @@
-import { test, fc } from "@fast-check/vitest";
+import { fc, test } from "@fast-check/vitest";
 import { geodesicFromBoundary } from "../../src/geom/geodesic";
 import { reflectAcrossGeodesic } from "../../src/geom/reflect";
 import { angleToBoundaryPoint, isOnUnitCircle } from "../../src/geom/unit-disk";
@@ -10,20 +10,23 @@ const pointInDiskArb = fc.record({
     y: fc.double({ min: -0.95, max: 0.95, noNaN: true, noDefaultInfinity: true }),
 });
 
-test.prop([angleArb, pointInDiskArb])("diameter reflection is an involution and boundary-preserving", (theta, p) => {
-    const a = angleToBoundaryPoint(theta);
-    const b = angleToBoundaryPoint(theta + Math.PI);
-    const g = geodesicFromBoundary(a, b);
-    const R = reflectAcrossGeodesic(g);
-    // involution
-    const back = R(R(p));
-    expect(back.x).toBeCloseTo(p.x, 12);
-    expect(back.y).toBeCloseTo(p.y, 12);
-    // boundary maps to boundary
-    const q = angleToBoundaryPoint(theta + 0.123);
-    const rq = R(q);
-    expect(isOnUnitCircle(rq)).toBe(true);
-});
+test.prop([angleArb, pointInDiskArb])(
+    "diameter reflection is an involution and boundary-preserving",
+    (theta, p) => {
+        const a = angleToBoundaryPoint(theta);
+        const b = angleToBoundaryPoint(theta + Math.PI);
+        const g = geodesicFromBoundary(a, b);
+        const R = reflectAcrossGeodesic(g);
+        // involution
+        const back = R(R(p));
+        expect(back.x).toBeCloseTo(p.x, 12);
+        expect(back.y).toBeCloseTo(p.y, 12);
+        // boundary maps to boundary
+        const q = angleToBoundaryPoint(theta + 0.123);
+        const rq = R(q);
+        expect(isOnUnitCircle(rq)).toBe(true);
+    },
+);
 
 test.prop([angleArb, angleArb, pointInDiskArb])(
     "circle reflection (inversion) is an involution and boundary-preserving",

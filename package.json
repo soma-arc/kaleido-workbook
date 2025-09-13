@@ -9,7 +9,7 @@
         "preview": "vite preview",
         "typecheck": "tsc -p tsconfig.json",
         "lint": "biome check .",
-        "format": "biome format --write .",
+        "format": "biome check --write .",
         "test": "vitest",
         "test:sandbox": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
         "coverage": "vitest run --coverage"

@@ -1,4 +1,4 @@
-import { test, fc } from "@fast-check/vitest";
+import { fc, test } from "@fast-check/vitest";
 import { geodesicFromBoundary } from "../../src/geom/geodesic";
 import type { Vec2 } from "../../src/geom/types";
 

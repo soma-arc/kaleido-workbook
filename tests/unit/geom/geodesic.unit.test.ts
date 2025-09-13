@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { geodesicFromBoundary } from "../../../src/geom/geodesic";
 import type { Vec2 } from "../../../src/geom/types";
 
