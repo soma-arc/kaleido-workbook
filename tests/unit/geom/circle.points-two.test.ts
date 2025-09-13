@@ -8,8 +8,8 @@ describe("circleCircleIntersection points: two intersections", () => {
         const B: Circle = { c: { x: 8, y: 0 }, r: 5 };
         const out = circleCircleIntersection(A, B);
         expect(out.kind).toBe("two");
-        const pts = out.points!;
-        expect(pts).toHaveLength(2);
+        const pts = out.points ?? [];
+        expect(pts.length).toBe(2);
         // Sorted x→y should be (4,-3), (4,3)
         expect(pts[0].x).toBeCloseTo(4, 12);
         expect(pts[0].y).toBeCloseTo(-3, 12);

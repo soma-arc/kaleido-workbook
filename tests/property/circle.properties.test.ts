@@ -24,8 +24,8 @@ describe("circleCircleIntersection properties (fast-check)", () => {
         "points satisfy both circle equations (two/tangent)",
         (A, B) => {
             const r = circleCircleIntersection(A, B);
-            if (!isTwoOrTangent(r)) return true;
-            for (const p of r.points!) {
+            if (!isTwoOrTangent(r) || !r.points) return true;
+            for (const p of r.points) {
                 const da = Math.hypot(p.x - A.c.x, p.y - A.c.y);
                 const db = Math.hypot(p.x - B.c.x, p.y - B.c.y);
                 // Precision baseline 1e-12 via toBeCloseTo(..., 12)
@@ -50,9 +50,9 @@ describe("circleCircleIntersection properties (fast-check)", () => {
         const moved = circleCircleIntersection(TA, TB);
 
         expect(moved.kind).toBe(base.kind);
-        if (isTwoOrTangent(base) && isTwoOrTangent(moved)) {
-            const baseT = sortPts(base.points!.map((p) => transformPoint(s, angle, tx, ty, p)));
-            const movedPts = sortPts(moved.points!);
+        if (isTwoOrTangent(base) && isTwoOrTangent(moved) && base.points && moved.points) {
+            const baseT = sortPts(base.points.map((p) => transformPoint(s, angle, tx, ty, p)));
+            const movedPts = sortPts(moved.points);
             expect(movedPts.length).toBe(baseT.length);
             for (let k = 0; k < movedPts.length; k++) {
                 expect(movedPts[k].x).toBeCloseTo(baseT[k].x, 12);
@@ -66,9 +66,9 @@ describe("circleCircleIntersection properties (fast-check)", () => {
         const ab = circleCircleIntersection(A, B);
         const ba = circleCircleIntersection(B, A);
         expect(ba.kind).toBe(ab.kind);
-        if (isTwoOrTangent(ab) && isTwoOrTangent(ba)) {
-            const p = sortPts(ab.points!);
-            const q = sortPts(ba.points!);
+        if (isTwoOrTangent(ab) && isTwoOrTangent(ba) && ab.points && ba.points) {
+            const p = sortPts(ab.points);
+            const q = sortPts(ba.points);
             expect(q.length).toBe(p.length);
             for (let k = 0; k < p.length; k++) {
                 expect(q[k].x).toBeCloseTo(p[k].x, 12);
