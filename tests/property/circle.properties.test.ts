@@ -1,4 +1,4 @@
-import { test, fc } from "@fast-check/vitest";
+import { fc, test } from "@fast-check/vitest";
 import { circleCircleIntersection } from "../../src/geom/circle";
 import type { Circle, IntersectResult, Vec2 } from "../../src/geom/types";
 import { sortPts, transformCircle, transformPoint } from "../fixtures/geom";

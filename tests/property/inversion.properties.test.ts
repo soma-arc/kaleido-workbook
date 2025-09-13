@@ -1,5 +1,5 @@
-import { test, fc } from "@fast-check/vitest";
-import { invertUnit, invertInCircle } from "../../src/geom/inversion";
+import { fc, test } from "@fast-check/vitest";
+import { invertInCircle, invertUnit } from "../../src/geom/inversion";
 import type { Circle, Vec2 } from "../../src/geom/types";
 
 const vecArb: fc.Arbitrary<Vec2> = fc.record({

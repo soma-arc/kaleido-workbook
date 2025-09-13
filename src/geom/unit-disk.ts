@@ -1,4 +1,4 @@
-import type { Vec2, Tolerance } from "./types";
+import type { Tolerance, Vec2 } from "./types";
 import { defaultTol, tolValue } from "./types";
 
 function normalizeAngle(theta: number): number {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { snapAngle, snapBoundaryPoint } from "../../../src/geom/snap";
 
 const TAU = 2 * Math.PI;

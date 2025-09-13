@@ -1,6 +1,6 @@
-import type { Vec2 } from "./types";
-import { invertInCircle } from "./inversion";
 import type { Geodesic } from "./geodesic";
+import { invertInCircle } from "./inversion";
+import type { Vec2 } from "./types";
 
 export type Transform2D = (p: Vec2) => Vec2;
 
@@ -22,4 +22,3 @@ export function reflectAcrossGeodesic(g: Geodesic): Transform2D {
     // circle geodesic: Euclidean inversion in the orthogonal circle
     return (p: Vec2): Vec2 => invertInCircle(p, { c: g.c, r: g.r });
 }
-

@@ -1,4 +1,4 @@
-import { test, fc } from "@fast-check/vitest";
+import { fc, test } from "@fast-check/vitest";
 import { snapAngle, snapBoundaryPoint } from "../../src/geom/snap";
 import { angleToBoundaryPoint } from "../../src/geom/unit-disk";
 

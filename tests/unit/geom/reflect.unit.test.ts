@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { geodesicFromBoundary } from "../../../src/geom/geodesic";
 import { reflectAcrossGeodesic } from "../../../src/geom/reflect";
 import { angleToBoundaryPoint } from "../../../src/geom/unit-disk";
@@ -42,4 +42,3 @@ describe("reflectAcrossGeodesic (unit)", () => {
         expect(back.y).toBeCloseTo(p.y, 12);
     });
 });
-
