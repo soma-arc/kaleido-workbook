@@ -21,8 +21,8 @@ describe("render/primitives specs", () => {
         const a = angleToBoundaryPoint(0);
         const b = angleToBoundaryPoint(Math.PI / 3);
         const g: Geodesic = geodesicFromBoundary(a, b);
-        expect(g.kind).toBe("circle");
         const vp = identity;
+        if (g.kind !== "circle") throw new Error("expected circle geodesic");
         const s = geodesicSpec(g, vp);
         if ("r" in s) {
             // radius equals world radius when scale=1
