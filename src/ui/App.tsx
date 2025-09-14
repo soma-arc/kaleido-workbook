@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { setCanvasDPR, attachResize } from "../render/canvas";
-import { type Viewport } from "../render/viewport";
-import { unitDiskSpec } from "../render/primitives";
+import { attachResize, setCanvasDPR } from "../render/canvas";
 import { drawCircle } from "../render/canvasAdapter";
+import { unitDiskSpec } from "../render/primitives";
+import type { Viewport } from "../render/viewport";
 
 export function App(): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);

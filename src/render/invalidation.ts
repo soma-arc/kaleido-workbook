@@ -132,11 +132,11 @@ export class InvalidationScheduler {
      * 即時にマージと通知を行います（通常は RAF により内部から呼ばれます）。
      */
     flush(): void {
-    if (this.rafId !== null) {
-      const caf = globalThis.cancelAnimationFrame?.bind(globalThis);
-      if (caf) caf(this.rafId);
-      this.rafId = null;
-    }
+        if (this.rafId !== null) {
+            const caf = globalThis.cancelAnimationFrame?.bind(globalThis);
+            if (caf) caf(this.rafId);
+            this.rafId = null;
+        }
         if (this.pending.length === 0) return;
         const merged = mergeRects(this.pending);
         this.pending = [];
@@ -147,10 +147,10 @@ export class InvalidationScheduler {
      * 保留キューを破棄し、将来のフラッシュを止めます。
      */
     dispose(): void {
-    if (this.rafId !== null) {
-      const caf = globalThis.cancelAnimationFrame?.bind(globalThis);
-      if (caf) caf(this.rafId);
-    }
+        if (this.rafId !== null) {
+            const caf = globalThis.cancelAnimationFrame?.bind(globalThis);
+            if (caf) caf(this.rafId);
+        }
         this.rafId = null;
         this.pending = [];
     }

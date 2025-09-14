@@ -4,8 +4,8 @@ import { attachResize, setCanvasDPR } from "../../../src/render/canvas";
 
 function makeCanvas(cssW: number, cssH: number): HTMLCanvasElement {
     const cv = document.createElement("canvas");
-  // mock layout size
-  cv.getBoundingClientRect = () => ({
+    // mock layout size
+    cv.getBoundingClientRect = () => ({
         x: 0,
         y: 0,
         top: 0,
@@ -32,14 +32,14 @@ describe("render/canvas DPR utilities", () => {
 
     it("uses devicePixelRatio when param omitted", () => {
         const old = globalThis.devicePixelRatio as unknown as number | undefined;
-    (globalThis as any).devicePixelRatio = 1.5;
+        (globalThis as any).devicePixelRatio = 1.5;
         const cv = makeCanvas(400, 300);
         const dpr = setCanvasDPR(cv);
         expect(dpr).toBeCloseTo(1.5, 12);
         expect(cv.width).toBe(600);
         expect(cv.height).toBe(450);
         // restore
-    (globalThis as any).devicePixelRatio = old ?? 1;
+        (globalThis as any).devicePixelRatio = old ?? 1;
     });
 
     it("attachResize wires and unwires window resize", () => {

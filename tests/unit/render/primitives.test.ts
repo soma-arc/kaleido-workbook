@@ -20,16 +20,16 @@ describe("render/primitives specs", () => {
     it("geodesicSpec(circle) produces screen circle", () => {
         const a = angleToBoundaryPoint(0);
         const b = angleToBoundaryPoint(Math.PI / 3);
-    const g: Geodesic = geodesicFromBoundary(a, b);
-    const vp = identity;
-    if (g.kind !== "circle") throw new Error("expected circle geodesic");
-    const s = geodesicSpec(g, vp);
-    if ("r" in s) {
-      // radius equals world radius when scale=1
-      expect(s.r).toBeCloseTo(g.r, 12);
-    } else {
-      throw new Error("expected circle spec");
-    }
+        const g: Geodesic = geodesicFromBoundary(a, b);
+        const vp = identity;
+        if (g.kind !== "circle") throw new Error("expected circle geodesic");
+        const s = geodesicSpec(g, vp);
+        if ("r" in s) {
+            // radius equals world radius when scale=1
+            expect(s.r).toBeCloseTo(g.r, 12);
+        } else {
+            throw new Error("expected circle spec");
+        }
     });
 
     it("geodesicSpec(diameter) produces a line through ±dir", () => {
