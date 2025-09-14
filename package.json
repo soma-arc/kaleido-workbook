@@ -12,7 +12,10 @@
         "format": "biome check --write .",
         "test": "vitest",
         "test:sandbox": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "prepare": "husky",
+        "ci": "pnpm biome:ci && pnpm typecheck && pnpm test:sandbox",
+        "biome:ci": "biome ci ."
     },
     "devDependencies": {
         "@biomejs/biome": "^2.2.2",
@@ -22,7 +25,9 @@
         "@vitejs/plugin-react": "^4.3.1",
         "@vitest/coverage-v8": "^2.0.5",
         "fast-check": "^4.3.0",
+        "husky": "^9.1.7",
         "jsdom": "^27.0.0",
+        "lint-staged": "^16.1.6",
         "typescript": "^5.6.2",
         "vite": "^5.4.6",
         "vitest": "^2.0.5"
