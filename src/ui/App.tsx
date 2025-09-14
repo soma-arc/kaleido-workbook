@@ -1,4 +1,8 @@
 import { useEffect, useRef } from "react";
+import { setCanvasDPR, attachResize } from "../render/canvas";
+import { type Viewport } from "../render/viewport";
+import { unitDiskSpec } from "../render/primitives";
+import { drawCircle } from "../render/canvasAdapter";
 
 export function App(): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -6,16 +10,25 @@ export function App(): JSX.Element {
     useEffect(() => {
         const cv = canvasRef.current;
         if (!cv) return;
-        // simple placeholder fill to visualize the canvas region
         const ctx = cv.getContext("2d");
-        if (ctx) {
+        if (!ctx) return;
+
+        const render = () => {
+            setCanvasDPR(cv);
+            const rect = cv.getBoundingClientRect();
+            const size = Math.min(rect.width, rect.height);
+            const margin = 8;
+            const scale = Math.max(1, size / 2 - margin);
+            const vp: Viewport = { scale, tx: rect.width / 2, ty: rect.height / 2 };
+
             ctx.clearRect(0, 0, cv.width, cv.height);
-            ctx.fillStyle = "#f5f5f5";
-            ctx.fillRect(0, 0, cv.width, cv.height);
-            ctx.fillStyle = "#555";
-            ctx.font = "14px sans-serif";
-            ctx.fillText("Canvas stage", 12, 24);
-        }
+            const disk = unitDiskSpec(vp);
+            drawCircle(ctx, disk, { strokeStyle: "#222", lineWidth: 1 });
+        };
+
+        render();
+        const detach = attachResize(cv, render);
+        return () => detach();
     }, []);
 
     // minimal fixed size; DPR handling will come later tasks
