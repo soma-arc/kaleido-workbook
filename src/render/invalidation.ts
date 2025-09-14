@@ -1,5 +1,31 @@
+/**
+ * Invalidation (Dirty Region) utilities
+ *
+ * Concept
+ * - UIの変更で「どの画面領域を再描画すべきか」を矩形(Rect)で表現し、
+ *   同一フレーム内の複数の invalidation をまとめて(=coalesce)処理します。
+ * - 交差 or 辺で隣接する矩形だけを結合し、離れた領域は分割のまま保持することで、
+ *   単一の巨大バウンディングボックスに潰すよりも再描画コストを抑えます。
+ *
+ * スケジューリング
+ * - `invalidate(rect)` を呼ぶと次の `requestAnimationFrame` フレームで
+ *   矩形群をマージして `onFlush(mergedRects)` に通知します。
+ * - `dispose()` で保留キューを破棄します。
+ *
+ * マージ戦略・計算量
+ * - 交差(`intersects`) or 辺で隣接(`adjacent`)なら `union` で結合し、
+ *   これを変化がなくなるまで O(n^2) で繰り返す簡易実装です（WP 範囲）。
+ * - 領域数が多くなったら sweep-line / R-Tree 等への置き換えが可能です。
+ *
+ * 想定される使い方
+ * - 状態変更が起きたときに `invalidate({...})` を呼ぶ。
+ * - `onFlush(rects)` では、各 rect と交差する描画プリミティブだけ再描画する。
+ */
 export type Rect = { x: number; y: number; w: number; h: number };
 
+/**
+ * 正規化: 右下座標から来ても (x,y,w,h) が常に正になるよう整えます。
+ */
 function normRect(r: Rect): Rect {
     const x2 = r.x + r.w;
     const y2 = r.y + r.h;
@@ -10,12 +36,18 @@ function normRect(r: Rect): Rect {
     return { x, y, w, h };
 }
 
+/**
+ * 交差判定: 2矩形が重なっているか（辺や点の接触も交差扱い）
+ */
 export function intersects(a: Rect, b: Rect): boolean {
     a = normRect(a);
     b = normRect(b);
     return a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
 }
 
+/**
+ * 隣接判定: 2矩形が水平または垂直の辺で接しており、反対軸で重なっているか
+ */
 export function adjacent(a: Rect, b: Rect): boolean {
     // share edge horizontally or vertically and overlapping on the other axis
     a = normRect(a);
@@ -27,6 +59,9 @@ export function adjacent(a: Rect, b: Rect): boolean {
     return horizTouch || vertTouch;
 }
 
+/**
+ * 外接矩形を返す（最小の共通バウンディングボックス）
+ */
 export function union(a: Rect, b: Rect): Rect {
     a = normRect(a);
     b = normRect(b);
@@ -37,6 +72,10 @@ export function union(a: Rect, b: Rect): Rect {
     return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
 }
 
+/**
+ * 交差/隣接する矩形を結合して、できるだけ少ない矩形集合に縮約します。
+ * 厳密最小は保証しませんが、実装が単純で十分な削減効果が得られます。
+ */
 function mergeRects(rects: Rect[]): Rect[] {
     // naive O(n^2) merge of intersecting/adjacent rectangles
     const rs = rects.map(normRect);
@@ -59,12 +98,24 @@ function mergeRects(rects: Rect[]): Rect[] {
     return rs;
 }
 
+/**
+ * InvalidationScheduler
+ * - `invalidate(rect)` を貯め、次フレームでマージして `onFlush` に渡します。
+ * - 同フレーム中の複数呼び出しは 1 回の flush に coalesce されます。
+ */
 export class InvalidationScheduler {
     private pending: Rect[] = [];
     private rafId: number | null = null;
 
+    /**
+     * @param onFlush 結合後の dirty 矩形集合が確定したときに呼ばれます。
+     */
     constructor(private onFlush: (rects: Rect[]) => void) {}
 
+    /**
+     * 次のフレームで再描画したい領域を追加します。
+     * 複数回呼ばれても同フレーム内では 1 回の flush にまとまります。
+     */
     invalidate(r: Rect): void {
         this.pending.push(normRect(r));
         if (this.rafId === null) {
@@ -77,6 +128,9 @@ export class InvalidationScheduler {
         }
     }
 
+    /**
+     * 即時にマージと通知を行います（通常は RAF により内部から呼ばれます）。
+     */
     flush(): void {
         if (this.rafId !== null && globalThis.cancelAnimationFrame) {
             // not strictly necessary; frame just fired
@@ -88,6 +142,9 @@ export class InvalidationScheduler {
         this.onFlush(merged);
     }
 
+    /**
+     * 保留キューを破棄し、将来のフラッシュを止めます。
+     */
     dispose(): void {
         if (this.rafId !== null && globalThis.cancelAnimationFrame) {
             globalThis.cancelAnimationFrame(this.rafId);
