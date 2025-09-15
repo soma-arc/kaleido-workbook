@@ -1,7 +1,7 @@
-import type { FundamentalTriangle } from "./triangle-fundamental";
-import type { Vec2 } from "./types";
 import type { Geodesic } from "./geodesic";
 import { reflectAcrossGeodesic } from "./reflect";
+import type { FundamentalTriangle } from "./triangle-fundamental";
+import type { Vec2 } from "./types";
 
 export type TriangleFace = {
     id: string;
@@ -32,12 +32,20 @@ function qkey(p: Vec2, q = 1e-9): string {
     return `${qx}:${qy}`;
 }
 
-function applyTransform(verts: [Vec2, Vec2, Vec2], mirrors: [Geodesic, Geodesic, Geodesic], idx: 0 | 1 | 2): [Vec2, Vec2, Vec2] {
+function applyTransform(
+    verts: [Vec2, Vec2, Vec2],
+    mirrors: [Geodesic, Geodesic, Geodesic],
+    idx: 0 | 1 | 2,
+): [Vec2, Vec2, Vec2] {
     const R = reflectAcrossGeodesic(mirrors[idx]);
     return [R(verts[0]), R(verts[1]), R(verts[2])];
 }
 
-export function expandTriangleGroup(base: FundamentalTriangle, depth: number, opts?: { maxFaces?: number }) {
+export function expandTriangleGroup(
+    base: FundamentalTriangle,
+    depth: number,
+    opts?: { maxFaces?: number },
+) {
     const mirrors = base.mirrors;
     const faces: TriangleFace[] = [];
     const seen = new Set<string>();
@@ -70,7 +78,18 @@ export function expandTriangleGroup(base: FundamentalTriangle, depth: number, op
     }
 
     // Stable order: by word length then lexicographic word, then id
-    faces.sort((a, b) => a.word.length - b.word.length || (a.word < b.word ? -1 : a.word > b.word ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    faces.sort(
+        (a, b) =>
+            a.word.length - b.word.length ||
+            (a.word < b.word ? -1 : a.word > b.word ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    );
 
-    return { faces, stats: { depth, total: faces.length, duplicates: seen.size !== faces.length ? faces.length - seen.size : 0 } };
+    return {
+        faces,
+        stats: {
+            depth,
+            total: faces.length,
+            duplicates: seen.size !== faces.length ? faces.length - seen.size : 0,
+        },
+    };
 }

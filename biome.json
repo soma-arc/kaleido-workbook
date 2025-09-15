@@ -11,5 +11,17 @@
         "rules": {
             "recommended": true
         }
-    }
+    },
+    "overrides": [
+        {
+            "includes": ["tests/acceptance/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noNonNullAssertion": "off"
+                    }
+                }
+            }
+        }
+    ]
 }
