@@ -10,8 +10,9 @@ export class FpsAverager {
     }
     get fps(): number {
         if (this.times.length < 2) return 0;
-        const first = this.times[0]!;
-        const last = this.times[this.times.length - 1]!;
+        const first = this.times[0];
+        const last = this.times[this.times.length - 1];
+        if (first === undefined || last === undefined) return 0;
         const dt = (last - first) / (this.times.length - 1);
         return dt > 0 ? 1000 / dt : 0;
     }
