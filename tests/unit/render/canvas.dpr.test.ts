@@ -31,15 +31,15 @@ describe("render/canvas DPR utilities", () => {
     });
 
     it("uses devicePixelRatio when param omitted", () => {
-        const old = globalThis.devicePixelRatio as unknown as number | undefined;
-        (globalThis as any).devicePixelRatio = 1.5;
+        const old = window.devicePixelRatio;
+        Object.defineProperty(window, "devicePixelRatio", { value: 1.5, configurable: true });
         const cv = makeCanvas(400, 300);
         const dpr = setCanvasDPR(cv);
         expect(dpr).toBeCloseTo(1.5, 12);
         expect(cv.width).toBe(600);
         expect(cv.height).toBe(450);
         // restore
-        (globalThis as any).devicePixelRatio = old ?? 1;
+        Object.defineProperty(window, "devicePixelRatio", { value: old, configurable: true });
     });
 
     it("attachResize wires and unwires window resize", () => {

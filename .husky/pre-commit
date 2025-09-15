@@ -1,5 +1,8 @@
 # Lint staged files with Biome (auto-fix) and re-stage
 pnpm exec lint-staged || exit 1
 
-# Project-wide Biome check (no writes)
-pnpm run biome:ci || exit 1
+# Apply repository formatting (write changes in code/docs only)
+pnpm run format || exit 1
+
+# Project-wide Biome check on code/docs only (no writes)
+pnpm run biome:ci:code || exit 1

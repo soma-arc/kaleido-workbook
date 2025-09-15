@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildFundamentalTriangle } from "../../../src/geom/triangle-fundamental";
 import { expandTriangleGroup } from "../../../src/geom/triangle-group";
 

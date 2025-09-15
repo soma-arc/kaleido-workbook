@@ -4,7 +4,8 @@ import {
     buildFundamentalTriangle,
 } from "../../../src/geom/triangle-fundamental";
 
-const toRad = (x: number) => (x * Math.PI) / 180;
+// keep for potential future table-driven tests (unused)
+// const _toRad = (x: number) => (x * Math.PI) / 180;
 
 describe("geom/triangle-fundamental", () => {
     it("builds a (2,3,7) triangle with expected angles (within tol)", () => {

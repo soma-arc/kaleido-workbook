@@ -6,8 +6,9 @@ function makeCanvas(w = 100, h = 50) {
     const cv = document.createElement("canvas");
     cv.width = w;
     cv.height = h;
-    // stub toDataURL
-    (cv as any).toDataURL = vi.fn().mockReturnValue("data:image/png;base64,AAAA");
+    // stub toDataURL without using any
+    const stub: HTMLCanvasElement["toDataURL"] = () => "data:image/png;base64,AAAA";
+    (cv as HTMLCanvasElement).toDataURL = stub;
     return cv as HTMLCanvasElement;
 }
 
@@ -24,10 +25,13 @@ describe("render/exportPNG", () => {
         const created: HTMLCanvasElement[] = [];
         const orig = document.createElement.bind(document);
         vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
-            const el = orig(tag) as any;
+            const el = orig(tag);
             if (tag === "canvas") {
-                (el as any).toDataURL = vi.fn().mockReturnValue("data:image/png;base64,BBBB");
-                created.push(el);
+                const canvas = el as HTMLCanvasElement;
+                const stub: HTMLCanvasElement["toDataURL"] = () => "data:image/png;base64,BBBB";
+                canvas.toDataURL = stub;
+                created.push(canvas);
+                return canvas;
             }
             return el;
         });
