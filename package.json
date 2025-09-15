@@ -9,13 +9,14 @@
         "preview": "vite preview",
         "typecheck": "tsc -p tsconfig.json",
         "lint": "biome check .",
-        "format": "biome check --write .",
+        "format": "biome check --write src tests ops docs ./*.md ./*.json",
         "test": "vitest",
         "test:sandbox": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
         "coverage": "vitest run --coverage",
         "prepare": "husky",
         "ci": "pnpm biome:ci && pnpm typecheck && pnpm test:sandbox",
-        "biome:ci": "biome ci ."
+        "biome:ci": "biome ci .",
+        "biome:ci:code": "biome ci src tests ops docs ./*.md ./*.json"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.2.2",
