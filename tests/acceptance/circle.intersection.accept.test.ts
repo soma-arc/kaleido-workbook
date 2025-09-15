@@ -7,7 +7,10 @@ test("two intersections (r=5 @ (0,0) and r=5 @ (8,0)) -> (4,±3)", () => {
     const B: Circle = { c: { x: 8, y: 0 }, r: 5 };
     const r = circleCircleIntersection(A, B);
     expect(r.kind).toBe("two");
-    const pts = r.points!;
+    if (!r.points) {
+        throw new Error("expected intersection points for kind=two");
+    }
+    const pts = r.points;
     expect(pts).toHaveLength(2);
     // x=4、y=±3 を許容誤差内で
     const ok =
@@ -20,16 +23,22 @@ test("external tangent (B at (10,0), r=5) -> tangent @ (5,0)", () => {
     const B: Circle = { c: { x: 10, y: 0 }, r: 5 };
     const r = circleCircleIntersection(A, B);
     expect(r.kind).toBe("tangent");
-    expect(r.points![0].x).toBeCloseTo(5, 12);
-    expect(r.points![0].y).toBeCloseTo(0, 12);
+    if (!r.points || r.points.length === 0) {
+        throw new Error("expected a tangent point for kind=tangent");
+    }
+    expect(r.points[0].x).toBeCloseTo(5, 12);
+    expect(r.points[0].y).toBeCloseTo(0, 12);
 });
 
 test("internal tangent (B at (2,0), r=3) -> tangent @ (5,0)", () => {
     const B: Circle = { c: { x: 2, y: 0 }, r: 3 };
     const r = circleCircleIntersection(A, B);
     expect(r.kind).toBe("tangent");
-    expect(r.points![0].x).toBeCloseTo(5, 12);
-    expect(r.points![0].y).toBeCloseTo(0, 12);
+    if (!r.points || r.points.length === 0) {
+        throw new Error("expected a tangent point for kind=tangent");
+    }
+    expect(r.points[0].x).toBeCloseTo(5, 12);
+    expect(r.points[0].y).toBeCloseTo(0, 12);
 });
 
 test("separated (B at (20,0), r=5) -> none", () => {
