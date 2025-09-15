@@ -33,7 +33,7 @@ jobs:
           cache: pnpm
 
       - name: Biome (lint/format-check)
-        run: pnpm run biome:ci
+        run: pnpm run biome:ci:code
 
       - name: Typecheck
         run: pnpm run typecheck
