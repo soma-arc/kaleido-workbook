@@ -15,7 +15,9 @@ function safeToDataURL(canvas: HTMLCanvasElement): string | undefined {
 
 export function exportPNG(source: HTMLCanvasElement, opts: ExportOptions = {}): string {
     const scale =
-        typeof opts.scale === "number" && isFinite(opts.scale) && opts.scale > 0 ? opts.scale : 1;
+        typeof opts.scale === "number" && Number.isFinite(opts.scale) && opts.scale > 0
+            ? opts.scale
+            : 1;
     // If no scaling and no background, delegate directly
     if (scale === 1 && !opts.background) {
         const d = safeToDataURL(source);
