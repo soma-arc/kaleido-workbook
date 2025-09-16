@@ -3,7 +3,7 @@ import { buildTrianglePath, type LineSegmentSpec } from "../../../src/render/tri
 
 // NOTE: Placeholder unit tests for Issue #78; will be expanded with real geometry adapters in #79.
 describe("trianglePath: basic construction", () => {
-    it.skip("builds CCW orientation from three connected segments", () => {
+    it("builds CCW orientation from three connected segments", () => {
         const s0: LineSegmentSpec = { kind: "line", a: { x: 0, y: 0 }, b: { x: 0.5, y: 0 } };
         const s1: LineSegmentSpec = { kind: "line", a: s0.b, b: { x: 0.25, y: 0.4 } };
         const s2: LineSegmentSpec = { kind: "line", a: s1.b, b: s0.a };

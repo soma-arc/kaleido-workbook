@@ -5,6 +5,8 @@ import { worldToScreen } from "./viewport";
 export type CircleSpec = { cx: number; cy: number; r: number };
 export type LineSpec = { x1: number; y1: number; x2: number; y2: number };
 
+// (Issue #79) Intentionally minimal; triangle path segment specs live in trianglePath.ts
+
 export function unitDiskSpec(vp: Viewport): CircleSpec {
     const c = worldToScreen(vp, { x: 0, y: 0 });
     const r = Math.abs(vp.scale || 1) * 1;
