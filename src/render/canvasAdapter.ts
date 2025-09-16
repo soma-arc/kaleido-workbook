@@ -1,6 +1,12 @@
 import type { CircleSpec, LineSpec } from "./primitives";
+import type { TrianglePathSpec } from "./trianglePath";
 
-export type StrokeStyle = { strokeStyle?: string; lineWidth?: number };
+export type StrokeStyle = {
+    strokeStyle?: string;
+    lineWidth?: number;
+    lineJoin?: CanvasLineJoin;
+    lineCap?: CanvasLineCap;
+};
 
 function align05(x: number): number {
     // align 1px strokes to device pixel grid to avoid blur
@@ -50,4 +56,32 @@ export function clearRects(
     rects: Array<{ x: number; y: number; w: number; h: number }>,
 ): void {
     for (const r of rects) ctx.clearRect(r.x, r.y, r.w, r.h);
+}
+
+export function strokeTrianglePath(
+    ctx: CanvasRenderingContext2D,
+    tri: TrianglePathSpec,
+    style?: StrokeStyle,
+) {
+    ctx.save();
+    if (style?.strokeStyle) ctx.strokeStyle = style.strokeStyle;
+    if (style?.lineWidth) ctx.lineWidth = style.lineWidth;
+    if (style?.lineJoin) ctx.lineJoin = style.lineJoin;
+    if (style?.lineCap) ctx.lineCap = style.lineCap;
+    ctx.beginPath();
+    const [s0, s1, s2] = tri.segments;
+    ctx.moveTo(s0.a.x, s0.a.y);
+    for (const seg of [s0, s1, s2]) {
+        if (seg.kind === "line") {
+            ctx.lineTo(seg.b.x, seg.b.y);
+        } else {
+            // Arc: use center, radius; determine start/end angles
+            const a = Math.atan2(seg.a.y - seg.center.y, seg.a.x - seg.center.x);
+            const b = Math.atan2(seg.b.y - seg.center.y, seg.b.x - seg.center.x);
+            ctx.arc(seg.center.x, seg.center.y, seg.radius, a, b, seg.ccw);
+        }
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
 }
