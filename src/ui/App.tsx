@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
+import { buildTiling } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "../render/canvas";
-import { drawCircle } from "../render/canvasAdapter";
-import { unitDiskSpec } from "../render/primitives";
+import { drawCircle, drawLine } from "../render/canvasAdapter";
+import { geodesicSpec, unitDiskSpec } from "../render/primitives";
+import { facesToEdgeGeodesics } from "../render/tilingAdapter";
 import type { Viewport } from "../render/viewport";
 
 export function App(): JSX.Element {
@@ -24,6 +26,18 @@ export function App(): JSX.Element {
             ctx.clearRect(0, 0, cv.width, cv.height);
             const disk = unitDiskSpec(vp);
             drawCircle(ctx, disk, { strokeStyle: "#222", lineWidth: 1 });
+
+            // Tiling preview (small): deterministic params
+            const { faces } = buildTiling({ p: 2, q: 3, r: 7, depth: 2 });
+            const edges = facesToEdgeGeodesics(faces);
+            for (const e of edges) {
+                const spec = geodesicSpec(e.geodesic, vp);
+                if ("r" in spec) {
+                    drawCircle(ctx, spec, { strokeStyle: "#4a90e2", lineWidth: 1 });
+                } else {
+                    drawLine(ctx, spec, { strokeStyle: "#4a90e2", lineWidth: 1 });
+                }
+            }
         };
 
         render();

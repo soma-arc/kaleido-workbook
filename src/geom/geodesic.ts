@@ -62,3 +62,58 @@ export function geodesicFromBoundary(a: Vec2, b: Vec2): Geodesic {
     const r = Math.hypot(a.x - c.x, a.y - c.y);
     return { kind: "circle", c, r };
 }
+
+/**
+ * geodesicThroughPoints
+ * Construct the unique Poincaré geodesic passing through two interior points p,q (p≠q).
+ * - If either point is the origin, or p and q are colinear with the origin, returns a diameter with unit dir.
+ * - Otherwise returns the circle orthogonal to the unit circle that passes through p and q.
+ *
+ * Derivation for circle case:
+ *  For orthogonality, |c|^2 - r^2 = 1. Passing through x∈{p,q} gives |x-c|^2 = r^2 => |x|^2 - 2 x·c + |c|^2 = r^2.
+ *  Eliminate r^2 to get linear constraints 2 x·c = |x|^2 + 1 for x=p and x=q. Solve 2 [p;q] c = [|p|^2+1; |q|^2+1].
+ */
+export function geodesicThroughPoints(p: Vec2, q: Vec2): Geodesic {
+    const fin = (v: Vec2) => Number.isFinite(v.x) && Number.isFinite(v.y);
+    if (!fin(p) || !fin(q)) throw new Error("Non-finite point for geodesicThroughPoints");
+
+    const np = Math.hypot(p.x, p.y);
+    const nq = Math.hypot(q.x, q.y);
+    const eps = tolValue(1, defaultTol);
+
+    // If either is (near) origin, geodesic is the diameter along the other.
+    if (np <= eps && nq <= eps) return { kind: "diameter", dir: { x: 1, y: 0 } };
+    if (np <= eps) {
+        const s = Math.hypot(q.x, q.y) || 1;
+        return { kind: "diameter", dir: { x: q.x / s, y: q.y / s } };
+    }
+    if (nq <= eps) {
+        const s = Math.hypot(p.x, p.y) || 1;
+        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+    }
+
+    // Colinear with origin => diameter
+    const cross = p.x * q.y - p.y * q.x;
+    if (Math.abs(cross) <= eps) {
+        const s = np || 1;
+        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+    }
+
+    // Solve 2 M c = b  => M c = b/2 where M = [[px, py],[qx, qy]]
+    const det = p.x * q.y - p.y * q.x;
+    if (Math.abs(det) <= eps) {
+        const s = np || 1;
+        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+    }
+    const bp = p.x * p.x + p.y * p.y + 1;
+    const bq = q.x * q.x + q.y * q.y + 1;
+    // Cramer's rule for M c = [bp/2, bq/2]
+    const bx = bp * 0.5;
+    const by = bq * 0.5;
+    const cx = (bx * q.y - by * p.y) / det;
+    const cy = (p.x * by - q.x * bx) / det;
+    const cc = cx * cx + cy * cy;
+    const r2 = Math.max(0, cc - 1);
+    const r = Math.sqrt(r2);
+    return { kind: "circle", c: { x: cx, y: cy }, r };
+}

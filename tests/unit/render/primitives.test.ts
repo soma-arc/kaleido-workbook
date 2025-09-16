@@ -2,8 +2,10 @@
 import { describe, expect, it } from "vitest";
 
 import { type Geodesic, geodesicFromBoundary } from "../../../src/geom/geodesic";
+import { buildTiling } from "../../../src/geom/tiling";
 import { angleToBoundaryPoint } from "../../../src/geom/unit-disk";
 import { geodesicSpec, unitDiskSpec } from "../../../src/render/primitives";
+import { facesToEdgeGeodesics } from "../../../src/render/tilingAdapter";
 import { identity, type Viewport } from "../../../src/render/viewport";
 
 const close = (a: number, b: number, d = 1e-12) => Math.abs(a - b) <= d;
@@ -44,5 +46,21 @@ describe("render/primitives specs", () => {
         } else {
             throw new Error("expected line spec");
         }
+    });
+
+    it("facesToEdgeGeodesics returns stable-ordered edges", () => {
+        const { faces } = buildTiling({ p: 2, q: 3, r: 7, depth: 2 });
+        const edges = facesToEdgeGeodesics(faces);
+        // stable order: by face.word length then lexicographic, and within each face by local edge index 0,1,2
+        const words = faces.map((f) => f.word);
+        const sortedWords = [...words].sort(
+            (a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0),
+        );
+        expect(words).toEqual(sortedWords);
+        // edges must be grouped by faces in that order, 3 per face
+        expect(edges.length % 3).toBe(0);
+        const grouped = [] as string[];
+        for (let i = 0; i < edges.length; i += 3) grouped.push(edges[i].faceWord);
+        expect(grouped).toEqual(words);
     });
 });

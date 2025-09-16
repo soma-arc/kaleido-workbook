@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildTiling } from "../../../src/geom/tiling";
 
 describe("geom/tiling", () => {
@@ -12,7 +12,9 @@ describe("geom/tiling", () => {
         expect(faces.map((f) => f.id)).toEqual(faces2.map((f) => f.id));
         // ordering: word length then lexicographic
         const words = faces.map((f) => f.word);
-        const sorted = [...words].sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
+        const sorted = [...words].sort(
+            (a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0),
+        );
         expect(words).toEqual(sorted);
         // aabb sanity
         for (const f of faces) {
@@ -21,4 +23,3 @@ describe("geom/tiling", () => {
         }
     });
 });
-
