@@ -77,6 +77,7 @@ pnpm i
 3) **TDD で実装**  
    - 最小の失敗テスト → 実装 → 緑化  
    - 小さくコミット（Conventional Commits、`Refs #<id>`）  
+   - コミットメッセージは英語にする
    - `pnpm run lint && pnpm typecheck && pnpm run test:sandbox` を都度通す
    - `pnpm run format` で都度フォーマット（import 並び替え/整形を含む）
 4) **PR 作成**（Draft 可）  
@@ -115,34 +116,11 @@ pnpm i
 - 進行中：コメントにログ、PR にスクショ/確認手順  
 - 完了：Close、Epic/リリースノートに反映、Project の Status/Order を更新
 
----
-
-## 付録：よく使うコマンド
-
-```bash
-# Issue 作成（NDJSON 適用）
-bash scripts/issues/apply_ndjson.sh ops/out/issues.ndjson
-
-# 親子(Sub-issues) の付与（親=Epicタイトル）
-bash scripts/issues/link_subissues.sh ops/out/issues.ndjson "Epic: v0.1 ..."
-
-# PR 作成（テンプレは自動適用）
-gh pr create -B main -H $(git branch --show-current) -t "feat: ..." -b $'Closes #123
-
-<本文>'
-
-# 依存関係の付与（例：#123 を #456 がブロック）
-bid=$(gh api repos/OWNER/REPO/issues/456 --jq .id)
-gh api -X POST repos/OWNER/REPO/issues/123/dependencies/blocked_by -f issue_id="$bid"
-```
-
----
 
 ## 参照（SSOT）
 
 - **起票用マスタープロンプト**：[`../prompts/v1/master_issue.md`](../prompts/v1/master_issue.md)  
 - **実装用マスタープロンプト**：[`../prompts/v1/implement_issue.md`](../prompts/v1/implement_issue.md)  
-- **起票スクリプト**：[`../../scripts/issues/apply_ndjson.sh`](../../scripts/issues/apply_ndjson.sh)  
-- **親子付け**：[`../../scripts/issues/link_subissues.sh`](../../scripts/issues/link_subissues.sh)  
-- **PR テンプレ**：[`../../.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md)  
+- **親子付け**：[`../../scripts/issues/issue_deps.sh`](../../scripts/issues/issue-deps.sh)  
+- **PR テンプレ**：[`../../.github/PULL_REQUEST_TEMPLATE/feature.md`](../../.github/PULL_REQUEST_TEMPLATE/feature.md)  
 - **Bugfix PR テンプレ**：[`../../.github/PULL_REQUEST_TEMPLATE/bugfix.md`](../../.github/PULL_REQUEST_TEMPLATE/bugfix.md)
