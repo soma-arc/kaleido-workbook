@@ -47,15 +47,41 @@ export function facesToTrianglePaths(faces: TriangleFace[]): TrianglePathSpec[] 
     for (const f of faces) {
         const [v0, v1, v2] = f.verts;
         const segs: [GeodesicSegmentSpec, GeodesicSegmentSpec, GeodesicSegmentSpec] = [
-            { kind: "line", a: v0, b: v1 },
-            { kind: "line", a: v1, b: v2 },
-            { kind: "line", a: v2, b: v0 },
+            buildSegment(v0, v1),
+            buildSegment(v1, v2),
+            buildSegment(v2, v0),
         ];
         const tri = buildTrianglePath(segs, { ensureCCW: true });
         tri.faceId = f.id;
         out.push(tri);
     }
     return out;
+}
+
+function buildSegment(
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+): GeodesicSegmentSpec {
+    const g = geodesicThroughPoints(a, b);
+    if (g.kind === "diameter") return { kind: "line", a, b };
+    // circle case -> arc
+    // Determine direction ccw: choose minor arc.
+    const start = Math.atan2(a.y - g.c.y, a.x - g.c.x);
+    const end = Math.atan2(b.y - g.c.y, b.x - g.c.x);
+    // Compute delta in [ -π, π ]
+    let delta = end - start;
+    while (delta <= -Math.PI) delta += 2 * Math.PI;
+    while (delta > Math.PI) delta -= 2 * Math.PI;
+    // If delta < 0 we would go clockwise; choose CCW minor arc
+    const ccw = delta >= 0;
+    return {
+        kind: "arc",
+        a,
+        b,
+        center: g.c,
+        radius: g.r,
+        ccw,
+    };
 }
 
 /**

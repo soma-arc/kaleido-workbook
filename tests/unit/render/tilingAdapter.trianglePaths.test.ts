@@ -9,10 +9,17 @@ describe("tilingAdapter triangle path wiring", () => {
     const base = buildFundamentalTriangle(7, 3, 2);
     const { faces } = expandTriangleGroup(base, 1); // shallow depth
 
-    it("converts faces to triangle paths (line segments only)", () => {
+    it("converts faces to triangle paths (segments length=3)", () => {
         const tris = facesToTrianglePaths(faces);
         expect(tris.length).toBe(faces.length);
         expect(tris[0].segments.length).toBe(3);
+    });
+
+    it("emits at least one arc segment for circle geodesic edges", () => {
+        const tris = facesToTrianglePaths(faces);
+        // Fundamental triangle has one circular mirror => its adjacent edges should yield arcs
+        const arcCount = tris.flatMap((t) => t.segments).filter((s) => s.kind === "arc").length;
+        expect(arcCount).toBeGreaterThan(0);
     });
 
     it("orders and culls (no cull at default)", () => {
