@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { buildTiling, type TilingParams } from "../geom/tiling";
-import { validateTriangleParams } from "../geom/triangleParams";
+import { normalizeDepth, validateTriangleParams } from "../geom/triangleParams";
 import { attachResize, setCanvasDPR } from "../render/canvas";
 import { drawCircle, drawLine } from "../render/canvasAdapter";
 import { geodesicSpec, unitDiskSpec } from "../render/primitives";
@@ -12,10 +12,19 @@ export function App(): JSX.Element {
     const [formInputs, setFormInputs] = useState({ p: "2", q: "3", r: "7" });
     const [params, setParams] = useState<TilingParams>({ p: 2, q: 3, r: 7, depth: 2 });
     const [paramError, setParamError] = useState<string | null>(null);
+    const depthRange = { min: 0, max: 10 } as const;
 
     const handleParamChange = (key: "p" | "q" | "r") => (event: ChangeEvent<HTMLInputElement>) => {
         const { value } = event.target;
         setFormInputs((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const updateDepth = (value: number) => {
+        setParams((prev) => {
+            const nextDepth = normalizeDepth(value);
+            if (prev.depth === nextDepth) return prev;
+            return { ...prev, depth: nextDepth };
+        });
     };
 
     useEffect(() => {
@@ -108,6 +117,38 @@ export function App(): JSX.Element {
                 <p style={{ margin: 0, fontSize: "0.85rem", color: "#555" }}>
                     Current: ({params.p}, {params.q}, {params.r})
                 </p>
+                <div style={{ display: "grid", gap: "8px" }}>
+                    <label style={{ display: "grid", gap: "4px" }}>
+                        <span style={{ fontWeight: 600 }}>Depth (slider)</span>
+                        <input
+                            type="range"
+                            min={depthRange.min}
+                            max={depthRange.max}
+                            step={1}
+                            value={params.depth}
+                            onChange={(event) => updateDepth(Number(event.target.value))}
+                        />
+                    </label>
+                    <label style={{ display: "grid", gap: "4px" }}>
+                        <span style={{ fontWeight: 600 }}>Depth (exact)</span>
+                        <input
+                            type="number"
+                            min={depthRange.min}
+                            max={depthRange.max}
+                            step={1}
+                            value={params.depth}
+                            onChange={(event) => {
+                                const numeric = Number(event.target.value);
+                                if (Number.isFinite(numeric)) {
+                                    updateDepth(numeric);
+                                }
+                            }}
+                        />
+                    </label>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#555" }}>
+                        Depth range: {depthRange.min} – {depthRange.max}
+                    </p>
+                </div>
             </div>
             <div style={{ display: "grid", placeItems: "center" }}>
                 {/* biome-ignore lint/correctness/useUniqueElementIds: Canvas host id is part of public API */}

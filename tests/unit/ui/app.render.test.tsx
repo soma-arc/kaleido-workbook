@@ -19,5 +19,8 @@ describe("App", () => {
             expect(stage.width).toBeGreaterThan(0);
             expect(stage.height).toBeGreaterThan(0);
         }
+
+        const depthSlider = host.querySelector('input[type="range"]');
+        expect(depthSlider).not.toBeNull();
     });
 });
