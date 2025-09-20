@@ -6,17 +6,29 @@ export type HyperbolicTriangleParams = {
 
 export type TriangleParamsValidation = { ok: true } | { ok: false; errors: string[] };
 
+export type TriangleValidationOptions = {
+    requireIntegers?: boolean;
+};
+
 const MIN_VALUE = 2;
 const EPSILON = 1e-12;
 const DEPTH_MIN = 0;
 const DEPTH_MAX = 10;
 
-export function validateTriangleParams(params: HyperbolicTriangleParams): TriangleParamsValidation {
+export function validateTriangleParams(
+    params: HyperbolicTriangleParams,
+    options?: TriangleValidationOptions,
+): TriangleParamsValidation {
     const errors: string[] = [];
+    const requireIntegers = options?.requireIntegers !== false;
 
     (["p", "q", "r"] as const).forEach((key) => {
         const value = params[key];
-        if (!Number.isInteger(value) || value < MIN_VALUE) {
+        if (!Number.isFinite(value) || value < MIN_VALUE) {
+            errors.push(`${key} must be a number >= ${MIN_VALUE}`);
+            return;
+        }
+        if (requireIntegers && !Number.isInteger(value)) {
             errors.push(`${key} must be an integer >= ${MIN_VALUE}`);
         }
     });

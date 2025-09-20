@@ -1,19 +1,14 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { buildTiling, type TilingParams } from "../geom/tiling";
 import { normalizeDepth, validateTriangleParams } from "../geom/triangleParams";
-import {
-    DEFAULT_PI_OVER_N_MAX,
-    type PqrKey,
-    snapTriangleParams,
-    type TriangleTriple,
-} from "../geom/triangleSnap";
+import { type PqrKey, snapTriangleParams, type TriangleTriple } from "../geom/triangleSnap";
 import { attachResize, setCanvasDPR } from "../render/canvas";
 import { drawCircle, drawLine } from "../render/canvasAdapter";
 import { geodesicSpec, unitDiskSpec } from "../render/primitives";
 import { facesToEdgeGeodesics } from "../render/tilingAdapter";
 import type { Viewport } from "../render/viewport";
 
-const TRIANGLE_N_MAX = DEFAULT_PI_OVER_N_MAX;
+const TRIANGLE_N_MAX = 100;
 
 const PQR_PRESETS = [
     { label: "(3,3,3)", p: 3, q: 3, r: 3 },
@@ -28,10 +23,12 @@ export function App(): JSX.Element {
     const [paramError, setParamError] = useState<string | null>(null);
     const [snapEnabled, setSnapEnabled] = useState(true);
     const [anchor, setAnchor] = useState<{ p: number; q: number } | null>({ p: 2, q: 3 });
+    const [preservePresetDisplay, setPreservePresetDisplay] = useState(false);
     const depthRange = { min: 0, max: 10 } as const;
     const rRange = { min: 2, max: TRIANGLE_N_MAX } as const;
     const parsedR = Number(formInputs.r);
     const rSliderValue = Number.isFinite(parsedR) ? parsedR : params.r;
+    const rStep = snapEnabled ? 1 : 0.1;
 
     const handleParamChange = (key: PqrKey) => (event: ChangeEvent<HTMLInputElement>) => {
         if (anchor && key !== "r") {
@@ -43,6 +40,7 @@ export function App(): JSX.Element {
 
     const setFromPreset = (preset: { p: number; q: number; r: number }) => {
         setAnchor({ p: preset.p, q: preset.q });
+        setPreservePresetDisplay(true);
         setFormInputs({ p: String(preset.p), q: String(preset.q), r: String(preset.r) });
     };
 
@@ -83,7 +81,7 @@ export function App(): JSX.Element {
               })
             : parsed;
 
-        if (snapEnabled) {
+        if (snapEnabled && !preservePresetDisplay) {
             const nextInputs: Record<PqrKey, string> = {
                 p: String(snapped.p),
                 q: String(snapped.q),
@@ -99,7 +97,7 @@ export function App(): JSX.Element {
             }
         }
 
-        const result = validateTriangleParams(snapped);
+        const result = validateTriangleParams(snapped, { requireIntegers: snapEnabled });
         if (result.ok) {
             setParams((prev) => {
                 if (prev.p === snapped.p && prev.q === snapped.q && prev.r === snapped.r) {
@@ -108,10 +106,13 @@ export function App(): JSX.Element {
                 return { ...prev, ...snapped };
             });
             setParamError(null);
+            if (preservePresetDisplay) {
+                setPreservePresetDisplay(false);
+            }
         } else {
             setParamError(result.errors[0] ?? "Invalid parameters");
         }
-    }, [formInputs, snapEnabled, anchor]);
+    }, [formInputs, snapEnabled, anchor, preservePresetDisplay]);
 
     useEffect(() => {
         const cv = canvasRef.current;
@@ -211,19 +212,23 @@ export function App(): JSX.Element {
                     </label>
                 </div>
                 <div style={{ display: "grid", gap: "8px" }}>
-                    {(["p", "q", "r"] as const).map((key) => (
-                        <label key={key} style={{ display: "grid", gap: "4px" }}>
-                            <span style={{ fontWeight: 600 }}>{key.toUpperCase()}</span>
-                            <input
-                                type="number"
-                                min={2}
-                                step={1}
-                                disabled={Boolean(anchor) && key !== "r"}
-                                value={formInputs[key]}
-                                onChange={handleParamChange(key)}
-                            />
-                        </label>
-                    ))}
+                    {(["p", "q", "r"] as const).map((key) => {
+                        const isR = key === "r";
+                        return (
+                            <label key={key} style={{ display: "grid", gap: "4px" }}>
+                                <span style={{ fontWeight: 600 }}>{key.toUpperCase()}</span>
+                                <input
+                                    type="number"
+                                    min={2}
+                                    max={isR ? rRange.max : undefined}
+                                    step={isR ? rStep : 1}
+                                    disabled={Boolean(anchor) && key !== "r"}
+                                    value={formInputs[key]}
+                                    onChange={handleParamChange(key)}
+                                />
+                            </label>
+                        );
+                    })}
                 </div>
                 <label style={{ display: "grid", gap: "4px" }}>
                     <span style={{ fontWeight: 600 }}>R (slider)</span>
@@ -231,7 +236,7 @@ export function App(): JSX.Element {
                         type="range"
                         min={rRange.min}
                         max={rRange.max}
-                        step={1}
+                        step={rStep}
                         value={rSliderValue}
                         onChange={(event) => {
                             const numeric = Number(event.target.value);
