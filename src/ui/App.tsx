@@ -1,12 +1,8 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
-import { buildTiling, type TilingParams } from "../geom/tiling";
+import type { TilingParams } from "../geom/tiling";
 import { normalizeDepth, validateTriangleParams } from "../geom/triangleParams";
 import { type PqrKey, snapTriangleParams, type TriangleTriple } from "../geom/triangleSnap";
-import { attachResize, setCanvasDPR } from "../render/canvas";
-import { drawCircle, drawLine } from "../render/canvasAdapter";
-import { geodesicSpec, unitDiskSpec } from "../render/primitives";
-import { facesToEdgeGeodesics } from "../render/tilingAdapter";
-import type { Viewport } from "../render/viewport";
+import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
 
 const TRIANGLE_N_MAX = 100;
 
@@ -24,6 +20,8 @@ export function App(): JSX.Element {
     const [snapEnabled, setSnapEnabled] = useState(true);
     const [anchor, setAnchor] = useState<{ p: number; q: number } | null>({ p: 2, q: 3 });
     const [preservePresetDisplay, setPreservePresetDisplay] = useState(false);
+    const [renderMode] = useState(() => detectRenderMode());
+    const renderEngineRef = useRef<RenderEngine | null>(null);
     const depthRange = { min: 0, max: 10 } as const;
     const rRange = { min: 2, max: TRIANGLE_N_MAX } as const;
     const parsedR = Number(formInputs.r);
@@ -92,7 +90,7 @@ export function App(): JSX.Element {
                 (key) => nextInputs[key] !== formInputs[key],
             );
             if (changed) {
-                setFormInputs(nextInputs);
+                setFormInputs(nextInputs as typeof formInputs);
                 return;
             }
         }
@@ -115,38 +113,18 @@ export function App(): JSX.Element {
     }, [formInputs, snapEnabled, anchor, preservePresetDisplay]);
 
     useEffect(() => {
-        const cv = canvasRef.current;
-        if (!cv) return;
-        const ctx = cv.getContext("2d");
-        if (!ctx) return;
-
-        const render = () => {
-            setCanvasDPR(cv);
-            const rect = cv.getBoundingClientRect();
-            const size = Math.min(rect.width, rect.height);
-            const margin = 8;
-            const scale = Math.max(1, size / 2 - margin);
-            const vp: Viewport = { scale, tx: rect.width / 2, ty: rect.height / 2 };
-
-            ctx.clearRect(0, 0, cv.width, cv.height);
-            const disk = unitDiskSpec(vp);
-            drawCircle(ctx, disk, { strokeStyle: "#222", lineWidth: 1 });
-
-            const { faces } = buildTiling(params);
-            const edges = facesToEdgeGeodesics(faces);
-            for (const e of edges) {
-                const spec = geodesicSpec(e.geodesic, vp);
-                if ("r" in spec) {
-                    drawCircle(ctx, spec, { strokeStyle: "#4a90e2", lineWidth: 1 });
-                } else {
-                    drawLine(ctx, spec, { strokeStyle: "#4a90e2", lineWidth: 1 });
-                }
-            }
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const engine = createRenderEngine(canvas, { mode: renderMode });
+        renderEngineRef.current = engine;
+        return () => {
+            renderEngineRef.current = null;
+            engine.dispose();
         };
+    }, [renderMode]);
 
-        render();
-        const detach = attachResize(cv, render);
-        return () => detach();
+    useEffect(() => {
+        renderEngineRef.current?.render(params);
     }, [params]);
 
     return (
@@ -210,6 +188,9 @@ export function App(): JSX.Element {
                             onChange={(event) => setSnapEnabled(event.target.checked)}
                         />
                     </label>
+                    <span style={{ fontSize: "0.8rem", color: "#555" }}>
+                        Render mode: {renderMode}
+                    </span>
                 </div>
                 <div style={{ display: "grid", gap: "8px" }}>
                     {(["p", "q", "r"] as const).map((key) => {

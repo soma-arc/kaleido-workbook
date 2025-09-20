@@ -16,9 +16,9 @@ describe("validateTriangleParams", () => {
         }
     });
 
-    it("allows non-integer inputs when integers are optional", () => {
+    it("allows non-integers when integers are optional", () => {
         const result = validateTriangleParams(
-            { p: 2.5, q: 3.5, r: 7.2 },
+            { p: 2.5, q: 3.2, r: 7.9 },
             { requireIntegers: false },
         );
         expect(result.ok).toBe(true);

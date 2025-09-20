@@ -26,7 +26,7 @@ pnpm ci             # biome ci + typecheck + test:sandbox
 - `(p,q,r)` preset buttons anchor `p` と `q` を固定（Custom でアンカー解除）。
 - `Snap π/n` トグルで `π/n` グリッドへ吸着（on: 分母が自動調整, off: 生の入力値）。
 - `Snap π/n` が有効な場合、双曲条件 `1/p + 1/q + 1/r < 1` を満たすよう未固定の分母を自動調整します。
-- `R` スライダは分母の範囲 `[2, 200]` で安全に操作可能（p,q 固定）。
+- `R` スライダは分母の範囲 `[2, 100]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 
 ### Git Hooks（husky + lint-staged）
@@ -68,6 +68,11 @@ pnpm ci             # biome ci + typecheck + test:sandbox
   - ドローコールをプログラム/状態でバッチしつつ、必要な順序を保持。
 
 この構造により、GLSL への移行は「Specを解釈するWebGLアダプタの追加」で完結し、幾何やビューポートのコードは不変のまま差し替え可能です。
+
+### Rendering Modes
+- 既定では Canvas モードで描画します。
+- ハイブリッド・モード（Canvas UI + WebGL タイル土台）を試す場合は、起動前に `VITE_RENDER_MODE=hybrid pnpm dev` のように環境変数を指定するか、`window.__HP_RENDER_MODE__ = "hybrid"` を設定してからアプリを初期化してください。
+- ハイブリッド・モードでは WebGL 初期化を試み、未対応ブラウザではエラーログを出して Canvas 描画のみを継続します（GLSL 実装は今後追加予定）。
 
 ## リンク
 - docs/ROADMAP.md（中長期の方向性メモ）
