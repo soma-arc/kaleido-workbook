@@ -25,6 +25,7 @@ pnpm ci             # biome ci + typecheck + test:sandbox
 ### UI Controls
 - `(p,q,r)` preset buttons anchor `p` と `q` を固定（Custom でアンカー解除）。
 - `Snap π/n` トグルで `π/n` グリッドへ吸着（on: 分母が自動調整, off: 生の入力値）。
+- `Snap π/n` が有効な場合、双曲条件 `1/p + 1/q + 1/r < 1` を満たすよう未固定の分母を自動調整します。
 - `R` スライダは分母の範囲 `[2, 200]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 

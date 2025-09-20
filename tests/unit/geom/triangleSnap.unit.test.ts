@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { snapParameterToPiOverN } from "../../../src/geom/triangleSnap";
+import { validateTriangleParams } from "../../../src/geom/triangleParams";
+import {
+    DEFAULT_PI_OVER_N_MAX,
+    snapParameterToPiOverN,
+    snapTriangleParams,
+} from "../../../src/geom/triangleSnap";
 
 describe("snapParameterToPiOverN", () => {
     it("returns minimum denominator when value is too small", () => {
@@ -20,5 +25,28 @@ describe("snapParameterToPiOverN", () => {
         for (let n = 2; n <= 10; n += 1) {
             expect(snapParameterToPiOverN(n)).toBe(n);
         }
+    });
+});
+
+describe("snapTriangleParams", () => {
+    it("raises r when anchor locks p and q", () => {
+        const result = snapTriangleParams({ p: 3, q: 3, r: 3 }, { locked: { p: true, q: true } });
+        expect(result).toEqual({ p: 3, q: 3, r: 4 });
+    });
+
+    it("keeps values within nMax", () => {
+        const result = snapTriangleParams(
+            { p: 3, q: 3, r: 500 },
+            { locked: { p: true, q: true }, nMax: 180 },
+        );
+        expect(result.r).toBeLessThanOrEqual(180);
+    });
+
+    it("produces hyperbolic triples when feasible", () => {
+        const result = snapTriangleParams(
+            { p: 3, q: 3, r: 3 },
+            { locked: { p: true, q: true }, nMax: DEFAULT_PI_OVER_N_MAX },
+        );
+        expect(validateTriangleParams(result).ok).toBe(true);
     });
 });

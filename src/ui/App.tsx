@@ -1,7 +1,12 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { buildTiling, type TilingParams } from "../geom/tiling";
 import { normalizeDepth, validateTriangleParams } from "../geom/triangleParams";
-import { DEFAULT_PI_OVER_N_MAX, snapParameterToPiOverN } from "../geom/triangleSnap";
+import {
+    DEFAULT_PI_OVER_N_MAX,
+    type PqrKey,
+    snapTriangleParams,
+    type TriangleTriple,
+} from "../geom/triangleSnap";
 import { attachResize, setCanvasDPR } from "../render/canvas";
 import { drawCircle, drawLine } from "../render/canvasAdapter";
 import { geodesicSpec, unitDiskSpec } from "../render/primitives";
@@ -15,8 +20,6 @@ const PQR_PRESETS = [
     { label: "(2,4,4)", p: 2, q: 4, r: 4 },
     { label: "(2,3,6)", p: 2, q: 3, r: 6 },
 ];
-
-type PqrKey = "p" | "q" | "r";
 
 export function App(): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -67,21 +70,17 @@ export function App(): JSX.Element {
     }, [anchor]);
 
     useEffect(() => {
-        const parsed = {
+        const parsed: TriangleTriple = {
             p: Number(formInputs.p),
             q: Number(formInputs.q),
             r: Number(formInputs.r),
-        } as Record<PqrKey, number>;
+        };
 
         const snapped = snapEnabled
-            ? (Object.entries(parsed) as [PqrKey, number][]).reduce(
-                  (acc, [key, value]) => {
-                      const snappedValue = snapParameterToPiOverN(value, { nMax: TRIANGLE_N_MAX });
-                      acc[key] = snappedValue;
-                      return acc;
-                  },
-                  {} as Record<PqrKey, number>,
-              )
+            ? snapTriangleParams(parsed, {
+                  nMax: TRIANGLE_N_MAX,
+                  locked: anchor ? { p: true, q: true } : undefined,
+              })
             : parsed;
 
         if (snapEnabled) {
@@ -112,7 +111,7 @@ export function App(): JSX.Element {
         } else {
             setParamError(result.errors[0] ?? "Invalid parameters");
         }
-    }, [formInputs, snapEnabled]);
+    }, [formInputs, snapEnabled, anchor]);
 
     useEffect(() => {
         const cv = canvasRef.current;

@@ -1,11 +1,19 @@
 import { fc, test } from "@fast-check/vitest";
 import { expect } from "vitest";
-import { snapParameterToPiOverN } from "../../src/geom/triangleSnap";
+import { validateTriangleParams } from "../../src/geom/triangleParams";
+import {
+    DEFAULT_PI_OVER_N_MAX,
+    snapParameterToPiOverN,
+    snapTriangleParams,
+} from "../../src/geom/triangleSnap";
 
-const DEFAULT_MAX = 200;
+const DEFAULT_MAX = DEFAULT_PI_OVER_N_MAX;
 
 const valueArb = fc.double({ min: 0.01, max: 500, noDefaultInfinity: true, noNaN: true });
 const nMaxArb = fc.integer({ min: 50, max: DEFAULT_MAX });
+const hyperbolicAnchorArb = fc
+    .tuple(fc.integer({ min: 2, max: 20 }), fc.integer({ min: 2, max: 20 }))
+    .filter(([p, q]) => 1 / p + 1 / q < 1 - 1e-6);
 
 const angleDiff = (n: number, value: number) => Math.abs(Math.PI / n - Math.PI / value);
 
@@ -29,3 +37,14 @@ test.prop([valueArb, nMaxArb])("returns n minimizing |π/n - π/value|", (value,
     }
     expect(diff).toBeCloseTo(best, 12);
 });
+
+test.prop([hyperbolicAnchorArb, valueArb])(
+    "locked (p,q) triples are hyperbolic when feasible",
+    ([p, q], r) => {
+        const result = snapTriangleParams(
+            { p, q, r },
+            { locked: { p: true, q: true }, nMax: DEFAULT_MAX },
+        );
+        expect(validateTriangleParams(result).ok).toBe(true);
+    },
+);
