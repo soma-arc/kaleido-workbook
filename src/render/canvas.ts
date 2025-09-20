@@ -20,6 +20,14 @@ export function setCanvasDPR(canvas: HTMLCanvasElement, dpr?: number): number {
         // ignore
     }
 
+    // Keep layout size stable by locking CSS width/height when unset.
+    if (!canvas.style.width) {
+        canvas.style.width = `${cssW}px`;
+    }
+    if (!canvas.style.height) {
+        canvas.style.height = `${cssH}px`;
+    }
+
     const pxW = Math.max(1, Math.round(cssW * ratio));
     const pxH = Math.max(1, Math.round(cssH * ratio));
     canvas.width = pxW;
