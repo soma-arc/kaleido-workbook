@@ -19,6 +19,7 @@ export interface WebGLRenderer {
 export type WebGLInitResult = {
     renderer: WebGLRenderer;
     canvas: HTMLCanvasElement | null;
+    ready: boolean;
 };
 
 export function createWebGLRenderer(): WebGLInitResult {
@@ -49,6 +50,7 @@ export function createWebGLRenderer(): WebGLInitResult {
 function createStubRenderer(canvas: HTMLCanvasElement | null): WebGLInitResult {
     return {
         canvas,
+        ready: false,
         renderer: {
             render: () => {
                 /* no-op */
@@ -106,6 +108,7 @@ function createRealRenderer(
 
     return {
         canvas,
+        ready: true,
         renderer: {
             render: (scene: TileScene) => {
                 const width = canvas.width || gl.drawingBufferWidth || 1;
