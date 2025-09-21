@@ -1,9 +1,9 @@
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
-import { renderTileLayer } from "./canvasLayers";
+import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
 import { buildTileScene, type TileScene } from "./scene";
 import type { Viewport } from "./viewport";
-import { createWebGLRenderer, type WebGLRenderer } from "./webglStub";
+import { createWebGLRenderer, type WebGLRenderer } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
 
@@ -53,10 +53,14 @@ export function createRenderEngine(
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
         const scene = buildTileScene(params, viewport);
-        renderCanvasLayer(ctx, scene);
+        const canvasStyle = webgl ? { tileStroke: "rgba(0,0,0,0)" } : undefined;
+        renderCanvasLayer(ctx, scene, canvasStyle);
         if (webgl) {
             syncWebGLCanvas(webgl, canvas);
             webgl.renderer.render(scene);
+            if (webgl.canvas) {
+                ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
+            }
         }
     };
 
@@ -80,8 +84,12 @@ export function createRenderEngine(
     };
 }
 
-function renderCanvasLayer(ctx: CanvasRenderingContext2D, scene: TileScene) {
-    renderTileLayer(ctx, scene);
+function renderCanvasLayer(
+    ctx: CanvasRenderingContext2D,
+    scene: TileScene,
+    style?: CanvasTileStyle,
+) {
+    renderTileLayer(ctx, scene, style);
 }
 
 function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {

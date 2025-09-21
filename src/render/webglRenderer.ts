@@ -1,0 +1,272 @@
+import type { TileScene } from "./scene";
+import {
+    createGeodesicUniformBuffers,
+    MAX_UNIFORM_GEODESICS,
+    packSceneGeodesics,
+} from "./webgl/geodesicUniforms";
+
+const LINE_WIDTH = 1.5;
+const LINE_FEATHER = 0.9;
+const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
+
+export interface WebGLRenderer {
+    render(scene: TileScene): void;
+    dispose(): void;
+}
+
+export type WebGLInitResult = {
+    renderer: WebGLRenderer;
+    canvas: HTMLCanvasElement | null;
+};
+
+export function createWebGLRenderer(): WebGLInitResult {
+    const glCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
+    if (!glCanvas) {
+        console.error("[render] WebGL2 is unavailable in this environment");
+        return createStubRenderer(null);
+    }
+
+    const gl = glCanvas.getContext("webgl2", {
+        preserveDrawingBuffer: true,
+        antialias: true,
+    }) as WebGL2RenderingContext | null;
+
+    if (!gl) {
+        console.error("[render] WebGL2 context acquisition failed");
+        return createStubRenderer(glCanvas);
+    }
+
+    try {
+        return createRealRenderer(glCanvas, gl);
+    } catch (error) {
+        console.error("[render] WebGL renderer initialisation failed", error);
+        return createStubRenderer(glCanvas);
+    }
+}
+
+function createStubRenderer(canvas: HTMLCanvasElement | null): WebGLInitResult {
+    return {
+        canvas,
+        renderer: {
+            render: () => {
+                /* no-op */
+            },
+            dispose: () => {
+                if (canvas) {
+                    canvas.width = 0;
+                    canvas.height = 0;
+                }
+            },
+        },
+    };
+}
+
+function createRealRenderer(
+    canvas: HTMLCanvasElement,
+    gl: WebGL2RenderingContext,
+): WebGLInitResult {
+    const vertexShaderSource = VERTEX_SHADER_SOURCE;
+    const fragmentShaderSource = buildFragmentShaderSource();
+    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = linkProgram(gl, vertexShader, fragmentShader);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+
+    const vao = gl.createVertexArray();
+    if (!vao) throw new Error("Failed to create VAO");
+    const vertexBuffer = gl.createBuffer();
+    if (!vertexBuffer) throw new Error("Failed to create vertex buffer");
+
+    const fullscreenTriangle = new Float32Array([-1, -1, 3, -1, -1, 3]);
+
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, fullscreenTriangle, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
+    gl.useProgram(program);
+    gl.uniform3f(gl.getUniformLocation(program, "uLineColor"), ...LINE_COLOR);
+    gl.uniform1f(gl.getUniformLocation(program, "uLineWidth"), LINE_WIDTH);
+    gl.uniform1f(gl.getUniformLocation(program, "uFeather"), LINE_FEATHER);
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
+    gl.useProgram(null);
+
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    const geodesicBuffers = createGeodesicUniformBuffers(MAX_UNIFORM_GEODESICS);
+    const uniforms = resolveUniformLocations(gl, program);
+
+    return {
+        canvas,
+        renderer: {
+            render: (scene: TileScene) => {
+                const width = canvas.width || gl.drawingBufferWidth || 1;
+                const height = canvas.height || gl.drawingBufferHeight || 1;
+                gl.viewport(0, 0, width, height);
+                gl.useProgram(program);
+                gl.uniform2f(uniforms.resolution, width, height);
+                gl.uniform4f(uniforms.disk, scene.disk.cx, scene.disk.cy, scene.disk.r, 0);
+                const count = packSceneGeodesics(scene, geodesicBuffers, MAX_UNIFORM_GEODESICS);
+                gl.uniform1i(uniforms.geodesicCount, count);
+                gl.uniform4fv(uniforms.geodesicsA, geodesicBuffers.dataA);
+                gl.uniform4fv(uniforms.geodesicsB, geodesicBuffers.dataB);
+
+                gl.clearColor(0, 0, 0, 0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.bindVertexArray(vao);
+                gl.drawArrays(gl.TRIANGLES, 0, 3);
+                gl.bindVertexArray(null);
+                gl.useProgram(null);
+            },
+            dispose: () => {
+                gl.deleteBuffer(vertexBuffer);
+                gl.deleteVertexArray(vao);
+                gl.deleteProgram(program);
+                canvas.width = 0;
+                canvas.height = 0;
+            },
+        },
+    };
+}
+
+const VERTEX_SHADER_SOURCE = `#version 300 es
+layout(location = 0) in vec2 aPosition;
+uniform vec2 uResolution;
+out vec2 vFragCoord;
+void main() {
+    gl_Position = vec4(aPosition, 0.0, 1.0);
+    vFragCoord = (aPosition * 0.5 + 0.5) * uResolution;
+}
+`;
+
+function buildFragmentShaderSource(): string {
+    return `#version 300 es
+precision highp float;
+
+in vec2 vFragCoord;
+layout(location = 0) out vec4 outColor;
+
+uniform vec2 uResolution;
+uniform vec4 uDisk;
+uniform int uGeodesicCount;
+uniform float uLineWidth;
+uniform float uFeather;
+uniform vec3 uLineColor;
+
+const int MAX_GEODESICS = ${MAX_UNIFORM_GEODESICS};
+uniform vec4 uGeodesicsA[MAX_GEODESICS];
+uniform vec4 uGeodesicsB[MAX_GEODESICS];
+
+float sdfCircle(vec2 point, vec4 params) {
+    return abs(length(point - params.xy) - params.z);
+}
+
+float sdfLine(vec2 point, vec4 a, vec4 b) {
+    vec2 base = a.xy;
+    vec2 dir = normalize(vec2(a.z, b.x));
+    vec2 diff = point - base;
+    return abs(diff.x * dir.y - diff.y * dir.x);
+}
+
+void main() {
+    vec2 fragCoord = vFragCoord;
+    float diskDist = length(fragCoord - uDisk.xy) - uDisk.z;
+    float diskMask = 1.0 - smoothstep(0.0, uFeather, diskDist);
+    if (diskMask <= 0.0) {
+        discard;
+    }
+
+    float minSdf = 1e9;
+    for (int i = 0; i < MAX_GEODESICS; ++i) {
+        if (i >= uGeodesicCount) {
+            break;
+        }
+        vec4 a = uGeodesicsA[i];
+        vec4 b = uGeodesicsB[i];
+        if (a.w < 0.5) {
+            minSdf = min(minSdf, sdfCircle(fragCoord, a));
+        } else {
+            minSdf = min(minSdf, sdfLine(fragCoord, a, b));
+        }
+    }
+
+    float alpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, minSdf);
+    alpha *= diskMask;
+    if (alpha <= 0.0) {
+        discard;
+    }
+
+    outColor = vec4(uLineColor, alpha);
+}
+`;
+}
+
+function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
+    const shader = gl.createShader(type);
+    if (!shader) throw new Error("Failed to create shader");
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const info = gl.getShaderInfoLog(shader) ?? "Unknown error";
+        gl.deleteShader(shader);
+        throw new Error(`Shader compilation failed: ${info}`);
+    }
+    return shader;
+}
+
+function linkProgram(
+    gl: WebGL2RenderingContext,
+    vertex: WebGLShader,
+    fragment: WebGLShader,
+): WebGLProgram {
+    const program = gl.createProgram();
+    if (!program) throw new Error("Failed to create program");
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, fragment);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const info = gl.getProgramInfoLog(program) ?? "Unknown error";
+        gl.deleteProgram(program);
+        throw new Error(`Program link failed: ${info}`);
+    }
+    return program;
+}
+
+type UniformLocations = {
+    resolution: WebGLUniformLocation;
+    disk: WebGLUniformLocation;
+    geodesicCount: WebGLUniformLocation;
+    geodesicsA: WebGLUniformLocation;
+    geodesicsB: WebGLUniformLocation;
+};
+
+function resolveUniformLocations(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+): UniformLocations {
+    const resolution = getUniformLocation(gl, program, "uResolution");
+    const disk = getUniformLocation(gl, program, "uDisk");
+    const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
+    const geodesicsA = getUniformLocation(gl, program, "uGeodesicsA[0]");
+    const geodesicsB = getUniformLocation(gl, program, "uGeodesicsB[0]");
+    return { resolution, disk, geodesicCount, geodesicsA, geodesicsB };
+}
+
+function getUniformLocation(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+    name: string,
+): WebGLUniformLocation {
+    const location = gl.getUniformLocation(program, name);
+    if (!location) {
+        throw new Error(`Uniform ${name} not found`);
+    }
+    return location;
+}

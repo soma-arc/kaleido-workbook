@@ -14,6 +14,7 @@ function createMockCanvas() {
         closePath: vi.fn(),
         stroke: vi.fn(),
         clearRect: vi.fn(),
+        drawImage: vi.fn(),
         lineWidth: 1,
         strokeStyle: "#000",
         lineJoin: "miter",
@@ -48,11 +49,12 @@ describe("createRenderEngine", () => {
     });
 
     it("initialises hybrid mode and logs WebGL errors when unavailable", () => {
-        const { canvas } = createMockCanvas();
+        const { canvas, ctx } = createMockCanvas();
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const engine = createRenderEngine(canvas, { mode: "hybrid" });
         engine.render({ p: 2, q: 3, r: 7, depth: 1 });
         expect(errorSpy).toHaveBeenCalled();
+        expect(ctx.drawImage).toHaveBeenCalled();
         engine.dispose();
         errorSpy.mockRestore();
     });
