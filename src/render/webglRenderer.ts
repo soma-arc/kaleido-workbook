@@ -116,6 +116,7 @@ function createRealRenderer(
                 const height = canvas.height || gl.drawingBufferHeight || 1;
                 gl.viewport(0, 0, width, height);
                 gl.useProgram(program);
+                gl.uniform2f(uniforms.resolution, width, height);
                 gl.uniform3f(uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
                 const count = packSceneGeodesics(scene, geodesicBuffers, MAX_UNIFORM_GEODESICS);
                 gl.uniform1i(uniforms.geodesicCount, count);
@@ -178,6 +179,7 @@ function linkProgram(
 }
 
 type UniformLocations = {
+    resolution: WebGLUniformLocation;
     viewport: WebGLUniformLocation;
     geodesicCount: WebGLUniformLocation;
     geodesics: WebGLUniformLocation;
@@ -187,10 +189,11 @@ function resolveUniformLocations(
     gl: WebGL2RenderingContext,
     program: WebGLProgram,
 ): UniformLocations {
+    const resolution = getUniformLocation(gl, program, "uResolution");
     const viewport = getUniformLocation(gl, program, "uViewport");
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
     const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    return { viewport, geodesicCount, geodesics };
+    return { resolution, viewport, geodesicCount, geodesics };
 }
 
 function getUniformLocation(
