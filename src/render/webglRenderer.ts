@@ -1,4 +1,5 @@
 import type { TileScene } from "./scene";
+import type { Viewport } from "./viewport";
 import {
     createGeodesicUniformBuffers,
     MAX_UNIFORM_GEODESICS,
@@ -12,7 +13,7 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 
 export interface WebGLRenderer {
-    render(scene: TileScene): void;
+    render(scene: TileScene, viewport: Viewport): void;
     dispose(): void;
 }
 
@@ -52,7 +53,7 @@ function createStubRenderer(canvas: HTMLCanvasElement | null): WebGLInitResult {
         canvas,
         ready: false,
         renderer: {
-            render: () => {
+            render: (_scene: TileScene, _viewport: Viewport) => {
                 /* no-op */
             },
             dispose: () => {
@@ -110,17 +111,15 @@ function createRealRenderer(
         canvas,
         ready: true,
         renderer: {
-            render: (scene: TileScene) => {
+            render: (scene: TileScene, viewport: Viewport) => {
                 const width = canvas.width || gl.drawingBufferWidth || 1;
                 const height = canvas.height || gl.drawingBufferHeight || 1;
                 gl.viewport(0, 0, width, height);
                 gl.useProgram(program);
-                gl.uniform2f(uniforms.resolution, width, height);
-                gl.uniform4f(uniforms.disk, scene.disk.cx, scene.disk.cy, scene.disk.r, 0);
+                gl.uniform3f(uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
                 const count = packSceneGeodesics(scene, geodesicBuffers, MAX_UNIFORM_GEODESICS);
                 gl.uniform1i(uniforms.geodesicCount, count);
-                gl.uniform4fv(uniforms.geodesicsA, geodesicBuffers.dataA);
-                gl.uniform4fv(uniforms.geodesicsB, geodesicBuffers.dataB);
+                gl.uniform4fv(uniforms.geodesics, geodesicBuffers.data);
 
                 gl.clearColor(0, 0, 0, 0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
@@ -179,23 +178,19 @@ function linkProgram(
 }
 
 type UniformLocations = {
-    resolution: WebGLUniformLocation;
-    disk: WebGLUniformLocation;
+    viewport: WebGLUniformLocation;
     geodesicCount: WebGLUniformLocation;
-    geodesicsA: WebGLUniformLocation;
-    geodesicsB: WebGLUniformLocation;
+    geodesics: WebGLUniformLocation;
 };
 
 function resolveUniformLocations(
     gl: WebGL2RenderingContext,
     program: WebGLProgram,
 ): UniformLocations {
-    const resolution = getUniformLocation(gl, program, "uResolution");
-    const disk = getUniformLocation(gl, program, "uDisk");
+    const viewport = getUniformLocation(gl, program, "uViewport");
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
-    const geodesicsA = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    const geodesicsB = getUniformLocation(gl, program, "uGeodesicsB[0]");
-    return { resolution, disk, geodesicCount, geodesicsA, geodesicsB };
+    const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
+    return { viewport, geodesicCount, geodesics };
 }
 
 function getUniformLocation(

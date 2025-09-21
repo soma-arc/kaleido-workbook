@@ -34,38 +34,32 @@ describe("packSceneGeodesics", () => {
         const buffers = createGeodesicUniformBuffers(4);
         const count = packSceneGeodesics(SCENE, buffers);
         expect(count).toBe(2);
-        expect(Array.from(buffers.dataA.slice(0, 4))).toEqual([120, 120, 60, 0]);
-        expect(Array.from(buffers.dataB.slice(0, 4))).toEqual([0, 0, 0, 0]);
+        expect(Array.from(buffers.data.slice(0, 4))).toEqual([0, 0, 0.5, 0]);
         // line entry
         const lineOffset = 4;
-        const dataA = Array.from(buffers.dataA.slice(lineOffset, lineOffset + 4));
-        const dataB = Array.from(buffers.dataB.slice(lineOffset, lineOffset + 4));
-        expect(dataA[0]).toBe(80);
-        expect(dataA[1]).toBe(120);
-        expect(dataA[2]).toBeCloseTo(1, 12);
-        expect(dataA[3]).toBe(1);
-        expect(dataB[0]).toBeCloseTo(0, 12);
+        const data = Array.from(buffers.data.slice(lineOffset, lineOffset + 4));
+        expect(data[0]).toBe(1);
+        expect(data[1]).toBe(0);
+        expect(data[2]).toBe(0);
+        expect(data[3]).toBe(1);
     });
 
     it("clears the remainder of the buffers when there are fewer primitives than slots", () => {
         const buffers = createGeodesicUniformBuffers(4);
-        buffers.dataA.fill(123);
-        buffers.dataB.fill(456);
+        buffers.data.fill(123);
         const count = packSceneGeodesics({ ...SCENE, tiles: [SCENE.tiles[0]] }, buffers);
         expect(count).toBe(1);
-        expect(buffers.dataA[0]).toBe(120);
-        expect(buffers.dataA[3]).toBe(0);
+        expect(buffers.data[0]).toBe(0);
+        expect(buffers.data[3]).toBe(0);
         // remainder cleared
-        const tail = buffers.dataA.slice(4);
+        const tail = buffers.data.slice(4);
         expect(Array.from(tail)).toEqual(Array(tail.length).fill(0));
-        expect(buffers.dataB[0]).toBe(0);
-        expect(Array.from(buffers.dataB.slice(4))).toEqual(Array(buffers.dataB.length - 4).fill(0));
     });
 
     it("caps the number of packed primitives by the provided limit", () => {
         const buffers = createGeodesicUniformBuffers(1);
         const count = packSceneGeodesics(SCENE, buffers, 1);
         expect(count).toBe(1);
-        expect(buffers.dataA.slice(4)).toEqual(new Float32Array([]));
+        expect(buffers.data.slice(4)).toEqual(new Float32Array([]));
     });
 });

@@ -59,12 +59,12 @@ export function createRenderEngine(
         if (webgl) {
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
-                webgl.renderer.render(scene);
+                webgl.renderer.render(scene, viewport);
                 if (webgl.canvas) {
                     ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
                 }
             } else {
-                webgl.renderer.render(scene);
+                webgl.renderer.render(scene, viewport);
             }
         }
     };
