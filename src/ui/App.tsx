@@ -6,10 +6,12 @@ import { createRenderEngine, detectRenderMode, type RenderEngine } from "../rend
 
 const TRIANGLE_N_MAX = 100;
 
+// Presets are chosen in the hyperbolic regime (1/p + 1/q + 1/r < 1).
+// The triples below match the UI labels to their valid minimal integer r values.
 const PQR_PRESETS = [
-    { label: "(3,3,3)", p: 3, q: 3, r: 3 },
-    { label: "(2,4,4)", p: 2, q: 4, r: 4 },
-    { label: "(2,3,6)", p: 2, q: 3, r: 6 },
+    { label: "(3,3,4)", p: 3, q: 3, r: 4 },
+    { label: "(2,4,5)", p: 2, q: 4, r: 5 },
+    { label: "(2,3,7)", p: 2, q: 3, r: 7 },
 ];
 
 export function App(): JSX.Element {
