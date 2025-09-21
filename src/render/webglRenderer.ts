@@ -4,6 +4,8 @@ import {
     MAX_UNIFORM_GEODESICS,
     packSceneGeodesics,
 } from "./webgl/geodesicUniforms";
+import fragmentShaderSourceTemplate from "./webgl/shaders/geodesic.frag?raw";
+import vertexShaderSource from "./webgl/shaders/geodesic.vert?raw";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
@@ -65,7 +67,6 @@ function createRealRenderer(
     canvas: HTMLCanvasElement,
     gl: WebGL2RenderingContext,
 ): WebGLInitResult {
-    const vertexShaderSource = VERTEX_SHADER_SOURCE;
     const fragmentShaderSource = buildFragmentShaderSource();
     const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -136,76 +137,11 @@ function createRealRenderer(
     };
 }
 
-const VERTEX_SHADER_SOURCE = `#version 300 es
-layout(location = 0) in vec2 aPosition;
-uniform vec2 uResolution;
-out vec2 vFragCoord;
-void main() {
-    gl_Position = vec4(aPosition, 0.0, 1.0);
-    vFragCoord = (aPosition * 0.5 + 0.5) * uResolution;
-}
-`;
-
 function buildFragmentShaderSource(): string {
-    return `#version 300 es
-precision highp float;
-
-in vec2 vFragCoord;
-layout(location = 0) out vec4 outColor;
-
-uniform vec2 uResolution;
-uniform vec4 uDisk;
-uniform int uGeodesicCount;
-uniform float uLineWidth;
-uniform float uFeather;
-uniform vec3 uLineColor;
-
-const int MAX_GEODESICS = ${MAX_UNIFORM_GEODESICS};
-uniform vec4 uGeodesicsA[MAX_GEODESICS];
-uniform vec4 uGeodesicsB[MAX_GEODESICS];
-
-float sdfCircle(vec2 point, vec4 params) {
-    return abs(length(point - params.xy) - params.z);
-}
-
-float sdfLine(vec2 point, vec4 a, vec4 b) {
-    vec2 base = a.xy;
-    vec2 dir = normalize(vec2(a.z, b.x));
-    vec2 diff = point - base;
-    return abs(diff.x * dir.y - diff.y * dir.x);
-}
-
-void main() {
-    vec2 fragCoord = vFragCoord;
-    float diskDist = length(fragCoord - uDisk.xy) - uDisk.z;
-    float diskMask = 1.0 - smoothstep(0.0, uFeather, diskDist);
-    if (diskMask <= 0.0) {
-        discard;
-    }
-
-    float minSdf = 1e9;
-    for (int i = 0; i < MAX_GEODESICS; ++i) {
-        if (i >= uGeodesicCount) {
-            break;
-        }
-        vec4 a = uGeodesicsA[i];
-        vec4 b = uGeodesicsB[i];
-        if (a.w < 0.5) {
-            minSdf = min(minSdf, sdfCircle(fragCoord, a));
-        } else {
-            minSdf = min(minSdf, sdfLine(fragCoord, a, b));
-        }
-    }
-
-    float alpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, minSdf);
-    alpha *= diskMask;
-    if (alpha <= 0.0) {
-        discard;
-    }
-
-    outColor = vec4(uLineColor, alpha);
-}
-`;
+    return fragmentShaderSourceTemplate.replace(
+        "__MAX_GEODESICS__",
+        MAX_UNIFORM_GEODESICS.toString(),
+    );
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
