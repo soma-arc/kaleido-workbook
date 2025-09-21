@@ -22,7 +22,11 @@ vec2 screenToWorld(vec2 fragCoord) {
 float sdfCircleWorld(vec2 worldPoint, vec4 params) {
     vec2 center = params.xy;
     float radius = params.z;
-    return abs(length(worldPoint - center) - radius);
+    vec2 diff = worldPoint - center;
+    float lenSq = dot(diff, diff);
+    float numerator = abs(dot(worldPoint, worldPoint) + 1.0 - 2.0 * dot(worldPoint, center));
+    float denom = sqrt(max(lenSq, 1e-12)) + radius;
+    return numerator / max(denom, 1e-6);
 }
 
 float sdfDiameterWorld(vec2 worldPoint, vec2 dir) {
