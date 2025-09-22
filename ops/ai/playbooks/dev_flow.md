@@ -12,7 +12,7 @@
 - **依存**：`Blocked by` が解消されるまで着手禁止  
 - **品質ゲート**：Biome / TypeScript `strict` / Vitest + coverage v8 + fast-check を必ず通す  
 - **構成変更（lint/tsconfig 等）** は別 PR で先に通す  
-- **生成物**（`ops/out/*.ndjson`）は **.gitignore**。レビュー目的で一時コミット可だが **main には残さない**
+- **生成物**（ドラフトやメモ）は **.gitignore**。レビュー目的で一時コミット可だが **main には残さない**
 
 ---
 
@@ -20,7 +20,7 @@
 
 - **Playbook（本書）**：手順・判断基準・コマンドの正本  
 - **マスタープロンプト（2 種）**：  
-  1) **起票用** → タスクリストから NDJSON を生成 → Issue 起票  
+  1) **起票用** → タスクリストから Issue 案を生成 → ユーザー承認後に Issue 起票  
      - `ops/ai/prompts/v1/master_issue.md`  
   2) **実装用** → 起票済み Issue から ブランチ→実装→PR→レビュー依頼  
      - `ops/ai/prompts/v1/implement_issue.md`
@@ -42,15 +42,16 @@ pnpm i
 ## 3. タスク起票（必要なときだけ）
 
 1) **材料を用意**：実現したい機能を箇条書きにする（最大 10 件）  
-2) **マスタープロンプト（起票用）**で **NDJSON** を生成  
+2) **マスタープロンプト（起票用）**で Issue 草案を生成  
    - → `ops/ai/prompts/v1/master_issue.md` を使用  
-3) **レビュー→適用**  
-   - レビュー（PR で `ops/out/issues-YYYYMMDD.ndjson` を確認）  
-   - 起票：`scripts/issues/apply_ndjson.sh ops/out/issues-YYYYMMDD.ndjson`  
-   - 親子付け（任意）：`scripts/issues/link_subissues.sh ops/out/... "Epic: ..."`  
-   - **適用後に out を削除**（main に残さない）
+   - 出力はユーザー合意用の Issue 案リスト（Markdown）
+3) **レビュー→起票**  
+   - 草案をユーザーへ共有し、フィードバックを反映  
+   - 承認後に GitHub Issue を起票（テンプレに貼り付けて登録）  
+   - 起票時はテンプレートの見出し・チェックリスト等のスタイリングを崩さないこと  
+   - 親子付け：Issue 起票時に Epic/Parent を指定
 
-> 生成物は常に **NDJSON**。スキーマはマスタープロンプトの出力規約に従う。
+> Issue 起票前に必ずユーザーの承認を得ること。
 
 ---
 
@@ -98,7 +99,7 @@ pnpm i
 - PR（バグ修正）：`.github/PULL_REQUEST_TEMPLATE/bugfix.md`  
 - Issue（タスク/Epic など）：`.github/ISSUE_TEMPLATE/*`
 
-> AI はテンプレ見出しを**削除しない**。`Closes #` は主役だけ、補助は `Refs #`。
+> AI はテンプレ見出しを**削除しない**。`Closes #` は主役だけ、補助は `Refs #`。PR/Issue 作成時はいずれもテンプレートのスタイリングを崩さない。
 
 ---
 
