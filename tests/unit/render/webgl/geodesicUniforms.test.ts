@@ -6,8 +6,9 @@ import {
 } from "../../../../src/render/webgl/geodesicUniforms";
 
 const SCENE: HyperbolicScene = {
+    geometry: "hyperbolic",
     disk: { cx: 100, cy: 100, r: 90 },
-    tiles: [
+    geodesics: [
         {
             kind: "circle",
             id: "c:0",
@@ -47,7 +48,7 @@ describe("packSceneGeodesics", () => {
     it("clears the remainder of the buffers when there are fewer primitives than slots", () => {
         const buffers = createGeodesicUniformBuffers(4);
         buffers.data.fill(123);
-        const count = packSceneGeodesics({ ...SCENE, tiles: [SCENE.tiles[0]] }, buffers);
+        const count = packSceneGeodesics({ ...SCENE, geodesics: [SCENE.geodesics[0]] }, buffers);
         expect(count).toBe(1);
         expect(buffers.data[0]).toBe(0);
         expect(buffers.data[3]).toBe(0);

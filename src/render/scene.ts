@@ -21,9 +21,17 @@ export type GeodesicPrimitive =
     | (GeodesicPrimitiveBase & { kind: "line"; line: LineSpec });
 
 export type HyperbolicScene = {
+    geometry: "hyperbolic";
     disk: CircleSpec;
-    tiles: GeodesicPrimitive[];
+    geodesics: GeodesicPrimitive[];
 };
+
+export type EuclideanScene = {
+    geometry: "euclidean";
+    geodesics: GeodesicPrimitive[];
+};
+
+export type RenderScene = HyperbolicScene | EuclideanScene;
 
 function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicPrimitive[] {
     const edges = facesToEdgeGeodesics(faces);
@@ -46,14 +54,14 @@ function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicP
 export function buildHyperbolicScene(params: TilingParams, vp: Viewport): HyperbolicScene {
     const { faces } = buildTiling(params);
     return {
+        geometry: "hyperbolic",
         disk: unitDiskSpec(vp),
-        tiles: buildGeodesicPrimitives(faces, vp),
+        geodesics: buildGeodesicPrimitives(faces, vp),
     };
 }
 
-export function buildHalfPlaneScene(planes: HalfPlane[], vp: Viewport): HyperbolicScene {
-    const disk = unitDiskSpec(vp);
-    const tiles: GeodesicPrimitive[] = planes.map((plane, index) => {
+export function buildEuclideanScene(planes: HalfPlane[], vp: Viewport): EuclideanScene {
+    const geodesics: GeodesicPrimitive[] = planes.map((plane, index) => {
         const geodesic = toGeodesicHalfPlane(plane);
         const spec = geodesicSpec(geodesic, vp);
         const base: GeodesicPrimitiveBase = {
@@ -68,5 +76,5 @@ export function buildHalfPlaneScene(planes: HalfPlane[], vp: Viewport): Hyperbol
         }
         return { ...base, kind: "line", line: spec };
     });
-    return { disk, tiles };
+    return { geometry: "euclidean", geodesics };
 }

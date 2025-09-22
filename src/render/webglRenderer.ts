@@ -1,4 +1,4 @@
-import type { HyperbolicScene } from "./scene";
+import type { RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import {
     createGeodesicUniformBuffers,
@@ -13,7 +13,7 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 
 export interface WebGLRenderer {
-    render(scene: HyperbolicScene, viewport: Viewport, options?: { clipToDisk?: boolean }): void;
+    render(scene: RenderScene, viewport: Viewport, options?: { clipToDisk?: boolean }): void;
     dispose(): void;
 }
 
@@ -53,7 +53,7 @@ function createStubRenderer(canvas: HTMLCanvasElement | null): WebGLInitResult {
         canvas,
         ready: false,
         renderer: {
-            render: (_scene: HyperbolicScene, _viewport: Viewport) => {
+            render: (_scene: RenderScene, _viewport: Viewport) => {
                 /* no-op */
             },
             dispose: () => {
@@ -112,7 +112,7 @@ function createRealRenderer(
         ready: true,
         renderer: {
             render: (
-                scene: HyperbolicScene,
+                scene: RenderScene,
                 viewport: Viewport,
                 options?: { clipToDisk?: boolean },
             ) => {

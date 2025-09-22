@@ -2,7 +2,7 @@ import type { HalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
-import { buildHalfPlaneScene, buildHyperbolicScene, type HyperbolicScene } from "./scene";
+import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
@@ -57,20 +57,20 @@ export function createRenderEngine(
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
-        const isHyperbolic = request.geometry === "hyperbolic";
-        const scene = isHyperbolic
-            ? buildHyperbolicScene(request.params, viewport)
-            : buildHalfPlaneScene(request.halfPlanes, viewport);
+        const scene: RenderScene =
+            request.geometry === "hyperbolic"
+                ? buildHyperbolicScene(request.params, viewport)
+                : buildEuclideanScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
         const canvasStyle: CanvasTileStyle = {
-            drawDisk: isHyperbolic,
+            drawDisk: scene.geometry === "hyperbolic",
         };
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
         renderCanvasLayer(ctx, scene, canvasStyle);
         if (webgl) {
-            const clipToDisk = isHyperbolic;
+            const clipToDisk = scene.geometry === "hyperbolic";
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
                 webgl.renderer.render(scene, viewport, { clipToDisk });
@@ -105,7 +105,7 @@ export function createRenderEngine(
 
 function renderCanvasLayer(
     ctx: CanvasRenderingContext2D,
-    scene: HyperbolicScene,
+    scene: RenderScene,
     style?: CanvasTileStyle,
 ) {
     renderTileLayer(ctx, scene, style);

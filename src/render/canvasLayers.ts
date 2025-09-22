@@ -1,5 +1,5 @@
 import { drawCircle, drawLine } from "./canvasAdapter";
-import type { GeodesicPrimitive, HyperbolicScene } from "./scene";
+import type { GeodesicPrimitive, RenderScene } from "./scene";
 
 export type CanvasTileStyle = {
     tileStroke?: string;
@@ -17,15 +17,16 @@ const DEFAULT_STYLE: Required<CanvasTileStyle> = {
 
 export function renderTileLayer(
     ctx: CanvasRenderingContext2D,
-    scene: HyperbolicScene,
+    scene: RenderScene,
     style: CanvasTileStyle = {},
 ): void {
     const { tileStroke, diskStroke, lineWidth, drawDisk } = { ...DEFAULT_STYLE, ...style };
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    if (drawDisk) {
+    const shouldDrawDisk = drawDisk ?? scene.geometry === "hyperbolic";
+    if (shouldDrawDisk && scene.geometry === "hyperbolic") {
         drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });
     }
-    for (const primitive of scene.tiles) {
+    for (const primitive of scene.geodesics) {
         drawGeodesicPrimitive(ctx, primitive, { strokeStyle: tileStroke, lineWidth });
     }
 }

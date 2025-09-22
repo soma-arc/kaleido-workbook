@@ -1,5 +1,5 @@
 import type { Geodesic } from "../../geom/geodesic";
-import type { HyperbolicScene } from "../scene";
+import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
 const COMPONENTS_PER_VEC4 = 4;
@@ -18,13 +18,13 @@ export function createGeodesicUniformBuffers(
 }
 
 export function packSceneGeodesics(
-    scene: HyperbolicScene,
+    scene: RenderScene,
     buffers: GeodesicUniformBuffers,
     limit: number = MAX_UNIFORM_GEODESICS,
 ): number {
     const maxCount = Math.min(limit, buffers.data.length / COMPONENTS_PER_VEC4);
     let count = 0;
-    for (const primitive of scene.tiles) {
+    for (const primitive of scene.geodesics) {
         if (count >= maxCount) break;
         if (primitive.geodesic.kind === "circle") {
             packCircleGeodesic(primitive.geodesic, buffers, count);

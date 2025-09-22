@@ -8,7 +8,7 @@ describe("buildHyperbolicScene", () => {
     it("returns disk and tile primitives", () => {
         const scene = buildHyperbolicScene({ p: 2, q: 3, r: 7, depth: 1 }, VIEWPORT);
         expect(scene.disk.r).toBeGreaterThan(0);
-        expect(scene.tiles.length).toBeGreaterThan(0);
-        expect(scene.tiles[0]).toHaveProperty("kind");
+        expect(scene.geodesics.length).toBeGreaterThan(0);
+        expect(scene.geodesics[0]).toHaveProperty("kind");
     });
 });
