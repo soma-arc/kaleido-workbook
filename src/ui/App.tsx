@@ -8,7 +8,7 @@ const TRIANGLE_N_MAX = 100;
 
 const PQR_PRESETS = [
     { label: "(3,3,3)", p: 3, q: 3, r: 3 },
-    { label: "(2,4,4)", p: 2, q: 4, r: 4 },
+    { label: "(2,4,6)", p: 2, q: 4, r: 6 },
     { label: "(2,3,6)", p: 2, q: 3, r: 6 },
 ];
 

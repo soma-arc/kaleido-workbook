@@ -1,9 +1,9 @@
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
-import { renderTileLayer } from "./canvasLayers";
+import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
 import { buildTileScene, type TileScene } from "./scene";
 import type { Viewport } from "./viewport";
-import { createWebGLRenderer, type WebGLRenderer } from "./webglStub";
+import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
 
@@ -17,7 +17,7 @@ export type RenderEngineOptions = {
     mode?: RenderMode;
 };
 
-const DEFAULT_MODE: RenderMode = "canvas";
+const DEFAULT_MODE: RenderMode = "hybrid";
 
 export function detectRenderMode(): RenderMode {
     const envMode = safeString(readEnvRenderMode());
@@ -53,10 +53,19 @@ export function createRenderEngine(
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
         const scene = buildTileScene(params, viewport);
-        renderCanvasLayer(ctx, scene);
+        const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
+        const canvasStyle = hasWebGLOutput ? { tileStroke: "rgba(0,0,0,0)" } : undefined;
+        renderCanvasLayer(ctx, scene, canvasStyle);
         if (webgl) {
-            syncWebGLCanvas(webgl, canvas);
-            webgl.renderer.render(scene);
+            if (hasWebGLOutput) {
+                syncWebGLCanvas(webgl, canvas);
+                webgl.renderer.render(scene, viewport);
+                if (webgl.canvas) {
+                    ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
+                }
+            } else {
+                webgl.renderer.render(scene, viewport);
+            }
         }
     };
 
@@ -80,8 +89,12 @@ export function createRenderEngine(
     };
 }
 
-function renderCanvasLayer(ctx: CanvasRenderingContext2D, scene: TileScene) {
-    renderTileLayer(ctx, scene);
+function renderCanvasLayer(
+    ctx: CanvasRenderingContext2D,
+    scene: TileScene,
+    style?: CanvasTileStyle,
+) {
+    renderTileLayer(ctx, scene, style);
 }
 
 function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {
@@ -93,10 +106,7 @@ function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {
     return { scale, tx: width / 2, ty: height / 2 };
 }
 
-function syncWebGLCanvas(
-    webgl: { renderer: WebGLRenderer; canvas: HTMLCanvasElement | null },
-    uiCanvas: HTMLCanvasElement,
-) {
+function syncWebGLCanvas(webgl: WebGLInitResult, uiCanvas: HTMLCanvasElement) {
     if (!webgl.canvas) return;
     webgl.canvas.width = uiCanvas.width;
     webgl.canvas.height = uiCanvas.height;
