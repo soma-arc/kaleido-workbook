@@ -8,21 +8,17 @@ export type CanvasTileStyle = {
     drawDisk?: boolean;
 };
 
-const DEFAULT_STYLE: Required<CanvasTileStyle> = {
-    tileStroke: "#4a90e2",
-    diskStroke: "#222",
-    lineWidth: 1,
-    drawDisk: true,
-};
-
 export function renderTileLayer(
     ctx: CanvasRenderingContext2D,
     scene: RenderScene,
     style: CanvasTileStyle = {},
 ): void {
-    const { tileStroke, diskStroke, lineWidth, drawDisk } = { ...DEFAULT_STYLE, ...style };
+    const tileStroke = style.tileStroke ?? "#4a90e2";
+    const diskStroke = style.diskStroke ?? "#222";
+    const lineWidth = style.lineWidth ?? 1;
+    const drawDiskOption = style.drawDisk;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    const shouldDrawDisk = drawDisk ?? scene.geometry === "hyperbolic";
+    const shouldDrawDisk = drawDiskOption ?? scene.geometry === "hyperbolic";
     if (shouldDrawDisk && scene.geometry === "hyperbolic") {
         drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });
     }
