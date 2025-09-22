@@ -1,6 +1,6 @@
 import type { Geodesic } from "../geom/geodesic";
 import type { HalfPlane } from "../geom/halfPlane";
-import { toGeodesicHalfPlane } from "../geom/halfPlane";
+import { normalizeHalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { buildTiling } from "../geom/tiling";
 import type { TriangleFace } from "../geom/triangle-group";
@@ -28,7 +28,7 @@ export type HyperbolicScene = {
 
 export type EuclideanScene = {
     geometry: "euclidean";
-    geodesics: GeodesicPrimitive[];
+    halfPlanes: HalfPlane[];
 };
 
 export type RenderScene = HyperbolicScene | EuclideanScene;
@@ -60,21 +60,6 @@ export function buildHyperbolicScene(params: TilingParams, vp: Viewport): Hyperb
     };
 }
 
-export function buildEuclideanScene(planes: HalfPlane[], vp: Viewport): EuclideanScene {
-    const geodesics: GeodesicPrimitive[] = planes.map((plane, index) => {
-        const geodesic = toGeodesicHalfPlane(plane);
-        const spec = geodesicSpec(geodesic, vp);
-        const base: GeodesicPrimitiveBase = {
-            id: `plane-${index}`,
-            faceId: `plane-${index}`,
-            faceWord: "plane",
-            edgeIndex: 0,
-            geodesic,
-        };
-        if ("r" in spec) {
-            return { ...base, kind: "circle", circle: spec };
-        }
-        return { ...base, kind: "line", line: spec };
-    });
-    return { geometry: "euclidean", geodesics };
+export function buildEuclideanScene(planes: HalfPlane[], _vp: Viewport): EuclideanScene {
+    return { geometry: "euclidean", halfPlanes: planes.map((plane) => normalizeHalfPlane(plane)) };
 }

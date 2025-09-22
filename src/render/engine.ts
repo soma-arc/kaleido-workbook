@@ -68,7 +68,7 @@ export function createRenderEngine(
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
-        renderCanvasLayer(ctx, scene, canvasStyle);
+        renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === "hyperbolic";
             if (hasWebGLOutput) {
@@ -106,9 +106,10 @@ export function createRenderEngine(
 function renderCanvasLayer(
     ctx: CanvasRenderingContext2D,
     scene: RenderScene,
+    viewport: Viewport,
     style?: CanvasTileStyle,
 ) {
-    renderTileLayer(ctx, scene, style);
+    renderTileLayer(ctx, scene, viewport, style);
 }
 
 function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {

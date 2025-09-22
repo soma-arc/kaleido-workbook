@@ -1,4 +1,5 @@
 import type { Geodesic } from "../../geom/geodesic";
+import type { HalfPlane } from "../../geom/halfPlane";
 import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
@@ -24,16 +25,24 @@ export function packSceneGeodesics(
 ): number {
     const maxCount = Math.min(limit, buffers.data.length / COMPONENTS_PER_VEC4);
     let count = 0;
-    for (const primitive of scene.geodesics) {
-        if (count >= maxCount) break;
-        if (primitive.geodesic.kind === "circle") {
-            packCircleGeodesic(primitive.geodesic, buffers, count);
-        } else if (primitive.geodesic.kind === "diameter") {
-            packDiameterGeodesic(primitive.geodesic, buffers, count);
-        } else {
-            packHalfPlaneGeodesic(primitive.geodesic, buffers, count);
+    if (scene.geometry === "hyperbolic") {
+        for (const primitive of scene.geodesics) {
+            if (count >= maxCount) break;
+            if (primitive.geodesic.kind === "circle") {
+                packCircleGeodesic(primitive.geodesic, buffers, count);
+            } else if (primitive.geodesic.kind === "diameter") {
+                packDiameterGeodesic(primitive.geodesic, buffers, count);
+            } else {
+                packHalfPlaneGeodesic(primitive.geodesic, buffers, count);
+            }
+            count += 1;
         }
-        count += 1;
+    } else {
+        for (const plane of scene.halfPlanes) {
+            if (count >= maxCount) break;
+            packSceneHalfPlane(plane, buffers, count);
+            count += 1;
+        }
     }
     clearRemainder(buffers, count);
     return count;
@@ -67,6 +76,14 @@ function packHalfPlaneGeodesic(
     index: number,
 ): void {
     packLine(geo.normal, geo.offset, buffers, index);
+}
+
+function packSceneHalfPlane(
+    plane: HalfPlane,
+    buffers: GeodesicUniformBuffers,
+    index: number,
+): void {
+    packLine(plane.normal, plane.offset, buffers, index);
 }
 
 function packLine(

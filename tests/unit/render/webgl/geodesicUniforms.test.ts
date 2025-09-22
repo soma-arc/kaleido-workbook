@@ -30,6 +30,14 @@ const SCENE: HyperbolicScene = {
     ],
 };
 
+const EUCLIDEAN_SCENE = {
+    geometry: "euclidean" as const,
+    halfPlanes: [
+        { normal: { x: 1, y: 0 }, offset: 0 },
+        { normal: { x: 0, y: 1 }, offset: 0 },
+    ],
+};
+
 describe("packSceneGeodesics", () => {
     it("packs circle and line primitives into uniform buffers", () => {
         const buffers = createGeodesicUniformBuffers(4);
@@ -62,5 +70,14 @@ describe("packSceneGeodesics", () => {
         const count = packSceneGeodesics(SCENE, buffers, 1);
         expect(count).toBe(1);
         expect(buffers.data.slice(4)).toEqual(new Float32Array([]));
+    });
+
+    it("packs euclidean half-planes as lines", () => {
+        const buffers = createGeodesicUniformBuffers(4);
+        const count = packSceneGeodesics(EUCLIDEAN_SCENE, buffers);
+        expect(count).toBe(EUCLIDEAN_SCENE.halfPlanes.length);
+        const data = Array.from(buffers.data.slice(0, 4));
+        expect(Math.hypot(data[0], data[1])).toBeCloseTo(1, 12);
+        expect(data[3]).toBe(1);
     });
 });

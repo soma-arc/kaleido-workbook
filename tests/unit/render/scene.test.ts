@@ -23,7 +23,7 @@ describe("buildEuclideanScene", () => {
     it("returns geodesic primitives without disk", () => {
         const scene = buildEuclideanScene(PLANES, VIEWPORT);
         expect(scene.geometry).toBe("euclidean");
-        expect(scene.geodesics.length).toBe(PLANES.length);
+        expect(scene.halfPlanes.length).toBe(PLANES.length);
         expect((scene as unknown as { disk?: unknown }).disk).toBeUndefined();
     });
 });
