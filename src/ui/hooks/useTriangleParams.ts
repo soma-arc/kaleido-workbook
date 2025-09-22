@@ -6,10 +6,14 @@ import {
     validateTriangleParams,
 } from "../../geom/triangleParams";
 import { type PqrKey, snapTriangleParams, type TriangleTriple } from "../../geom/triangleSnap";
+import {
+    DEFAULT_EUCLIDEAN_PRESET,
+    DEFAULT_HYPERBOLIC_PRESET,
+    type GeometryMode,
+    type TrianglePreset,
+} from "../trianglePresets";
 
-export type TrianglePreset = { label: string; p: number; q: number; r: number };
-
-export type GeometryMode = "hyperbolic" | "euclidean";
+export type { GeometryMode, TrianglePreset } from "../trianglePresets";
 
 export type UseTriangleParamsOptions = {
     initialParams: TilingParams;
@@ -136,14 +140,15 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
             r: Number(formInputs.r),
         };
 
-        const snapped = snapEnabled
+        const shouldSnap = geometryMode === "hyperbolic" && snapEnabled;
+        const snapped = shouldSnap
             ? snapTriangleParams(parsed, {
                   nMax: triangleNMax,
                   locked: anchor ? { p: true, q: true } : undefined,
               })
             : parsed;
 
-        if (snapEnabled && !preservePresetDisplay) {
+        if (shouldSnap && !preservePresetDisplay) {
             const nextInputs: FormInputs = {
                 p: String(snapped.p),
                 q: String(snapped.q),
@@ -201,18 +206,30 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
     }, [formInputs, snapEnabled, anchor, triangleNMax, preservePresetDisplay, geometryMode]);
 
     useEffect(() => {
-        if (geometryMode !== "euclidean") {
-            setParamWarning(null);
+        if (geometryMode === "euclidean") {
+            const sum =
+                1 / Number(formInputs.p || "1") +
+                1 / Number(formInputs.q || "1") +
+                1 / Number(formInputs.r || "1");
+            if (!Number.isFinite(sum) || Math.abs(sum - 1) > 1e-3) {
+                setFromPreset(DEFAULT_EUCLIDEAN_PRESET);
+            }
             return;
         }
-        const sum =
-            1 / Number(formInputs.p || "1") +
-            1 / Number(formInputs.q || "1") +
-            1 / Number(formInputs.r || "1");
-        if (!Number.isFinite(sum) || Math.abs(sum - 1) > 1e-3) {
-            setFromPreset({ label: "(3,3,3)", p: 3, q: 3, r: 3 });
+
+        const validation = validateTriangleParams(
+            {
+                p: Number(formInputs.p),
+                q: Number(formInputs.q),
+                r: Number(formInputs.r),
+            },
+            { requireIntegers: snapEnabled },
+        );
+        if (!validation.ok && anchor) {
+            setFromPreset(DEFAULT_HYPERBOLIC_PRESET);
         }
-    }, [geometryMode, formInputs, setFromPreset]);
+        setParamWarning(null);
+    }, [geometryMode, formInputs, anchor, setFromPreset, snapEnabled]);
 
     const parsedR = Number(formInputs.r);
     const rSliderValue = Number.isFinite(parsedR) ? parsedR : params.r;
