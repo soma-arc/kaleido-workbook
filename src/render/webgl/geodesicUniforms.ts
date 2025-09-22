@@ -1,5 +1,5 @@
 import type { Geodesic } from "../../geom/geodesic";
-import type { TileScene } from "../scene";
+import type { HyperbolicScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
 const COMPONENTS_PER_VEC4 = 4;
@@ -18,7 +18,7 @@ export function createGeodesicUniformBuffers(
 }
 
 export function packSceneGeodesics(
-    scene: TileScene,
+    scene: HyperbolicScene,
     buffers: GeodesicUniformBuffers,
     limit: number = MAX_UNIFORM_GEODESICS,
 ): number {

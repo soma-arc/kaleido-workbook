@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { TileScene } from "../../../../src/render/scene";
+import type { HyperbolicScene } from "../../../../src/render/scene";
 import {
     createGeodesicUniformBuffers,
     packSceneGeodesics,
 } from "../../../../src/render/webgl/geodesicUniforms";
 
-const SCENE: TileScene = {
+const SCENE: HyperbolicScene = {
     disk: { cx: 100, cy: 100, r: 90 },
     tiles: [
         {

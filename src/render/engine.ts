@@ -2,7 +2,7 @@ import type { HalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
-import { buildHalfPlaneScene, buildTileScene, type TileScene } from "./scene";
+import { buildHalfPlaneScene, buildHyperbolicScene, type HyperbolicScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
@@ -59,7 +59,7 @@ export function createRenderEngine(
         const viewport = computeViewport(rect, canvas);
         const isHyperbolic = request.geometry === "hyperbolic";
         const scene = isHyperbolic
-            ? buildTileScene(request.params, viewport)
+            ? buildHyperbolicScene(request.params, viewport)
             : buildHalfPlaneScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
         const canvasStyle: CanvasTileStyle = {
@@ -105,7 +105,7 @@ export function createRenderEngine(
 
 function renderCanvasLayer(
     ctx: CanvasRenderingContext2D,
-    scene: TileScene,
+    scene: HyperbolicScene,
     style?: CanvasTileStyle,
 ) {
     renderTileLayer(ctx, scene, style);

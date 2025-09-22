@@ -8,7 +8,7 @@ import { type CircleSpec, geodesicSpec, type LineSpec, unitDiskSpec } from "./pr
 import { facesToEdgeGeodesics } from "./tilingAdapter";
 import type { Viewport } from "./viewport";
 
-export type TilePrimitiveBase = {
+export type GeodesicPrimitiveBase = {
     id: string;
     faceId: string;
     faceWord: string;
@@ -16,20 +16,20 @@ export type TilePrimitiveBase = {
     geodesic: Geodesic;
 };
 
-export type TilePrimitive =
-    | (TilePrimitiveBase & { kind: "circle"; circle: CircleSpec })
-    | (TilePrimitiveBase & { kind: "line"; line: LineSpec });
+export type GeodesicPrimitive =
+    | (GeodesicPrimitiveBase & { kind: "circle"; circle: CircleSpec })
+    | (GeodesicPrimitiveBase & { kind: "line"; line: LineSpec });
 
-export type TileScene = {
+export type HyperbolicScene = {
     disk: CircleSpec;
-    tiles: TilePrimitive[];
+    tiles: GeodesicPrimitive[];
 };
 
-function buildTilePrimitives(faces: TriangleFace[], vp: Viewport): TilePrimitive[] {
+function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicPrimitive[] {
     const edges = facesToEdgeGeodesics(faces);
     return edges.map((edge) => {
         const spec = geodesicSpec(edge.geodesic, vp);
-        const base: TilePrimitiveBase = {
+        const base: GeodesicPrimitiveBase = {
             id: `${edge.faceId}:${edge.edgeIndex}`,
             faceId: edge.faceId,
             faceWord: edge.faceWord,
@@ -37,26 +37,26 @@ function buildTilePrimitives(faces: TriangleFace[], vp: Viewport): TilePrimitive
             geodesic: edge.geodesic,
         };
         if ("r" in spec) {
-            return { ...base, kind: "circle", circle: spec } as TilePrimitive;
+            return { ...base, kind: "circle", circle: spec } as GeodesicPrimitive;
         }
-        return { ...base, kind: "line", line: spec } as TilePrimitive;
+        return { ...base, kind: "line", line: spec } as GeodesicPrimitive;
     });
 }
 
-export function buildTileScene(params: TilingParams, vp: Viewport): TileScene {
+export function buildHyperbolicScene(params: TilingParams, vp: Viewport): HyperbolicScene {
     const { faces } = buildTiling(params);
     return {
         disk: unitDiskSpec(vp),
-        tiles: buildTilePrimitives(faces, vp),
+        tiles: buildGeodesicPrimitives(faces, vp),
     };
 }
 
-export function buildHalfPlaneScene(planes: HalfPlane[], vp: Viewport): TileScene {
+export function buildHalfPlaneScene(planes: HalfPlane[], vp: Viewport): HyperbolicScene {
     const disk = unitDiskSpec(vp);
-    const tiles: TilePrimitive[] = planes.map((plane, index) => {
+    const tiles: GeodesicPrimitive[] = planes.map((plane, index) => {
         const geodesic = toGeodesicHalfPlane(plane);
         const spec = geodesicSpec(geodesic, vp);
-        const base: TilePrimitiveBase = {
+        const base: GeodesicPrimitiveBase = {
             id: `plane-${index}`,
             faceId: `plane-${index}`,
             faceWord: "plane",
