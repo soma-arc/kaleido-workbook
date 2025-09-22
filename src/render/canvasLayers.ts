@@ -5,12 +5,14 @@ export type CanvasTileStyle = {
     tileStroke?: string;
     diskStroke?: string;
     lineWidth?: number;
+    drawDisk?: boolean;
 };
 
 const DEFAULT_STYLE: Required<CanvasTileStyle> = {
     tileStroke: "#4a90e2",
     diskStroke: "#222",
     lineWidth: 1,
+    drawDisk: true,
 };
 
 export function renderTileLayer(
@@ -18,9 +20,11 @@ export function renderTileLayer(
     scene: TileScene,
     style: CanvasTileStyle = {},
 ): void {
-    const { tileStroke, diskStroke, lineWidth } = { ...DEFAULT_STYLE, ...style };
+    const { tileStroke, diskStroke, lineWidth, drawDisk } = { ...DEFAULT_STYLE, ...style };
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });
+    if (drawDisk) {
+        drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });
+    }
     for (const primitive of scene.tiles) {
         drawTilePrimitive(ctx, primitive, { strokeStyle: tileStroke, lineWidth });
     }

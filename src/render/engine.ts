@@ -57,14 +57,18 @@ export function createRenderEngine(
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
-        const scene =
-            request.geometry === "hyperbolic"
-                ? buildTileScene(request.params, viewport)
-                : buildHalfPlaneScene(request.halfPlanes, viewport);
+        const isHyperbolic = request.geometry === "hyperbolic";
+        const scene = isHyperbolic
+            ? buildTileScene(request.params, viewport)
+            : buildHalfPlaneScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
-        const canvasStyle = hasWebGLOutput ? { tileStroke: "rgba(0,0,0,0)" } : undefined;
+        const canvasStyle = isHyperbolic
+            ? hasWebGLOutput
+                ? { tileStroke: "rgba(0,0,0,0)" }
+                : undefined
+            : { drawDisk: false };
         renderCanvasLayer(ctx, scene, canvasStyle);
-        if (webgl) {
+        if (webgl && isHyperbolic) {
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
                 webgl.renderer.render(scene, viewport);
