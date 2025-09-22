@@ -21,6 +21,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.2.2",
         "@fast-check/vitest": "^0.2.2",
+        "@types/node": "^24.5.2",
         "@types/react": "^18.3.5",
         "@types/react-dom": "^18.3.0",
         "@vitejs/plugin-react": "^4.3.1",
