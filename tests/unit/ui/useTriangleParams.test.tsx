@@ -1,11 +1,11 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
-import type { TrianglePreset } from "../../../src/ui/hooks/useTriangleParams";
 import {
     type UseTriangleParamsOptions,
     useTriangleParams,
 } from "../../../src/ui/hooks/useTriangleParams";
+import type { TrianglePreset } from "../../../src/ui/trianglePresets";
 
 const globalActFlag = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
 globalActFlag.IS_REACT_ACT_ENVIRONMENT = true;
@@ -81,12 +81,12 @@ describe("useTriangleParams", () => {
 
     it("locks p and q when anchor is set", () => {
         const harness = renderHook();
-        const preset: TrianglePreset = { label: "(3,3,3)", p: 3, q: 3, r: 3 };
+        const preset: TrianglePreset = { label: "(2,3,7)", p: 2, q: 3, r: 7 };
         harness.update((state) => {
             state.setFromPreset(preset);
             state.setParamInput("p", "5");
         });
-        expect(harness.current.formInputs.p).toBe("3");
+        expect(harness.current.formInputs.p).toBe(String(preset.p));
         harness.cleanup();
     });
 
