@@ -29,9 +29,8 @@ float sdfCircleWorld(vec2 worldPoint, vec4 params) {
     return numerator / max(denom, 1e-6);
 }
 
-float sdfDiameterWorld(vec2 worldPoint, vec2 dir) {
-    vec2 normal = vec2(-dir.y, dir.x);
-    return abs(dot(worldPoint, normal));
+float sdfLineWorld(vec2 worldPoint, vec2 normal, float offset) {
+    return abs(dot(worldPoint, normal) + offset);
 }
 
 void main() {
@@ -51,8 +50,8 @@ void main() {
         if (packed.w < 0.5) {
             minSdfWorld = min(minSdfWorld, sdfCircleWorld(worldPoint, packed));
         } else {
-            vec2 dir = normalize(packed.xy);
-            minSdfWorld = min(minSdfWorld, sdfDiameterWorld(worldPoint, dir));
+            vec2 normal = normalize(packed.xy);
+            minSdfWorld = min(minSdfWorld, sdfLineWorld(worldPoint, normal, packed.z));
         }
     }
 

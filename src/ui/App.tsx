@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildEuclideanTriangle } from "../geom/euclideanTriangle";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
 import { DepthControls } from "./components/DepthControls";
+import { ModeControls } from "./components/ModeControls";
 import { PresetSelector } from "./components/PresetSelector";
 import { SnapControls } from "./components/SnapControls";
 import { StageCanvas } from "./components/StageCanvas";
@@ -29,16 +31,19 @@ export function App(): JSX.Element {
         anchor,
         snapEnabled,
         paramError,
+        paramWarning,
         rRange,
         rSliderValue,
         rStep,
         depthRange,
+        geometryMode,
         setParamInput,
         setFromPreset,
         clearAnchor,
         setSnapEnabled: setSnapEnabledState,
         setRFromSlider,
         updateDepth,
+        setGeometryMode,
     } = useTriangleParams({
         initialParams: INITIAL_PARAMS,
         triangleNMax: TRIANGLE_N_MAX,
@@ -56,9 +61,30 @@ export function App(): JSX.Element {
         };
     }, [renderMode]);
 
+    const euclideanMirrors = useMemo(() => {
+        if (geometryMode !== "euclidean" || paramError) {
+            return null;
+        }
+        try {
+            const result = buildEuclideanTriangle(params.p, params.q, params.r);
+            return result.mirrors;
+        } catch {
+            return null;
+        }
+    }, [geometryMode, params, paramError]);
+
     useEffect(() => {
-        renderEngineRef.current?.render(params);
-    }, [params]);
+        if (geometryMode === "hyperbolic") {
+            renderEngineRef.current?.render({ geometry: "hyperbolic", params });
+            return;
+        }
+        if (euclideanMirrors) {
+            renderEngineRef.current?.render({
+                geometry: "euclidean",
+                halfPlanes: euclideanMirrors,
+            });
+        }
+    }, [geometryMode, params, euclideanMirrors]);
 
     return (
         <div
@@ -80,16 +106,19 @@ export function App(): JSX.Element {
                     onSelect={setFromPreset}
                     onClear={clearAnchor}
                 />
-                <SnapControls
-                    snapEnabled={snapEnabled}
-                    renderMode={renderMode}
-                    onToggle={setSnapEnabledState}
+                <ModeControls
+                    geometryMode={geometryMode}
+                    onGeometryChange={setGeometryMode}
+                    renderBackend={renderMode}
                 />
+                <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabledState} />
                 <TriangleParamForm
                     formInputs={formInputs}
                     params={params}
                     anchor={anchor}
                     paramError={paramError}
+                    paramWarning={paramWarning}
+                    geometryMode={geometryMode}
                     rRange={rRange}
                     rStep={rStep}
                     rSliderValue={rSliderValue}

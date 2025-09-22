@@ -1,4 +1,6 @@
 import type { Geodesic } from "../geom/geodesic";
+import type { HalfPlane } from "../geom/halfPlane";
+import { toGeodesicHalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { buildTiling } from "../geom/tiling";
 import type { TriangleFace } from "../geom/triangle-group";
@@ -47,4 +49,24 @@ export function buildTileScene(params: TilingParams, vp: Viewport): TileScene {
         disk: unitDiskSpec(vp),
         tiles: buildTilePrimitives(faces, vp),
     };
+}
+
+export function buildHalfPlaneScene(planes: HalfPlane[], vp: Viewport): TileScene {
+    const disk = unitDiskSpec(vp);
+    const tiles: TilePrimitive[] = planes.map((plane, index) => {
+        const geodesic = toGeodesicHalfPlane(plane);
+        const spec = geodesicSpec(geodesic, vp);
+        const base: TilePrimitiveBase = {
+            id: `plane-${index}`,
+            faceId: `plane-${index}`,
+            faceWord: "plane",
+            edgeIndex: 0,
+            geodesic,
+        };
+        if ("r" in spec) {
+            return { ...base, kind: "circle", circle: spec };
+        }
+        return { ...base, kind: "line", line: spec };
+    });
+    return { disk, tiles };
 }

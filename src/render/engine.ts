@@ -1,14 +1,19 @@
+import type { HalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
-import { buildTileScene, type TileScene } from "./scene";
+import { buildHalfPlaneScene, buildTileScene, type TileScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
 
+export type GeometryRenderRequest =
+    | { geometry: "hyperbolic"; params: TilingParams }
+    | { geometry: "euclidean"; halfPlanes: HalfPlane[] };
+
 export interface RenderEngine {
-    render(params: TilingParams): void;
+    render(request: GeometryRenderRequest): void;
     dispose(): void;
     getMode(): RenderMode;
 }
@@ -43,16 +48,19 @@ export function createRenderEngine(
 
     const webgl = mode === "hybrid" ? createWebGLRenderer() : null;
     const resizeHandlers: Array<() => void> = [];
-    let lastParams: TilingParams | null = null;
+    let lastRequest: GeometryRenderRequest | null = null;
     let disposed = false;
 
-    const renderScene = (params: TilingParams) => {
+    const renderScene = (request: GeometryRenderRequest) => {
         if (disposed) return;
-        lastParams = params;
+        lastRequest = request;
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
-        const scene = buildTileScene(params, viewport);
+        const scene =
+            request.geometry === "hyperbolic"
+                ? buildTileScene(request.params, viewport)
+                : buildHalfPlaneScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
         const canvasStyle = hasWebGLOutput ? { tileStroke: "rgba(0,0,0,0)" } : undefined;
         renderCanvasLayer(ctx, scene, canvasStyle);
@@ -71,8 +79,8 @@ export function createRenderEngine(
 
     resizeHandlers.push(
         attachResize(canvas, () => {
-            if (!lastParams) return;
-            renderScene(lastParams);
+            if (!lastRequest) return;
+            renderScene(lastRequest);
         }),
     );
 

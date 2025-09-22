@@ -38,9 +38,9 @@ describe("packSceneGeodesics", () => {
         // line entry
         const lineOffset = 4;
         const data = Array.from(buffers.data.slice(lineOffset, lineOffset + 4));
-        expect(data[0]).toBe(1);
-        expect(data[1]).toBe(0);
-        expect(data[2]).toBe(0);
+        expect(data[0]).toBeCloseTo(0, 12);
+        expect(data[1]).toBeCloseTo(1, 12);
+        expect(data[2]).toBeCloseTo(0, 12);
         expect(data[3]).toBe(1);
     });
 

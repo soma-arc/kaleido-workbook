@@ -122,4 +122,14 @@ describe("useTriangleParams", () => {
         expect(harness.current.params.depth).toBe(5);
         harness.cleanup();
     });
+
+    it("switches to Euclidean preset when mode changes", () => {
+        const harness = renderHook();
+        harness.update((state) => {
+            state.setGeometryMode("euclidean");
+        });
+        expect(harness.current.geometryMode).toBe("euclidean");
+        expect(harness.current.formInputs).toMatchObject({ p: "3", q: "3", r: "3" });
+        harness.cleanup();
+    });
 });

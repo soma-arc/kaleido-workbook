@@ -43,7 +43,7 @@ describe("createRenderEngine", () => {
     it("renders via canvas mode", () => {
         const { canvas, ctx } = createMockCanvas();
         const engine = createRenderEngine(canvas, { mode: "canvas" });
-        engine.render({ p: 2, q: 3, r: 7, depth: 1 });
+        engine.render({ geometry: "hyperbolic", params: { p: 2, q: 3, r: 7, depth: 1 } });
         expect(ctx.clearRect).toHaveBeenCalled();
         engine.dispose();
     });
@@ -52,7 +52,7 @@ describe("createRenderEngine", () => {
         const { canvas, ctx } = createMockCanvas();
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const engine = createRenderEngine(canvas, { mode: "hybrid" });
-        engine.render({ p: 2, q: 3, r: 7, depth: 1 });
+        engine.render({ geometry: "hyperbolic", params: { p: 2, q: 3, r: 7, depth: 1 } });
         expect(errorSpy).toHaveBeenCalled();
         expect(ctx.drawImage).not.toHaveBeenCalled();
         expect(ctx.clearRect).toHaveBeenCalled();
@@ -65,10 +65,25 @@ describe("createRenderEngine", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const engine = createRenderEngine(canvas);
         expect(engine.getMode()).toBe("hybrid");
-        engine.render({ p: 2, q: 3, r: 7, depth: 1 });
+        engine.render({ geometry: "hyperbolic", params: { p: 2, q: 3, r: 7, depth: 1 } });
         expect(ctx.clearRect).toHaveBeenCalled();
         expect(ctx.drawImage).not.toHaveBeenCalled();
         engine.dispose();
         errorSpy.mockRestore();
+    });
+
+    it("accepts Euclidean render requests", () => {
+        const { canvas, ctx } = createMockCanvas();
+        const engine = createRenderEngine(canvas, { mode: "canvas" });
+        engine.render({
+            geometry: "euclidean",
+            halfPlanes: [
+                { normal: { x: 1, y: 0 }, offset: 0 },
+                { normal: { x: 0, y: 1 }, offset: 0 },
+                { normal: { x: -Math.sqrt(0.5), y: Math.sqrt(0.5) }, offset: 0 },
+            ],
+        });
+        expect(ctx.clearRect).toHaveBeenCalled();
+        engine.dispose();
     });
 });

@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TilingParams } from "../../geom/tiling";
-import { normalizeDepth, validateTriangleParams } from "../../geom/triangleParams";
+import {
+    normalizeDepth,
+    validateEuclideanParams,
+    validateTriangleParams,
+} from "../../geom/triangleParams";
 import { type PqrKey, snapTriangleParams, type TriangleTriple } from "../../geom/triangleSnap";
 
 export type TrianglePreset = { label: string; p: number; q: number; r: number };
+
+export type GeometryMode = "hyperbolic" | "euclidean";
 
 export type UseTriangleParamsOptions = {
     initialParams: TilingParams;
     triangleNMax: number;
     depthRange: { min: number; max: number };
+    initialGeometryMode?: GeometryMode;
 };
 
 type FormInputs = Record<PqrKey, string>;
@@ -21,16 +28,19 @@ export type UseTriangleParamsResult = {
     anchor: TriangleAnchor;
     snapEnabled: boolean;
     paramError: string | null;
+    paramWarning: string | null;
     rRange: { min: number; max: number };
     rSliderValue: number;
     rStep: number;
     depthRange: { min: number; max: number };
+    geometryMode: GeometryMode;
     setParamInput: (key: PqrKey, value: string) => void;
     setFromPreset: (preset: TrianglePreset) => void;
     clearAnchor: () => void;
     setSnapEnabled: (enabled: boolean) => void;
     setRFromSlider: (value: number) => void;
     updateDepth: (value: number) => void;
+    setGeometryMode: (mode: GeometryMode) => void;
 };
 
 export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangleParamsResult {
@@ -47,7 +57,11 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
     });
     const [snapEnabled, setSnapEnabledState] = useState(true);
     const [paramError, setParamError] = useState<string | null>(null);
+    const [paramWarning, setParamWarning] = useState<string | null>(null);
     const [preservePresetDisplay, setPreservePresetDisplay] = useState(false);
+    const [geometryMode, setGeometryMode] = useState<GeometryMode>(
+        options.initialGeometryMode ?? "hyperbolic",
+    );
 
     const rRange = useMemo(() => ({ min: 2, max: triangleNMax }), [triangleNMax]);
 
@@ -144,10 +158,31 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
             }
         }
 
-        const validation = validateTriangleParams(snapped, {
-            requireIntegers: snapEnabled,
-        });
-        if (validation.ok) {
+        if (geometryMode === "hyperbolic") {
+            const validation = validateTriangleParams(snapped, {
+                requireIntegers: snapEnabled,
+            });
+            if (validation.ok) {
+                setParams((prev) => {
+                    if (prev.p === snapped.p && prev.q === snapped.q && prev.r === snapped.r) {
+                        return prev;
+                    }
+                    return { ...prev, ...snapped };
+                });
+                setParamError(null);
+                setParamWarning(null);
+                if (preservePresetDisplay) {
+                    setPreservePresetDisplay(false);
+                }
+            } else {
+                setParamError(validation.errors[0] ?? "Invalid parameters");
+                setParamWarning(null);
+            }
+            return;
+        }
+
+        const euclid = validateEuclideanParams(snapped);
+        if (euclid.ok) {
             setParams((prev) => {
                 if (prev.p === snapped.p && prev.q === snapped.q && prev.r === snapped.r) {
                     return prev;
@@ -155,13 +190,29 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
                 return { ...prev, ...snapped };
             });
             setParamError(null);
+            setParamWarning(euclid.warning ?? null);
             if (preservePresetDisplay) {
                 setPreservePresetDisplay(false);
             }
         } else {
-            setParamError(validation.errors[0] ?? "Invalid parameters");
+            setParamError(euclid.errors[0] ?? "Invalid parameters");
+            setParamWarning(null);
         }
-    }, [formInputs, snapEnabled, anchor, triangleNMax, preservePresetDisplay]);
+    }, [formInputs, snapEnabled, anchor, triangleNMax, preservePresetDisplay, geometryMode]);
+
+    useEffect(() => {
+        if (geometryMode !== "euclidean") {
+            setParamWarning(null);
+            return;
+        }
+        const sum =
+            1 / Number(formInputs.p || "1") +
+            1 / Number(formInputs.q || "1") +
+            1 / Number(formInputs.r || "1");
+        if (!Number.isFinite(sum) || Math.abs(sum - 1) > 1e-3) {
+            setFromPreset({ label: "(3,3,3)", p: 3, q: 3, r: 3 });
+        }
+    }, [geometryMode, formInputs, setFromPreset]);
 
     const parsedR = Number(formInputs.r);
     const rSliderValue = Number.isFinite(parsedR) ? parsedR : params.r;
@@ -172,15 +223,18 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
         anchor,
         snapEnabled,
         paramError,
+        paramWarning,
         rRange,
         rSliderValue,
         rStep: snapEnabled ? 1 : 0.1,
         depthRange,
+        geometryMode,
         setParamInput,
         setFromPreset,
         clearAnchor,
         setSnapEnabled,
         setRFromSlider,
         updateDepth,
+        setGeometryMode,
     };
 }

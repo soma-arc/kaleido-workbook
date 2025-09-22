@@ -69,6 +69,11 @@ pnpm ci             # biome ci + typecheck + test:sandbox
 
 この構造により、GLSL への移行は「Specを解釈するWebGLアダプタの追加」で完結し、幾何やビューポートのコードは不変のまま差し替え可能です。
 
+### Geometry Modes
+- 左ペインの「Geometry Mode」で Hyperbolic / Euclidean を切替えられます。
+- Euclidean モードでは (3,3,3) / (2,4,4) / (2,3,6) など `1/p + 1/q + 1/r = 1` を満たす三角群を対象に、三本の半平面鏡（オフセット＋単位法線）を SDF に渡して描画します。
+- 条件から外れた値を入力した場合は警告を表示し、必要に応じて自動的に `(3,3,3)` プリセットへ戻ります。
+
 ### Rendering Modes
 - 既定では Canvas モードで描画します。
 - ハイブリッド・モード（Canvas UI + WebGL タイル土台）を試す場合は、起動前に `VITE_RENDER_MODE=hybrid pnpm dev` のように環境変数を指定するか、`window.__HP_RENDER_MODE__ = "hybrid"` を設定してからアプリを初期化してください。

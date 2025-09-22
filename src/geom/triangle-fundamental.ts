@@ -232,6 +232,9 @@ function angleBetweenDirections(u: Vec2, v: Vec2): number {
 
 export function angleBetweenGeodesicsAt(a: Geodesic, b: Geodesic, at?: Vec2): number {
     let p: Vec2;
+    if (a.kind === "halfPlane" || b.kind === "halfPlane") {
+        throw new Error("Half-plane geodesics are not supported in hyperbolic angle evaluation");
+    }
     if (at) {
         p = at;
     } else if (a.kind === "diameter" && b.kind === "diameter") {

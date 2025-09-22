@@ -3,7 +3,8 @@ import { defaultTol, tolValue } from "./types";
 
 export type GeodesicCircle = { kind: "circle"; c: Vec2; r: number };
 export type GeodesicDiameter = { kind: "diameter"; dir: Vec2 };
-export type Geodesic = GeodesicCircle | GeodesicDiameter;
+export type GeodesicHalfPlane = { kind: "halfPlane"; normal: Vec2; offset: number };
+export type Geodesic = GeodesicCircle | GeodesicDiameter | GeodesicHalfPlane;
 
 function isOpposite(a: Vec2, b: Vec2): boolean {
     // a ≈ -b  <=>  |a + b| ≈ 0
