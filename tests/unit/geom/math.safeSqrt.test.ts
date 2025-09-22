@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeSqrt } from "../../../src/geom/math";
+import { safeSqrt } from "@/geom/core/math";
 
 describe("math.safeSqrt", () => {
     it("clamps small negative to 0", () => {

@@ -1,9 +1,9 @@
-import type { Geodesic } from "../geom/geodesic";
-import type { HalfPlane } from "../geom/halfPlane";
-import { normalizeHalfPlane } from "../geom/halfPlane";
-import type { TilingParams } from "../geom/tiling";
-import { buildTiling } from "../geom/tiling";
-import type { TriangleFace } from "../geom/triangle-group";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { TriangleFace } from "@/geom/triangle/group";
+import type { TilingParams } from "@/geom/triangle/tiling";
+import { buildTiling } from "@/geom/triangle/tiling";
 import { type CircleSpec, geodesicSpec, type LineSpec, unitDiskSpec } from "./primitives";
 import { facesToEdgeGeodesics } from "./tilingAdapter";
 import type { Viewport } from "./viewport";

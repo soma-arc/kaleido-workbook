@@ -1,7 +1,7 @@
-import type { Geodesic } from "./geodesic";
-import { reflectAcrossHalfPlane } from "./halfPlane";
-import { invertInCircle } from "./inversion";
-import type { Vec2 } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
+import { invertInCircle } from "@/geom/transforms/inversion";
 
 export type Transform2D = (p: Vec2) => Vec2;
 

@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
-import type { TilingParams } from "../../geom/tiling";
-import type { PqrKey } from "../../geom/triangleSnap";
+import type { PqrKey } from "@/geom/triangle/snap";
+import type { TilingParams } from "@/geom/triangle/tiling";
 import type { GeometryMode } from "../hooks/useTriangleParams";
 
 export type TriangleParamFormProps = {

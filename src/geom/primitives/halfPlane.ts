@@ -1,6 +1,6 @@
-import type { GeodesicHalfPlane } from "./geodesic";
-import type { Transform2D } from "./reflect";
-import type { Vec2 } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import type { GeodesicHalfPlane } from "@/geom/primitives/geodesic";
+import type { Transform2D } from "@/geom/transforms/reflect";
 
 export type HalfPlane = {
     normal: Vec2;

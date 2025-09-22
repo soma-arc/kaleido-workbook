@@ -1,6 +1,6 @@
-import type { Geodesic } from "../geom/geodesic";
-import { geodesicThroughPoints } from "../geom/geodesic";
-import type { TriangleFace } from "../geom/triangle-group";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import { geodesicThroughPoints } from "@/geom/primitives/geodesic";
+import type { TriangleFace } from "@/geom/triangle/group";
 
 export type FaceEdge = {
     faceId: string;

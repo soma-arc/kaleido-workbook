@@ -1,6 +1,6 @@
-import { distance, perp90, safeSqrt } from "./math";
-import type { Circle, IntersectResult, Vec2 } from "./types";
-import { defaultTol, eqTol, tolValue } from "./types";
+import { distance, perp90, safeSqrt } from "@/geom/core/math";
+import type { Circle, IntersectResult, Vec2 } from "@/geom/core/types";
+import { defaultTol, eqTol, tolValue } from "@/geom/core/types";
 
 /**
  * circleCircleIntersection

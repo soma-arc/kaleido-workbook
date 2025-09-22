@@ -1,9 +1,9 @@
 /* @vitest-environment jsdom */
 import { describe, expect, it } from "vitest";
 
-import { type Geodesic, geodesicFromBoundary } from "../../../src/geom/geodesic";
-import { buildTiling } from "../../../src/geom/tiling";
-import { angleToBoundaryPoint } from "../../../src/geom/unit-disk";
+import { type Geodesic, geodesicFromBoundary } from "@/geom/primitives/geodesic";
+import { angleToBoundaryPoint } from "@/geom/primitives/unitDisk";
+import { buildTiling } from "@/geom/triangle/tiling";
 import { geodesicSpec, unitDiskSpec } from "../../../src/render/primitives";
 import { facesToEdgeGeodesics } from "../../../src/render/tilingAdapter";
 import { identity, type Viewport } from "../../../src/render/viewport";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildEuclideanTriangle } from "../../../src/geom/euclideanTriangle";
+import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 
 function planeEval(
     normal: { x: number; y: number },

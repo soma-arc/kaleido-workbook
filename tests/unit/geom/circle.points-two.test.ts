@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { circleCircleIntersection } from "../../../src/geom/circle";
-import type { Circle } from "../../../src/geom/types";
+import type { Circle } from "@/geom/core/types";
+import { circleCircleIntersection } from "@/geom/primitives/circle";
 
 describe("circleCircleIntersection points: two intersections", () => {
     it("returns (4,±3) for A(0,0,r=5), B(8,0,r=5)", () => {

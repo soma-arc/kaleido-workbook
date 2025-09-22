@@ -1,5 +1,5 @@
-import type { HalfPlane } from "../geom/halfPlane";
-import type { TilingParams } from "../geom/tiling";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import type { TilingParams } from "@/geom/triangle/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";

@@ -1,5 +1,5 @@
-import type { Circle, Vec2 } from "./types";
-import { defaultTol, tolValue } from "./types";
+import type { Circle, Vec2 } from "@/geom/core/types";
+import { defaultTol, tolValue } from "@/geom/core/types";
 
 /**
  * Inversion in the unit circle.

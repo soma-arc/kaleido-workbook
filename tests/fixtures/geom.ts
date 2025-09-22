@@ -1,4 +1,4 @@
-import type { Circle, Vec2 } from "../../src/geom/types";
+import type { Circle, Vec2 } from "@/geom/core/types";
 
 export function sortPts(pts: Vec2[]): Vec2[] {
     return [...pts].sort((p, q) => (p.x === q.x ? p.y - q.y : p.x - q.x));

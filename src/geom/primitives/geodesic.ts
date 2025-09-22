@@ -1,5 +1,5 @@
-import type { Vec2 } from "./types";
-import { defaultTol, tolValue } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import { defaultTol, tolValue } from "@/geom/core/types";
 
 export type GeodesicCircle = { kind: "circle"; c: Vec2; r: number };
 export type GeodesicDiameter = { kind: "diameter"; dir: Vec2 };

@@ -1,7 +1,11 @@
-import type { Geodesic } from "./geodesic";
-import { reflectAcrossGeodesic } from "./reflect";
-import type { FundamentalTriangle } from "./triangle-fundamental";
-import type { Vec2 } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
+import { reflectAcrossGeodesic, type Transform2D } from "@/geom/transforms/reflect";
+import type {
+    EuclideanTrianglePrimitives,
+    HyperbolicTrianglePrimitives,
+    TrianglePrimitiveSet,
+} from "@/geom/triangle/types";
 
 export type TriangleFace = {
     id: string;
@@ -32,18 +36,20 @@ function qkey(p: Vec2, q = 1e-9): string {
     return `${qx}:${qy}`;
 }
 
-function applyTransform(
+function applyTransform<M>(
     verts: [Vec2, Vec2, Vec2],
-    mirrors: [Geodesic, Geodesic, Geodesic],
+    mirrors: [M, M, M],
     idx: 0 | 1 | 2,
+    reflector: (mirror: M) => Transform2D,
 ): [Vec2, Vec2, Vec2] {
-    const R = reflectAcrossGeodesic(mirrors[idx]);
+    const R = reflector(mirrors[idx]);
     return [R(verts[0]), R(verts[1]), R(verts[2])];
 }
 
-export function expandTriangleGroup(
-    base: FundamentalTriangle,
+export function expandTriangleGroup<M, K extends "hyperbolic" | "euclidean">(
+    base: TrianglePrimitiveSet<M, K>,
     depth: number,
+    reflector: (mirror: M) => Transform2D,
     opts?: { maxFaces?: number },
 ) {
     const mirrors = base.mirrors;
@@ -69,7 +75,7 @@ export function expandTriangleGroup(
             if (!cur) continue;
             for (const j of [0, 1, 2] as const) {
                 const w = cur.word + (j + 1).toString();
-                const v = applyTransform(cur.verts as [Vec2, Vec2, Vec2], mirrors, j);
+                const v = applyTransform(cur.verts as [Vec2, Vec2, Vec2], mirrors, j, reflector);
                 pushFace(v, w);
                 if (opts?.maxFaces && faces.length >= opts.maxFaces) break;
             }
@@ -92,4 +98,20 @@ export function expandTriangleGroup(
             duplicates: seen.size !== faces.length ? faces.length - seen.size : 0,
         },
     };
+}
+
+export function expandHyperbolicTriangleGroup(
+    base: HyperbolicTrianglePrimitives,
+    depth: number,
+    opts?: { maxFaces?: number },
+) {
+    return expandTriangleGroup(base, depth, reflectAcrossGeodesic, opts);
+}
+
+export function expandEuclideanTriangleGroup(
+    base: EuclideanTrianglePrimitives,
+    depth: number,
+    opts?: { maxFaces?: number },
+) {
+    return expandTriangleGroup(base, depth, reflectAcrossHalfPlane, opts);
 }

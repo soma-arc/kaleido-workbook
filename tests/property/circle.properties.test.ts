@@ -1,6 +1,6 @@
 import { fc, test } from "@fast-check/vitest";
-import { circleCircleIntersection } from "../../src/geom/circle";
-import type { Circle, IntersectResult, Vec2 } from "../../src/geom/types";
+import type { Circle, IntersectResult, Vec2 } from "@/geom/core/types";
+import { circleCircleIntersection } from "@/geom/primitives/circle";
 import { sortPts, transformCircle, transformPoint } from "../fixtures/geom";
 
 const range = 20;

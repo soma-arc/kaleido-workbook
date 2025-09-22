@@ -1,4 +1,4 @@
-import type { HalfPlane } from "../geom/halfPlane";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { drawCircle, drawLine } from "./canvasAdapter";
 import type { GeodesicPrimitive, RenderScene } from "./scene";
 import type { Viewport } from "./viewport";

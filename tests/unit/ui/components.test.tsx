@@ -1,7 +1,7 @@
 import { act, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PqrKey } from "../../../src/geom/triangleSnap";
+import type { PqrKey } from "@/geom/triangle/snap";
 import { DepthControls } from "../../../src/ui/components/DepthControls";
 import { ModeControls } from "../../../src/ui/components/ModeControls";
 import { PresetSelector } from "../../../src/ui/components/PresetSelector";

@@ -1,11 +1,11 @@
 import { fc, test } from "@fast-check/vitest";
-import { defaultTol, tolValue } from "../../src/geom/types";
+import { defaultTol, tolValue } from "@/geom/core/types";
 import {
     angleToBoundaryPoint,
     boundaryPointToAngle,
     isOnUnitCircle,
     normalizeOnUnitCircle,
-} from "../../src/geom/unit-disk";
+} from "@/geom/primitives/unitDisk";
 
 const angleArb = fc.double({
     min: -10 * Math.PI,

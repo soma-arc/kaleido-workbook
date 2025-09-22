@@ -1,4 +1,4 @@
-import type { Geodesic } from "../geom/geodesic";
+import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { Viewport } from "./viewport";
 import { worldToScreen } from "./viewport";
 

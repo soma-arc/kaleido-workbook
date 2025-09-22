@@ -1,5 +1,5 @@
 import { fc, test } from "@fast-check/vitest";
-import { reflectAcrossHalfPlane } from "../../src/geom/halfPlane";
+import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
 
 const normalArb = fc
     .record({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { geodesicFromBoundary } from "../../../src/geom/geodesic";
-import type { Vec2 } from "../../../src/geom/types";
+import type { Vec2 } from "@/geom/core/types";
+import { geodesicFromBoundary } from "@/geom/primitives/geodesic";
 
 const pt = (t: number): Vec2 => ({ x: Math.cos(t), y: Math.sin(t) });
 const dot = (a: Vec2, b: Vec2) => a.x * b.x + a.y * b.y;

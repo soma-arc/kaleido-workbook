@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildEuclideanTriangle } from "../geom/euclideanTriangle";
-import type { HalfPlane } from "../geom/halfPlane";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
 import { DepthControls } from "./components/DepthControls";
 import { ModeControls } from "./components/ModeControls";

@@ -1,5 +1,5 @@
-import type { Geodesic } from "../../geom/geodesic";
-import type { HalfPlane } from "../../geom/halfPlane";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;

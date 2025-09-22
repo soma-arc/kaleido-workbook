@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { TilingParams } from "../../geom/tiling";
 import {
     normalizeDepth,
     validateEuclideanParams,
     validateTriangleParams,
-} from "../../geom/triangleParams";
-import { type PqrKey, snapTriangleParams, type TriangleTriple } from "../../geom/triangleSnap";
+} from "@/geom/triangle/params";
+import { type PqrKey, snapTriangleParams, type TriangleTriple } from "@/geom/triangle/snap";
+import type { TilingParams } from "@/geom/triangle/tiling";
 import {
     DEFAULT_EUCLIDEAN_PRESET,
     DEFAULT_HYPERBOLIC_PRESET,
