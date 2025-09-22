@@ -10,6 +10,13 @@ export type TriangleValidationOptions = {
     requireIntegers?: boolean;
 };
 
+export type EuclideanValidation = { ok: true; warning?: string } | { ok: false; errors: string[] };
+
+export type EuclideanValidationOptions = {
+    tolerance?: number;
+    warnThreshold?: number;
+};
+
 const MIN_VALUE = 2;
 const EPSILON = 1e-12;
 const DEPTH_MIN = 0;
@@ -55,4 +62,46 @@ export function normalizeDepth(value: number): number {
     if (rounded < DEPTH_MIN) return DEPTH_MIN;
     if (rounded > DEPTH_MAX) return DEPTH_MAX;
     return rounded;
+}
+
+export function validateEuclideanParams(
+    params: HyperbolicTriangleParams,
+    options: EuclideanValidationOptions = {},
+): EuclideanValidation {
+    const errors: string[] = [];
+    const { tolerance = 1e-4, warnThreshold = 1e-5 } = options;
+    (["p", "q", "r"] as const).forEach((key) => {
+        const value = params[key];
+        if (!Number.isFinite(value) || value <= 1) {
+            errors.push(`${key} must be a finite number > 1`);
+        }
+    });
+
+    const alpha = Math.PI / params.p;
+    const beta = Math.PI / params.q;
+    const gamma = Math.PI / params.r;
+    const sum = 1 / params.p + 1 / params.q + 1 / params.r;
+    const diff = Math.abs(sum - 1);
+
+    if (diff > tolerance) {
+        errors.push("1/p + 1/q + 1/r must equal 1 (Euclidean regime)");
+    }
+
+    const sinAlpha = Math.sin(alpha);
+    const sinBeta = Math.sin(beta);
+    const sinGamma = Math.sin(gamma);
+    const sineEps = 1e-6;
+    if (sinAlpha <= sineEps || sinBeta <= sineEps || sinGamma <= sineEps) {
+        errors.push("Triangle angles are too small for a stable Euclidean triangle");
+    }
+
+    if (errors.length > 0) {
+        return { ok: false, errors };
+    }
+
+    const warning =
+        diff > warnThreshold
+            ? `Euclidean constraint nearly violated (Δ=${diff.toExponential(2)})`
+            : undefined;
+    return warning ? { ok: true, warning } : { ok: true };
 }

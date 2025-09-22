@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeDepth, validateTriangleParams } from "../../../src/geom/triangleParams";
+import {
+    normalizeDepth,
+    validateEuclideanParams,
+    validateTriangleParams,
+} from "../../../src/geom/triangleParams";
 
 describe("validateTriangleParams", () => {
     it("accepts hyperbolic triples", () => {
@@ -42,5 +46,31 @@ describe("normalizeDepth", () => {
 
     it("falls back to minimum for non-finite values", () => {
         expect(normalizeDepth(Number.NaN)).toBe(0);
+    });
+});
+
+describe("validateEuclideanParams", () => {
+    it("accepts canonical Euclidean triples", () => {
+        const result = validateEuclideanParams({ p: 3, q: 3, r: 3 });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.warning).toBeUndefined();
+        }
+    });
+
+    it("emits warnings when close to the boundary", () => {
+        const result = validateEuclideanParams({ p: 3.0002, q: 3, r: 2.9996 });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.warning).toBeDefined();
+        }
+    });
+
+    it("rejects non-euclidean triples", () => {
+        const result = validateEuclideanParams({ p: 2, q: 3, r: 7 });
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.errors).toContain("1/p + 1/q + 1/r must equal 1 (Euclidean regime)");
+        }
     });
 });

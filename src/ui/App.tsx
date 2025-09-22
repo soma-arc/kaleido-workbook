@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildEuclideanTriangle } from "../geom/euclideanTriangle";
+import type { HalfPlane } from "../geom/halfPlane";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
 import { DepthControls } from "./components/DepthControls";
+import { ModeControls } from "./components/ModeControls";
 import { PresetSelector } from "./components/PresetSelector";
 import { SnapControls } from "./components/SnapControls";
 import { StageCanvas } from "./components/StageCanvas";
 import { TriangleParamForm } from "./components/TriangleParamForm";
-import type { TrianglePreset } from "./hooks/useTriangleParams";
 import { useTriangleParams } from "./hooks/useTriangleParams";
+import { getPresetsForGeometry, type TrianglePreset } from "./trianglePresets";
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;
 const DEPTH_RANGE = { min: 0, max: 10 } as const;
 
-const PQR_PRESETS: TrianglePreset[] = [
-    { label: "(3,3,3)", p: 3, q: 3, r: 3 },
-    { label: "(2,4,4)", p: 2, q: 4, r: 4 },
-    { label: "(2,3,6)", p: 2, q: 3, r: 6 },
+const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
+    { normal: { x: 1, y: 0 }, offset: 0 },
+    { normal: { x: 0, y: 1 }, offset: 0 },
+    { normal: { x: -Math.SQRT1_2, y: Math.SQRT1_2 }, offset: 0 },
 ];
 
 export function App(): JSX.Element {
@@ -29,21 +32,29 @@ export function App(): JSX.Element {
         anchor,
         snapEnabled,
         paramError,
+        paramWarning,
         rRange,
         rSliderValue,
         rStep,
         depthRange,
+        geometryMode,
         setParamInput,
         setFromPreset,
         clearAnchor,
         setSnapEnabled: setSnapEnabledState,
         setRFromSlider,
         updateDepth,
+        setGeometryMode,
     } = useTriangleParams({
         initialParams: INITIAL_PARAMS,
         triangleNMax: TRIANGLE_N_MAX,
         depthRange: DEPTH_RANGE,
     });
+
+    const presets = useMemo<readonly TrianglePreset[]>(
+        () => getPresetsForGeometry(geometryMode),
+        [geometryMode],
+    );
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -56,9 +67,29 @@ export function App(): JSX.Element {
         };
     }, [renderMode]);
 
+    const euclideanHalfPlanes = useMemo(() => {
+        if (geometryMode !== "euclidean" || paramError) {
+            return null;
+        }
+        try {
+            const result = buildEuclideanTriangle(params.p, params.q, params.r);
+            return result.mirrors;
+        } catch {
+            return null;
+        }
+    }, [geometryMode, params, paramError]);
+
     useEffect(() => {
-        renderEngineRef.current?.render(params);
-    }, [params]);
+        if (geometryMode === "hyperbolic") {
+            renderEngineRef.current?.render({ geometry: "hyperbolic", params });
+            return;
+        }
+        const halfPlanes = euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        renderEngineRef.current?.render({
+            geometry: "euclidean",
+            halfPlanes,
+        });
+    }, [geometryMode, params, euclideanHalfPlanes]);
 
     return (
         <div
@@ -75,21 +106,24 @@ export function App(): JSX.Element {
             <div style={{ display: "grid", gap: "12px", alignContent: "start" }}>
                 <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Triangle Parameters</h2>
                 <PresetSelector
-                    presets={PQR_PRESETS}
+                    presets={presets}
                     anchor={anchor}
                     onSelect={setFromPreset}
                     onClear={clearAnchor}
                 />
-                <SnapControls
-                    snapEnabled={snapEnabled}
-                    renderMode={renderMode}
-                    onToggle={setSnapEnabledState}
+                <ModeControls
+                    geometryMode={geometryMode}
+                    onGeometryChange={setGeometryMode}
+                    renderBackend={renderMode}
                 />
+                <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabledState} />
                 <TriangleParamForm
                     formInputs={formInputs}
                     params={params}
                     anchor={anchor}
                     paramError={paramError}
+                    paramWarning={paramWarning}
+                    geometryMode={geometryMode}
                     rRange={rRange}
                     rStep={rStep}
                     rSliderValue={rSliderValue}

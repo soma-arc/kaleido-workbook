@@ -1,7 +1,7 @@
-import type { TrianglePreset } from "../hooks/useTriangleParams";
+import type { TrianglePreset } from "../trianglePresets";
 
 export type PresetSelectorProps = {
-    presets: TrianglePreset[];
+    presets: readonly TrianglePreset[];
     anchor: { p: number; q: number } | null;
     onSelect: (preset: TrianglePreset) => void;
     onClear: () => void;

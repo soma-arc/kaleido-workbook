@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import type { TileScene } from "../../../src/render/scene";
+import type { HyperbolicScene } from "../../../src/render/scene";
 import { createWebGLRenderer } from "../../../src/render/webglRenderer";
 
-const SCENE: TileScene = {
+const SCENE: HyperbolicScene = {
+    geometry: "hyperbolic",
     disk: { cx: 0, cy: 0, r: 1 },
-    tiles: [],
+    geodesics: [],
 };
 
 describe("createWebGLRenderer", () => {

@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { TileScene } from "../../../../src/render/scene";
+import type { HyperbolicScene } from "../../../../src/render/scene";
 import {
     createGeodesicUniformBuffers,
     packSceneGeodesics,
 } from "../../../../src/render/webgl/geodesicUniforms";
 
-const SCENE: TileScene = {
+const SCENE: HyperbolicScene = {
+    geometry: "hyperbolic",
     disk: { cx: 100, cy: 100, r: 90 },
-    tiles: [
+    geodesics: [
         {
             kind: "circle",
             id: "c:0",
@@ -29,6 +30,14 @@ const SCENE: TileScene = {
     ],
 };
 
+const EUCLIDEAN_SCENE = {
+    geometry: "euclidean" as const,
+    halfPlanes: [
+        { normal: { x: 1, y: 0 }, offset: 0 },
+        { normal: { x: 0, y: 1 }, offset: 0 },
+    ],
+};
+
 describe("packSceneGeodesics", () => {
     it("packs circle and line primitives into uniform buffers", () => {
         const buffers = createGeodesicUniformBuffers(4);
@@ -38,16 +47,16 @@ describe("packSceneGeodesics", () => {
         // line entry
         const lineOffset = 4;
         const data = Array.from(buffers.data.slice(lineOffset, lineOffset + 4));
-        expect(data[0]).toBe(1);
-        expect(data[1]).toBe(0);
-        expect(data[2]).toBe(0);
+        expect(data[0]).toBeCloseTo(0, 12);
+        expect(data[1]).toBeCloseTo(1, 12);
+        expect(data[2]).toBeCloseTo(0, 12);
         expect(data[3]).toBe(1);
     });
 
     it("clears the remainder of the buffers when there are fewer primitives than slots", () => {
         const buffers = createGeodesicUniformBuffers(4);
         buffers.data.fill(123);
-        const count = packSceneGeodesics({ ...SCENE, tiles: [SCENE.tiles[0]] }, buffers);
+        const count = packSceneGeodesics({ ...SCENE, geodesics: [SCENE.geodesics[0]] }, buffers);
         expect(count).toBe(1);
         expect(buffers.data[0]).toBe(0);
         expect(buffers.data[3]).toBe(0);
@@ -61,5 +70,14 @@ describe("packSceneGeodesics", () => {
         const count = packSceneGeodesics(SCENE, buffers, 1);
         expect(count).toBe(1);
         expect(buffers.data.slice(4)).toEqual(new Float32Array([]));
+    });
+
+    it("packs euclidean half-planes as lines", () => {
+        const buffers = createGeodesicUniformBuffers(4);
+        const count = packSceneGeodesics(EUCLIDEAN_SCENE, buffers);
+        expect(count).toBe(EUCLIDEAN_SCENE.halfPlanes.length);
+        const data = Array.from(buffers.data.slice(0, 4));
+        expect(Math.hypot(data[0], data[1])).toBeCloseTo(1, 12);
+        expect(data[3]).toBe(1);
     });
 });

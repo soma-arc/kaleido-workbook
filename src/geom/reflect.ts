@@ -1,4 +1,5 @@
 import type { Geodesic } from "./geodesic";
+import { reflectAcrossHalfPlane } from "./halfPlane";
 import { invertInCircle } from "./inversion";
 import type { Vec2 } from "./types";
 
@@ -18,6 +19,9 @@ function reflectAcrossDiameter(dirIn: Vec2): Transform2D {
 export function reflectAcrossGeodesic(g: Geodesic): Transform2D {
     if (g.kind === "diameter") {
         return reflectAcrossDiameter(g.dir);
+    }
+    if (g.kind === "halfPlane") {
+        return reflectAcrossHalfPlane({ normal: g.normal, offset: g.offset });
     }
     // circle geodesic: Euclidean inversion in the orthogonal circle
     return (p: Vec2): Vec2 => invertInCircle(p, { c: g.c, r: g.r });

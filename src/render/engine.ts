@@ -1,14 +1,19 @@
+import type { HalfPlane } from "../geom/halfPlane";
 import type { TilingParams } from "../geom/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
-import { buildTileScene, type TileScene } from "./scene";
+import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
 
+export type GeometryRenderRequest =
+    | { geometry: "hyperbolic"; params: TilingParams }
+    | { geometry: "euclidean"; halfPlanes: HalfPlane[] };
+
 export interface RenderEngine {
-    render(params: TilingParams): void;
+    render(request: GeometryRenderRequest): void;
     dispose(): void;
     getMode(): RenderMode;
 }
@@ -43,36 +48,45 @@ export function createRenderEngine(
 
     const webgl = mode === "hybrid" ? createWebGLRenderer() : null;
     const resizeHandlers: Array<() => void> = [];
-    let lastParams: TilingParams | null = null;
+    let lastRequest: GeometryRenderRequest | null = null;
     let disposed = false;
 
-    const renderScene = (params: TilingParams) => {
+    const renderScene = (request: GeometryRenderRequest) => {
         if (disposed) return;
-        lastParams = params;
+        lastRequest = request;
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
-        const scene = buildTileScene(params, viewport);
+        const scene: RenderScene =
+            request.geometry === "hyperbolic"
+                ? buildHyperbolicScene(request.params, viewport)
+                : buildEuclideanScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
-        const canvasStyle = hasWebGLOutput ? { tileStroke: "rgba(0,0,0,0)" } : undefined;
-        renderCanvasLayer(ctx, scene, canvasStyle);
+        const canvasStyle: CanvasTileStyle = {
+            drawDisk: scene.geometry === "hyperbolic",
+        };
+        if (hasWebGLOutput) {
+            canvasStyle.tileStroke = "rgba(0,0,0,0)";
+        }
+        renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
+            const clipToDisk = scene.geometry === "hyperbolic";
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
-                webgl.renderer.render(scene, viewport);
+                webgl.renderer.render(scene, viewport, { clipToDisk });
                 if (webgl.canvas) {
                     ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
                 }
             } else {
-                webgl.renderer.render(scene, viewport);
+                webgl.renderer.render(scene, viewport, { clipToDisk });
             }
         }
     };
 
     resizeHandlers.push(
         attachResize(canvas, () => {
-            if (!lastParams) return;
-            renderScene(lastParams);
+            if (!lastRequest) return;
+            renderScene(lastRequest);
         }),
     );
 
@@ -91,10 +105,11 @@ export function createRenderEngine(
 
 function renderCanvasLayer(
     ctx: CanvasRenderingContext2D,
-    scene: TileScene,
+    scene: RenderScene,
+    viewport: Viewport,
     style?: CanvasTileStyle,
 ) {
-    renderTileLayer(ctx, scene, style);
+    renderTileLayer(ctx, scene, viewport, style);
 }
 
 function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {

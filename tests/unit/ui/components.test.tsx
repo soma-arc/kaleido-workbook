@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { PqrKey } from "../../../src/geom/triangleSnap";
 import { DepthControls } from "../../../src/ui/components/DepthControls";
+import { ModeControls } from "../../../src/ui/components/ModeControls";
 import { PresetSelector } from "../../../src/ui/components/PresetSelector";
 import { SnapControls } from "../../../src/ui/components/SnapControls";
 import { StageCanvas } from "../../../src/ui/components/StageCanvas";
@@ -55,7 +56,7 @@ describe("UI components", () => {
         const container = document.createElement("div");
         const root = createRoot(container);
         act(() => {
-            root.render(<SnapControls snapEnabled renderMode="webgl" onToggle={onToggle} />);
+            root.render(<SnapControls snapEnabled onToggle={onToggle} />);
         });
         const checkbox = container.querySelector("input[type=checkbox]") as HTMLInputElement;
         expect(checkbox).not.toBeNull();
@@ -63,6 +64,30 @@ describe("UI components", () => {
             checkbox.click();
         });
         expect(onToggle).toHaveBeenCalledWith(false);
+        act(() => {
+            root.unmount();
+        });
+    });
+
+    it("allows switching geometry modes", () => {
+        const onChange = vi.fn();
+        const container = document.createElement("div");
+        const root = createRoot(container);
+        act(() => {
+            root.render(
+                <ModeControls
+                    geometryMode="hyperbolic"
+                    onGeometryChange={onChange}
+                    renderBackend="hybrid"
+                />,
+            );
+        });
+        const buttons = Array.from(container.querySelectorAll("button"));
+        expect(buttons).toHaveLength(2);
+        act(() => {
+            buttons[1]?.click();
+        });
+        expect(onChange).toHaveBeenCalledWith("euclidean");
         act(() => {
             root.unmount();
         });
@@ -80,6 +105,8 @@ describe("UI components", () => {
                     params={{ p: 2, q: 3, r: 7, depth: 2 }}
                     anchor={null}
                     paramError={null}
+                    paramWarning="near boundary"
+                    geometryMode="hyperbolic"
                     rRange={{ min: 2, max: 10 }}
                     rStep={1}
                     rSliderValue={7}
@@ -103,6 +130,8 @@ describe("UI components", () => {
             slider.dispatchEvent(new Event("input", { bubbles: true }));
         });
         expect(onSlider).toHaveBeenCalledWith(8);
+        const warning = container.querySelector("p:nth-of-type(2)");
+        expect(warning?.textContent).toContain("near boundary");
 
         act(() => {
             root.unmount();
