@@ -13,7 +13,7 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 
 export interface WebGLRenderer {
-    render(scene: TileScene, viewport: Viewport): void;
+    render(scene: TileScene, viewport: Viewport, options?: { clipToDisk?: boolean }): void;
     dispose(): void;
 }
 
@@ -111,13 +111,15 @@ function createRealRenderer(
         canvas,
         ready: true,
         renderer: {
-            render: (scene: TileScene, viewport: Viewport) => {
+            render: (scene: TileScene, viewport: Viewport, options?: { clipToDisk?: boolean }) => {
+                const clipToDisk = options?.clipToDisk !== false;
                 const width = canvas.width || gl.drawingBufferWidth || 1;
                 const height = canvas.height || gl.drawingBufferHeight || 1;
                 gl.viewport(0, 0, width, height);
                 gl.useProgram(program);
                 gl.uniform2f(uniforms.resolution, width, height);
                 gl.uniform3f(uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
+                gl.uniform1i(uniforms.clipToDisk, clipToDisk ? 1 : 0);
                 const count = packSceneGeodesics(scene, geodesicBuffers, MAX_UNIFORM_GEODESICS);
                 gl.uniform1i(uniforms.geodesicCount, count);
                 gl.uniform4fv(uniforms.geodesics, geodesicBuffers.data);
@@ -183,6 +185,7 @@ type UniformLocations = {
     viewport: WebGLUniformLocation;
     geodesicCount: WebGLUniformLocation;
     geodesics: WebGLUniformLocation;
+    clipToDisk: WebGLUniformLocation;
 };
 
 function resolveUniformLocations(
@@ -193,7 +196,8 @@ function resolveUniformLocations(
     const viewport = getUniformLocation(gl, program, "uViewport");
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
     const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    return { resolution, viewport, geodesicCount, geodesics };
+    const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
+    return { resolution, viewport, geodesicCount, geodesics, clipToDisk };
 }
 
 function getUniformLocation(

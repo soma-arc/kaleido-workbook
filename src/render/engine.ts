@@ -62,21 +62,23 @@ export function createRenderEngine(
             ? buildTileScene(request.params, viewport)
             : buildHalfPlaneScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
-        const canvasStyle = isHyperbolic
-            ? hasWebGLOutput
-                ? { tileStroke: "rgba(0,0,0,0)" }
-                : undefined
-            : { drawDisk: false };
+        const canvasStyle: CanvasTileStyle = {
+            drawDisk: isHyperbolic,
+        };
+        if (hasWebGLOutput) {
+            canvasStyle.tileStroke = "rgba(0,0,0,0)";
+        }
         renderCanvasLayer(ctx, scene, canvasStyle);
-        if (webgl && isHyperbolic) {
+        if (webgl) {
+            const clipToDisk = isHyperbolic;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
-                webgl.renderer.render(scene, viewport);
+                webgl.renderer.render(scene, viewport, { clipToDisk });
                 if (webgl.canvas) {
                     ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
                 }
             } else {
-                webgl.renderer.render(scene, viewport);
+                webgl.renderer.render(scene, viewport, { clipToDisk });
             }
         }
     };

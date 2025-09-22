@@ -8,6 +8,7 @@ uniform int uGeodesicCount;
 uniform float uLineWidth;
 uniform float uFeather;
 uniform vec3 uLineColor;
+uniform int uClipToDisk;
 uniform vec3 uViewport; // (scale, tx, ty)
 
 const int MAX_GEODESICS = __MAX_GEODESICS__;
@@ -35,10 +36,13 @@ float sdfLineWorld(vec2 worldPoint, vec2 normal, float offset) {
 
 void main() {
     vec2 worldPoint = screenToWorld(vFragCoord);
-    float diskDistPx = (length(worldPoint) - 1.0) * uViewport.x;
-    float diskMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
-    if (diskMask <= 0.0) {
-        discard;
+    float diskMask = 1.0;
+    if (uClipToDisk == 1) {
+        float diskDistPx = (length(worldPoint) - 1.0) * uViewport.x;
+        diskMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
+        if (diskMask <= 0.0) {
+            discard;
+        }
     }
 
     float minSdfWorld = 1e9;
