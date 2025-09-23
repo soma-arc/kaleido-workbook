@@ -1,7 +1,7 @@
 import { fc, test } from "@fast-check/vitest";
-import { geodesicFromBoundary } from "../../src/geom/geodesic";
-import { reflectAcrossGeodesic } from "../../src/geom/reflect";
-import { angleToBoundaryPoint, isOnUnitCircle } from "../../src/geom/unit-disk";
+import { geodesicFromBoundary } from "@/geom/primitives/geodesic";
+import { angleToBoundaryPoint, isOnUnitCircle } from "@/geom/primitives/unitDisk";
+import { reflectAcrossGeodesic } from "@/geom/transforms/reflect";
 
 const angleArb = fc.double({ min: -Math.PI, max: Math.PI, noNaN: true, noDefaultInfinity: true });
 

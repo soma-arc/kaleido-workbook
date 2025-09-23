@@ -5,7 +5,7 @@ import {
     boundaryPointToAngle,
     isOnUnitCircle,
     normalizeOnUnitCircle,
-} from "../../../src/geom/unit-disk";
+} from "@/geom/primitives/unitDisk";
 
 const close = (a: number, b: number, d = 1e-12) => Math.abs(a - b) <= d;
 

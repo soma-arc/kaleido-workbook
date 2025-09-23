@@ -1,5 +1,6 @@
-import type { HalfPlane } from "../geom/halfPlane";
-import type { TilingParams } from "../geom/tiling";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import type { TilingParams } from "@/geom/triangle/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
 import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
@@ -9,8 +10,8 @@ import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 export type RenderMode = "canvas" | "hybrid";
 
 export type GeometryRenderRequest =
-    | { geometry: "hyperbolic"; params: TilingParams }
-    | { geometry: "euclidean"; halfPlanes: HalfPlane[] };
+    | { geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams }
+    | { geometry: typeof GEOMETRY_KIND.euclidean; halfPlanes: HalfPlane[] };
 
 export interface RenderEngine {
     render(request: GeometryRenderRequest): void;
@@ -58,19 +59,19 @@ export function createRenderEngine(
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
         const scene: RenderScene =
-            request.geometry === "hyperbolic"
+            request.geometry === GEOMETRY_KIND.hyperbolic
                 ? buildHyperbolicScene(request.params, viewport)
                 : buildEuclideanScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
         const canvasStyle: CanvasTileStyle = {
-            drawDisk: scene.geometry === "hyperbolic",
+            drawDisk: scene.geometry === GEOMETRY_KIND.hyperbolic,
         };
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
-            const clipToDisk = scene.geometry === "hyperbolic";
+            const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
                 webgl.renderer.render(scene, viewport, { clipToDisk });

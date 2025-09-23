@@ -1,6 +1,6 @@
 import { fc, test } from "@fast-check/vitest";
-import { snapAngle, snapBoundaryPoint } from "../../src/geom/snap";
-import { angleToBoundaryPoint } from "../../src/geom/unit-disk";
+import { snapAngle, snapBoundaryPoint } from "@/geom/primitives/snap";
+import { angleToBoundaryPoint } from "@/geom/primitives/unitDisk";
 
 const TAU = 2 * Math.PI;
 

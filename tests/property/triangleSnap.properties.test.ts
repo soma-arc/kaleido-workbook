@@ -1,11 +1,11 @@
 import { fc, test } from "@fast-check/vitest";
 import { expect } from "vitest";
-import { validateTriangleParams } from "../../src/geom/triangleParams";
+import { validateTriangleParams } from "@/geom/triangle/params";
 import {
     DEFAULT_PI_OVER_N_MAX,
     snapParameterToPiOverN,
     snapTriangleParams,
-} from "../../src/geom/triangleSnap";
+} from "@/geom/triangle/snap";
 
 const DEFAULT_MAX = DEFAULT_PI_OVER_N_MAX;
 

@@ -1,5 +1,7 @@
-import type { Geodesic } from "../../geom/geodesic";
-import type { HalfPlane } from "../../geom/halfPlane";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
@@ -25,12 +27,12 @@ export function packSceneGeodesics(
 ): number {
     const maxCount = Math.min(limit, buffers.data.length / COMPONENTS_PER_VEC4);
     let count = 0;
-    if (scene.geometry === "hyperbolic") {
+    if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
         for (const primitive of scene.geodesics) {
             if (count >= maxCount) break;
-            if (primitive.geodesic.kind === "circle") {
+            if (primitive.geodesic.kind === GEODESIC_KIND.circle) {
                 packCircleGeodesic(primitive.geodesic, buffers, count);
-            } else if (primitive.geodesic.kind === "diameter") {
+            } else if (primitive.geodesic.kind === GEODESIC_KIND.diameter) {
                 packDiameterGeodesic(primitive.geodesic, buffers, count);
             } else {
                 packHalfPlaneGeodesic(primitive.geodesic, buffers, count);
@@ -49,7 +51,7 @@ export function packSceneGeodesics(
 }
 
 function packCircleGeodesic(
-    geo: Extract<Geodesic, { kind: "circle" }>,
+    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.circle }>,
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
@@ -62,7 +64,7 @@ function packCircleGeodesic(
 }
 
 function packDiameterGeodesic(
-    geo: Extract<Geodesic, { kind: "diameter" }>,
+    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.diameter }>,
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
@@ -71,7 +73,7 @@ function packDiameterGeodesic(
 }
 
 function packHalfPlaneGeodesic(
-    geo: Extract<Geodesic, { kind: "halfPlane" }>,
+    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.halfPlane }>,
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {

@@ -1,5 +1,5 @@
-import { circleCircleIntersection } from "../../src/geom/circle";
-import type { Circle } from "../../src/geom/types";
+import type { Circle } from "@/geom/core/types";
+import { circleCircleIntersection } from "@/geom/primitives/circle";
 
 const A: Circle = { c: { x: 0, y: 0 }, r: 5 };
 

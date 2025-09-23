@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { HalfPlane } from "../../../src/geom/halfPlane";
-import { buildEuclideanScene, buildHyperbolicScene } from "../../../src/render/scene";
-import type { Viewport } from "../../../src/render/viewport";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { buildEuclideanScene, buildHyperbolicScene } from "@/render/scene";
+import type { Viewport } from "@/render/viewport";
 
 const VIEWPORT: Viewport = { scale: 100, tx: 120, ty: 120 };
 const PLANES: HalfPlane[] = [

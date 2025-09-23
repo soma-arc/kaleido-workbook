@@ -1,5 +1,5 @@
-import type { Tolerance, Vec2 } from "./types";
-import { defaultTol, tolValue } from "./types";
+import type { Tolerance, Vec2 } from "@/geom/core/types";
+import { defaultTol, tolValue } from "@/geom/core/types";
 
 function normalizeAngle(theta: number): number {
     // Map to (-pi, pi]

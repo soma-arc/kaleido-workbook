@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { geodesicFromBoundary } from "../../../src/geom/geodesic";
-import { reflectAcrossGeodesic } from "../../../src/geom/reflect";
-import { angleToBoundaryPoint } from "../../../src/geom/unit-disk";
+import { geodesicFromBoundary } from "@/geom/primitives/geodesic";
+import { angleToBoundaryPoint } from "@/geom/primitives/unitDisk";
+import { reflectAcrossGeodesic } from "@/geom/transforms/reflect";
 
 describe("reflectAcrossGeodesic (unit)", () => {
     it("diameter: line through origin keeps colinear points fixed and flips perpendicular", () => {

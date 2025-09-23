@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { circleCircleIntersection } from "../../../src/geom/circle";
-import type { Circle } from "../../../src/geom/types";
+import type { Circle } from "@/geom/core/types";
+import { circleCircleIntersection } from "@/geom/primitives/circle";
 
 describe("circleCircleIntersection kind: concentric", () => {
     it("returns kind 'concentric' when centers coincide but radii differ", () => {

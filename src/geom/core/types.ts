@@ -11,7 +11,15 @@ export type Circle = { c: Vec2; r: number };
 /**
  * Intersection classification between two circles.
  */
-export type IntersectKind = "none" | "tangent" | "two" | "concentric" | "coincident";
+export const INTERSECT_KIND = {
+    none: "none",
+    tangent: "tangent",
+    two: "two",
+    concentric: "concentric",
+    coincident: "coincident",
+} as const;
+
+export type IntersectKind = (typeof INTERSECT_KIND)[keyof typeof INTERSECT_KIND];
 
 /**
  * Result of circle-circle intersection.
@@ -23,6 +31,16 @@ export type IntersectResult = {
     kind: IntersectKind;
     points?: Vec2[];
 };
+
+/**
+ * Geometry mode kind (shared across geom/render/ui)
+ */
+export const GEOMETRY_KIND = {
+    hyperbolic: "hyperbolic",
+    euclidean: "euclidean",
+} as const;
+
+export type GeometryKind = (typeof GEOMETRY_KIND)[keyof typeof GEOMETRY_KIND];
 
 /**
  * Numeric tolerance model for floating comparisons.

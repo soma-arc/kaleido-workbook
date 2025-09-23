@@ -1,4 +1,5 @@
-import type { HalfPlane } from "../geom/halfPlane";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { drawCircle, drawLine } from "./canvasAdapter";
 import type { GeodesicPrimitive, RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
@@ -22,7 +23,7 @@ export function renderTileLayer(
     const lineWidth = style.lineWidth ?? 1;
     const drawDiskOption = style.drawDisk;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    if (scene.geometry === "hyperbolic") {
+    if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
         const shouldDrawDisk = drawDiskOption ?? true;
         if (shouldDrawDisk) {
             drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });

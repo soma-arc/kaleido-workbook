@@ -41,7 +41,7 @@ pnpm ci             # biome ci + typecheck + test:sandbox
 
 ### 用語/型の統一
 - ベクトル型は `Vec2` を公開名として採用（旧 `Vec` は廃止）。
-- 主な幾何モジュール: `geom/circle.ts`（円×円交点）, `geom/geodesic.ts`（境界2点→直交円/直径）, `geom/inversion.ts`（円反転）, `geom/unit-disk.ts`（単位円ユーティリティ）。
+- 主な幾何モジュール: `geom/primitives/circle.ts`（円×円交点）, `geom/primitives/geodesic.ts`（境界2点→直交円/直径）, `geom/transforms/inversion.ts`（円反転）, `geom/primitives/unitDisk.ts`（単位円ユーティリティ）。
 
 ## Render Backend Portability（Canvas 2D / SVG / WebGL/GLSL）
 

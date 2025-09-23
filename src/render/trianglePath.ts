@@ -2,7 +2,7 @@
  * Triangle path specification (Issue #77)
  * Parent: #75  Epic: #56
  */
-import type { Vec2 } from "../geom/types";
+import type { Vec2 } from "@/geom/core/types";
 
 export interface LineSegmentSpec {
     kind: "line";

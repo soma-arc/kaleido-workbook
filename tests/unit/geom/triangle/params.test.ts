@@ -4,7 +4,7 @@ import {
     normalizeDepth,
     validateEuclideanParams,
     validateTriangleParams,
-} from "../../../src/geom/triangleParams";
+} from "@/geom/triangle/params";
 
 describe("validateTriangleParams", () => {
     it("accepts hyperbolic triples", () => {

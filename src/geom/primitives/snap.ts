@@ -1,5 +1,5 @@
-import type { Vec2 } from "./types";
-import { angleToBoundaryPoint, boundaryPointToAngle } from "./unit-disk";
+import type { Vec2 } from "@/geom/core/types";
+import { angleToBoundaryPoint, boundaryPointToAngle } from "@/geom/primitives/unitDisk";
 
 const TAU = 2 * Math.PI;
 

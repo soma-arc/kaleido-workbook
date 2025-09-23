@@ -1,3 +1,5 @@
+import type { GeometryKind } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { GeometryMode } from "../hooks/useTriangleParams";
 
 export type ModeControlsProps = {
@@ -6,11 +8,11 @@ export type ModeControlsProps = {
     renderBackend: string;
 };
 
-const MODES: GeometryMode[] = ["hyperbolic", "euclidean"];
+const MODES: GeometryMode[] = [GEOMETRY_KIND.hyperbolic, GEOMETRY_KIND.euclidean];
 
-const LABELS: Record<GeometryMode, string> = {
-    hyperbolic: "Hyperbolic",
-    euclidean: "Euclidean",
+const LABELS: Record<GeometryKind, string> = {
+    [GEOMETRY_KIND.hyperbolic]: "Hyperbolic",
+    [GEOMETRY_KIND.euclidean]: "Euclidean",
 };
 
 export function ModeControls({ geometryMode, onGeometryChange, renderBackend }: ModeControlsProps) {

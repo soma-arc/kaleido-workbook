@@ -1,4 +1,7 @@
-export type GeometryMode = "hyperbolic" | "euclidean";
+import type { GeometryKind } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+
+export type GeometryMode = GeometryKind;
 
 export type TrianglePreset = {
     label: string;
@@ -20,8 +23,8 @@ const EUCLIDEAN_PRESETS: TrianglePreset[] = [
 ];
 
 const PRESETS_BY_MODE: Record<GeometryMode, TrianglePreset[]> = {
-    hyperbolic: HYPERBOLIC_PRESETS,
-    euclidean: EUCLIDEAN_PRESETS,
+    [GEOMETRY_KIND.hyperbolic]: HYPERBOLIC_PRESETS,
+    [GEOMETRY_KIND.euclidean]: EUCLIDEAN_PRESETS,
 };
 
 export const DEFAULT_HYPERBOLIC_PRESET = HYPERBOLIC_PRESETS[0];

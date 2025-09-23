@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
-import {
-    angleBetweenGeodesicsAt,
-    buildFundamentalTriangle,
-} from "../../../src/geom/triangle-fundamental";
+import { angleBetweenGeodesicsAt } from "@/geom/triangle/geodesicAngles";
+import { buildHyperbolicTriangle } from "@/geom/triangle/hyperbolicTriangle";
 
 // keep for potential future table-driven tests (unused)
 // const _toRad = (x: number) => (x * Math.PI) / 180;
 
-describe("geom/triangle-fundamental", () => {
+describe("geom/triangle/hyperbolicTriangle", () => {
     it("builds a (2,3,7) triangle with expected angles (within tol)", () => {
-        const tri = buildFundamentalTriangle(2, 3, 7);
+        const tri = buildHyperbolicTriangle(2, 3, 7);
         const [g1, g2, g3] = tri.mirrors;
 
         const alpha = Math.PI / 2;

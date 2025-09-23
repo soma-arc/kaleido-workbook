@@ -1,48 +1,19 @@
-/**
- * Fundamental (p,q,r) triangle on the Poincaré unit disk.
- *
- * Overview
- * - We construct three mirrors (geodesics) g1,g2,g3 that bound a triangle whose interior
- *   angles are (π/p, π/q, π/r) at the three vertices, in that order.
- * - Mirrors are Poincaré geodesics: either a diameter through the origin, or a circle
- *   orthogonal to the unit circle (|c|^2 − r^2 = 1).
- * - We fix a canonical pose to make results deterministic:
- *   g1 is the x‑axis diameter, g2 is a diameter rotated by α = π/p, and g3 is an
- *   orthogonal circle placed in the upper half plane such that the angles at the two
- *   non‑origin vertices match β = π/q and γ = π/r.
- *
- * Notation
- * - α = π/p, β = π/q, γ = π/r.
- * - For g3 = circle(c,r), the orthogonality constraint is |c|^2 − r^2 = 1.
- * - The vertex set is: v0 = g1∩g2 = (0,0), v1 = g1∩g3 on the x‑axis, v2 = g2∩g3 along
- *   the ray at angle α from the origin.
- *
- * Domain/Validation
- * - Hyperbolic regime: p,q,r > 1 and 1/p + 1/q + 1/r < 1. Otherwise this throws.
- * - All computations are deterministic and purely numeric; no random seeds.
- *
- * Numeric considerations
- * - Solving g3: we parameterize its center using t∈(0,1), set cx=(1+t²)/(2t), dx=t−cx,
- *   choose cy=|dx|/tan(β) to enforce the angle β at v1, then locate v2 on g2 and measure
- *   the induced angle to match γ. We find t by bracketing + bisection (with a small
- *   secant fallback when needed). Stopping thresholds are tuned for unit tests (≈5e‑3 rad).
- * - Vertex intersections use closed forms to avoid fragile generic circle/line solvers.
- */
-import type { Geodesic } from "./geodesic";
-import { geodesicFromBoundary } from "./geodesic";
-import type { Vec2 } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { Geodesic } from "@/geom/primitives/geodesic";
+import { GEODESIC_KIND, geodesicFromBoundary } from "@/geom/primitives/geodesic";
+import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
 
 /**
- * FundamentalTriangle
- * - mirrors: The three bounding geodesics [g1,g2,g3] in the canonical pose
- * - vertices: The three Euclidean positions [v0,v1,v2] inside the unit disk
- * - angles: The interior angles [α,β,γ] = [π/p,π/q,π/r]
+ * Construct canonical hyperbolic triangle primitives on the Poincaré unit disk.
+ *
+ * Overview
+ * - Mirrors are Poincaré geodesics (diameter or circle) whose interior angles are (π/p, π/q, π/r).
+ * - The triangle is placed in a canonical pose: g1 on the x-axis, g2 rotated by α = π/p,
+ *   g3 an orthogonal circle in the upper half plane.
+ * - The resulting primitive set only encodes mirrors/vertices/angles so that higher level tiling
+ *   code can operate on geometric primitives without embedding tiling semantics here.
  */
-export type FundamentalTriangle = {
-    mirrors: [Geodesic, Geodesic, Geodesic];
-    vertices: [Vec2, Vec2, Vec2];
-    angles: [number, number, number];
-};
 
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
@@ -164,18 +135,14 @@ function solveForThirdMirror(alpha: number, beta: number, gamma: number): { c: V
 }
 
 /**
- * buildFundamentalTriangle
- * Construct a canonical (p,q,r) hyperbolic triangle and its three mirrors.
- *
- * Preconditions:
- * - p,q,r > 1 and 1/p + 1/q + 1/r < 1 (hyperbolic). Violations throw.
- *
- * Output pose/invariants:
- * - g1 = diameter along x‑axis, g2 = diameter at angle α=π/p, g3 = orthogonal circle in y≥0.
- * - vertices = [v0,v1,v2] with v0=(0,0), v1 on x‑axis, v2 on the α‑ray from origin.
- * - angles = [α,β,γ] = [π/p, π/q, π/r].
+ * buildHyperbolicTriangle
+ * Construct a canonical (p,q,r) hyperbolic triangle primitive set.
  */
-export function buildFundamentalTriangle(p: number, q: number, r: number): FundamentalTriangle {
+export function buildHyperbolicTriangle(
+    p: number,
+    q: number,
+    r: number,
+): HyperbolicTrianglePrimitives {
     if (!(p > 1 && q > 1 && r > 1) || 1 / p + 1 / q + 1 / r >= 1) {
         throw new Error("Invalid (p,q,r) for hyperbolic triangle");
     }
@@ -190,7 +157,7 @@ export function buildFundamentalTriangle(p: number, q: number, r: number): Funda
     const g2: Geodesic = geodesicFromBoundary(aDir, { x: -aDir.x, y: -aDir.y });
 
     const third = solveForThirdMirror(alpha, beta, gamma);
-    const g3: Geodesic = { kind: "circle", c: third.c, r: third.r };
+    const g3: Geodesic = { kind: GEODESIC_KIND.circle, c: third.c, r: third.r };
 
     // vertices: v0 = origin (g1∩g2), v1 = g1∩g3 on x‑axis, v2 = g2∩g3 on line alpha
     const v0: Vec2 = { x: 0, y: 0 };
@@ -214,54 +181,13 @@ export function buildFundamentalTriangle(p: number, q: number, r: number): Funda
     const s = cdotu - root;
     const v2: Vec2 = { x: s * aDir.x, y: s * aDir.y };
 
-    return { mirrors: [g1, g2, g3], vertices: [v0, v1, v2], angles: [alpha, beta, gamma] };
+    return {
+        kind: GEOMETRY_KIND.hyperbolic,
+        mirrors: [g1, g2, g3],
+        vertices: [v0, v1, v2],
+        angles: [alpha, beta, gamma],
+    };
 }
 
-// --- Angle helpers (for tests) ---
-function unit(v: Vec2): Vec2 {
-    const n = Math.hypot(v.x, v.y) || 1;
-    return { x: v.x / n, y: v.y / n };
-}
-
-function angleBetweenDirections(u: Vec2, v: Vec2): number {
-    const du = unit(u),
-        dv = unit(v);
-    const d = clamp(Math.abs(du.x * dv.x + du.y * dv.y), 0, 1);
-    return Math.acos(d);
-}
-
-export function angleBetweenGeodesicsAt(a: Geodesic, b: Geodesic, at?: Vec2): number {
-    let p: Vec2;
-    if (a.kind === "halfPlane" || b.kind === "halfPlane") {
-        throw new Error("Half-plane geodesics are not supported in hyperbolic angle evaluation");
-    }
-    if (at) {
-        p = at;
-    } else if (a.kind === "diameter" && b.kind === "diameter") {
-        p = { x: 0, y: 0 };
-    } else if (a.kind === "diameter" && b.kind === "circle") {
-        // intersection of line s*u with circle |su - c|=r
-        const u = a.dir;
-        const cdotu = b.c.x * u.x + b.c.y * u.y;
-        const cc = b.c.x * b.c.x + b.c.y * b.c.y;
-        const disc = cdotu * cdotu - (cc - b.r * b.r);
-        const s = cdotu - Math.sqrt(Math.max(0, disc));
-        p = { x: s * u.x, y: s * u.y };
-    } else if (a.kind === "circle" && b.kind === "diameter") {
-        const u = b.dir;
-        const cdotu = a.c.x * u.x + a.c.y * u.y;
-        const cc = a.c.x * a.c.x + a.c.y * a.c.y;
-        const disc = cdotu * cdotu - (cc - a.r * a.r);
-        const s = cdotu - Math.sqrt(Math.max(0, disc));
-        p = { x: s * u.x, y: s * u.y };
-    } else if (a.kind === "circle" && b.kind === "circle") {
-        // both circles: rough midpoint (未使用経路、テストでは到達しない)
-        p = { x: (a.c.x + b.c.x) / 2, y: (a.c.y + b.c.y) / 2 };
-    } else {
-        // fallback: origin
-        p = { x: 0, y: 0 };
-    }
-    const dirA = a.kind === "diameter" ? a.dir : { x: p.y - a.c.y, y: -(p.x - a.c.x) };
-    const dirB = b.kind === "diameter" ? b.dir : { x: p.y - b.c.y, y: -(p.x - b.c.x) };
-    return angleBetweenDirections(dirA, dirB);
-}
+/** @deprecated Prefer buildHyperbolicTriangle */
+export const buildFundamentalTriangle = buildHyperbolicTriangle;

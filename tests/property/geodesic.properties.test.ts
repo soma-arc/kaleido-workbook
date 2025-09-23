@@ -1,6 +1,6 @@
 import { fc, test } from "@fast-check/vitest";
-import { geodesicFromBoundary } from "../../src/geom/geodesic";
-import type { Vec2 } from "../../src/geom/types";
+import type { Vec2 } from "@/geom/core/types";
+import { geodesicFromBoundary } from "@/geom/primitives/geodesic";
 
 const pt = (t: number): Vec2 => ({ x: Math.cos(t), y: Math.sin(t) });
 const add = (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y });

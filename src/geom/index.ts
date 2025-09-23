@@ -1,0 +1,20 @@
+export * from "@/geom/core/math";
+export * from "@/geom/core/types";
+
+export * from "@/geom/primitives/circle";
+export * from "@/geom/primitives/geodesic";
+export * from "@/geom/primitives/halfPlane";
+export * from "@/geom/primitives/snap";
+export * from "@/geom/primitives/unitDisk";
+
+export * from "@/geom/transforms/inversion";
+export * from "@/geom/transforms/reflect";
+
+export * from "@/geom/triangle/euclideanTriangle";
+export * from "@/geom/triangle/geodesicAngles";
+export * from "@/geom/triangle/group";
+export * from "@/geom/triangle/hyperbolicTriangle";
+export * from "@/geom/triangle/params";
+export * from "@/geom/triangle/snap";
+export * from "@/geom/triangle/tiling";
+export * from "@/geom/triangle/types";

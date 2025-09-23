@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildTiling } from "../../../src/geom/tiling";
+import { buildTiling } from "@/geom/triangle/tiling";
 
-describe("geom/tiling", () => {
+describe("geom/triangle/tiling", () => {
     it("buildTiling produces deterministic faces and stats", () => {
         const params = { p: 2, q: 3, r: 7, depth: 2 };
         const { faces, stats } = buildTiling(params);

@@ -1,12 +1,10 @@
-import type { HalfPlane } from "./halfPlane";
-import { normalizeHalfPlane } from "./halfPlane";
-import type { Vec2 } from "./types";
+import type { Vec2 } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { EuclideanTrianglePrimitives } from "@/geom/triangle/types";
 
-export type EuclideanTriangle = {
-    mirrors: [HalfPlane, HalfPlane, HalfPlane];
-    vertices: [Vec2, Vec2, Vec2];
-    angles: [number, number, number];
-};
+export type EuclideanTriangle = EuclideanTrianglePrimitives;
 
 const SUM_TOL = 1e-6;
 
@@ -45,6 +43,7 @@ export function buildEuclideanTriangle(p: number, q: number, r: number): Euclide
     ];
 
     return {
+        kind: GEOMETRY_KIND.euclidean,
         mirrors,
         vertices: [v0, v1, v2],
         angles: [alpha, beta, gamma],
