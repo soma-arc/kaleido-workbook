@@ -1,6 +1,6 @@
 import { distance, perp90, safeSqrt } from "@/geom/core/math";
 import type { Circle, IntersectResult, Vec2 } from "@/geom/core/types";
-import { defaultTol, eqTol, tolValue } from "@/geom/core/types";
+import { defaultTol, eqTol, INTERSECT_KIND, tolValue } from "@/geom/core/types";
 
 /**
  * circleCircleIntersection
@@ -63,7 +63,7 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     };
     const A = norm(a);
     const B = norm(b);
-    if (!A || !B) return { kind: "none", points: [] };
+    if (!A || !B) return { kind: INTERSECT_KIND.none, points: [] };
 
     const dx = B.c.x - A.c.x;
     const dy = B.c.y - A.c.y;
@@ -75,7 +75,9 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const scale = A.r + B.r;
     const sameCenter = eqTol(d, 0, scale, defaultTol); // tolerant same-center check
     if (sameCenter) {
-        return A.r === B.r ? { kind: "coincident" } : { kind: "concentric" };
+        return A.r === B.r
+            ? { kind: INTERSECT_KIND.coincident }
+            : { kind: INTERSECT_KIND.concentric };
     }
 
     const rsum = scale;
@@ -84,7 +86,7 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
 
     // Early exit: separate or containment without touching
     if (d > rsum + epsR || d < rdiff - epsR) {
-        return { kind: "none", points: [] };
+        return { kind: INTERSECT_KIND.none, points: [] };
     }
 
     // Compute intersection base using robust algebra
@@ -95,7 +97,7 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
     const h = safeSqrt(h2);
     if (Number.isNaN(h)) {
         // Numerically outside: treat as none
-        return { kind: "none", points: [] };
+        return { kind: INTERSECT_KIND.none, points: [] };
     }
     const ux = dx / d;
     const uy = dy / d;
@@ -106,12 +108,12 @@ export function circleCircleIntersection(a: Circle, b: Circle): IntersectResult 
 
     if (h === 0) {
         const p = makePoint(px, py);
-        return { kind: "tangent", points: [p] };
+        return { kind: INTERSECT_KIND.tangent, points: [p] };
     }
 
     const nh = perp90({ x: ux, y: uy });
     const p1 = makePoint(px + nh.x * h, py + nh.y * h);
     const p2 = makePoint(px - nh.x * h, py - nh.y * h);
     const points = sortPointsAscXY([p1, p2]);
-    return { kind: "two", points };
+    return { kind: INTERSECT_KIND.two, points };
 }
