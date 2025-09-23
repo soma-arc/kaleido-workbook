@@ -1,4 +1,5 @@
 import type { Geodesic } from "@/geom/primitives/geodesic";
+import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
 import type { Viewport } from "./viewport";
 import { worldToScreen } from "./viewport";
 
@@ -12,12 +13,12 @@ export function unitDiskSpec(vp: Viewport): CircleSpec {
 }
 
 export function geodesicSpec(geo: Geodesic, vp: Viewport): CircleSpec | LineSpec {
-    if (geo.kind === "circle") {
+    if (geo.kind === GEODESIC_KIND.circle) {
         const c = worldToScreen(vp, geo.c);
         const r = Math.abs(vp.scale || 1) * geo.r;
         return { cx: c.x, cy: c.y, r };
     }
-    if (geo.kind === "diameter") {
+    if (geo.kind === GEODESIC_KIND.diameter) {
         const a = worldToScreen(vp, { x: -geo.dir.x, y: -geo.dir.y });
         const b = worldToScreen(vp, { x: geo.dir.x, y: geo.dir.y });
         return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };

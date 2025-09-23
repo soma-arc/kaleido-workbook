@@ -1,9 +1,21 @@
 import type { Vec2 } from "@/geom/core/types";
 import { defaultTol, tolValue } from "@/geom/core/types";
 
-export type GeodesicCircle = { kind: "circle"; c: Vec2; r: number };
-export type GeodesicDiameter = { kind: "diameter"; dir: Vec2 };
-export type GeodesicHalfPlane = { kind: "halfPlane"; normal: Vec2; offset: number };
+export const GEODESIC_KIND = {
+    circle: "circle",
+    diameter: "diameter",
+    halfPlane: "halfPlane",
+} as const;
+
+export type GeodesicKind = (typeof GEODESIC_KIND)[keyof typeof GEODESIC_KIND];
+
+export type GeodesicCircle = { kind: typeof GEODESIC_KIND.circle; c: Vec2; r: number };
+export type GeodesicDiameter = { kind: typeof GEODESIC_KIND.diameter; dir: Vec2 };
+export type GeodesicHalfPlane = {
+    kind: typeof GEODESIC_KIND.halfPlane;
+    normal: Vec2;
+    offset: number;
+};
 export type Geodesic = GeodesicCircle | GeodesicDiameter | GeodesicHalfPlane;
 
 function isOpposite(a: Vec2, b: Vec2): boolean {
@@ -55,13 +67,13 @@ export function geodesicFromBoundary(a: Vec2, b: Vec2): Geodesic {
     if (eq) throw new Error("Degenerate boundary pair: identical points");
 
     if (isOpposite(a, b)) {
-        return { kind: "diameter", dir: normalize(a) };
+        return { kind: GEODESIC_KIND.diameter, dir: normalize(a) };
     }
 
     const c = solveCenterFromDot1(a, b);
     // Prefer geometric radius from endpoint to improve stability for nearly coincident endpoints
     const r = Math.hypot(a.x - c.x, a.y - c.y);
-    return { kind: "circle", c, r };
+    return { kind: GEODESIC_KIND.circle, c, r };
 }
 
 /**
@@ -83,28 +95,28 @@ export function geodesicThroughPoints(p: Vec2, q: Vec2): Geodesic {
     const eps = tolValue(1, defaultTol);
 
     // If either is (near) origin, geodesic is the diameter along the other.
-    if (np <= eps && nq <= eps) return { kind: "diameter", dir: { x: 1, y: 0 } };
+    if (np <= eps && nq <= eps) return { kind: GEODESIC_KIND.diameter, dir: { x: 1, y: 0 } };
     if (np <= eps) {
         const s = Math.hypot(q.x, q.y) || 1;
-        return { kind: "diameter", dir: { x: q.x / s, y: q.y / s } };
+        return { kind: GEODESIC_KIND.diameter, dir: { x: q.x / s, y: q.y / s } };
     }
     if (nq <= eps) {
         const s = Math.hypot(p.x, p.y) || 1;
-        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+        return { kind: GEODESIC_KIND.diameter, dir: { x: p.x / s, y: p.y / s } };
     }
 
     // Colinear with origin => diameter
     const cross = p.x * q.y - p.y * q.x;
     if (Math.abs(cross) <= eps) {
         const s = np || 1;
-        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+        return { kind: GEODESIC_KIND.diameter, dir: { x: p.x / s, y: p.y / s } };
     }
 
     // Solve 2 M c = b  => M c = b/2 where M = [[px, py],[qx, qy]]
     const det = p.x * q.y - p.y * q.x;
     if (Math.abs(det) <= eps) {
         const s = np || 1;
-        return { kind: "diameter", dir: { x: p.x / s, y: p.y / s } };
+        return { kind: GEODESIC_KIND.diameter, dir: { x: p.x / s, y: p.y / s } };
     }
     const bp = p.x * p.x + p.y * p.y + 1;
     const bq = q.x * q.x + q.y * q.y + 1;
@@ -116,5 +128,5 @@ export function geodesicThroughPoints(p: Vec2, q: Vec2): Geodesic {
     const cc = cx * cx + cy * cy;
     const r2 = Math.max(0, cc - 1);
     const r = Math.sqrt(r2);
-    return { kind: "circle", c: { x: cx, y: cy }, r };
+    return { kind: GEODESIC_KIND.circle, c: { x: cx, y: cy }, r };
 }

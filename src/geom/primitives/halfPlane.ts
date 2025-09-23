@@ -1,5 +1,6 @@
 import type { Vec2 } from "@/geom/core/types";
 import type { GeodesicHalfPlane } from "@/geom/primitives/geodesic";
+import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
 import type { Transform2D } from "@/geom/transforms/reflect";
 
 export type HalfPlane = {
@@ -44,5 +45,5 @@ export function evaluateHalfPlane(plane: HalfPlane, point: Vec2): number {
 
 export function toGeodesicHalfPlane(plane: HalfPlane): GeodesicHalfPlane {
     const unit = normalizeHalfPlane(plane);
-    return { kind: "halfPlane", normal: unit.normal, offset: unit.offset };
+    return { kind: GEODESIC_KIND.halfPlane, normal: unit.normal, offset: unit.offset };
 }

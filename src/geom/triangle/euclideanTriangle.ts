@@ -1,4 +1,5 @@
 import type { Vec2 } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { EuclideanTrianglePrimitives } from "@/geom/triangle/types";
@@ -42,7 +43,7 @@ export function buildEuclideanTriangle(p: number, q: number, r: number): Euclide
     ];
 
     return {
-        kind: "euclidean",
+        kind: GEOMETRY_KIND.euclidean,
         mirrors,
         vertices: [v0, v1, v2],
         angles: [alpha, beta, gamma],

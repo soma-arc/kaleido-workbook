@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
@@ -68,7 +69,7 @@ export function App(): JSX.Element {
     }, [renderMode]);
 
     const euclideanHalfPlanes = useMemo(() => {
-        if (geometryMode !== "euclidean" || paramError) {
+        if (geometryMode !== GEOMETRY_KIND.euclidean || paramError) {
             return null;
         }
         try {
@@ -80,13 +81,13 @@ export function App(): JSX.Element {
     }, [geometryMode, params, paramError]);
 
     useEffect(() => {
-        if (geometryMode === "hyperbolic") {
-            renderEngineRef.current?.render({ geometry: "hyperbolic", params });
+        if (geometryMode === GEOMETRY_KIND.hyperbolic) {
+            renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.hyperbolic, params });
             return;
         }
         const halfPlanes = euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
         renderEngineRef.current?.render({
-            geometry: "euclidean",
+            geometry: GEOMETRY_KIND.euclidean,
             halfPlanes,
         });
     }, [geometryMode, params, euclideanHalfPlanes]);

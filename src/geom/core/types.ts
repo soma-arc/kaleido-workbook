@@ -33,6 +33,16 @@ export type IntersectResult = {
 };
 
 /**
+ * Geometry mode kind (shared across geom/render/ui)
+ */
+export const GEOMETRY_KIND = {
+    hyperbolic: "hyperbolic",
+    euclidean: "euclidean",
+} as const;
+
+export type GeometryKind = (typeof GEOMETRY_KIND)[keyof typeof GEOMETRY_KIND];
+
+/**
  * Numeric tolerance model for floating comparisons.
  * - abs: absolute tolerance (baseline at ~1e-12)
  * - rel: relative tolerance scaled by a problem-dependent scale (eg. r1+r2)

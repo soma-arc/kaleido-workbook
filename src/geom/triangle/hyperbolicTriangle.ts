@@ -1,6 +1,7 @@
 import type { Vec2 } from "@/geom/core/types";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
-import { geodesicFromBoundary } from "@/geom/primitives/geodesic";
+import { GEODESIC_KIND, geodesicFromBoundary } from "@/geom/primitives/geodesic";
 import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
 
 /**
@@ -156,7 +157,7 @@ export function buildHyperbolicTriangle(
     const g2: Geodesic = geodesicFromBoundary(aDir, { x: -aDir.x, y: -aDir.y });
 
     const third = solveForThirdMirror(alpha, beta, gamma);
-    const g3: Geodesic = { kind: "circle", c: third.c, r: third.r };
+    const g3: Geodesic = { kind: GEODESIC_KIND.circle, c: third.c, r: third.r };
 
     // vertices: v0 = origin (g1∩g2), v1 = g1∩g3 on x‑axis, v2 = g2∩g3 on line alpha
     const v0: Vec2 = { x: 0, y: 0 };
@@ -181,7 +182,7 @@ export function buildHyperbolicTriangle(
     const v2: Vec2 = { x: s * aDir.x, y: s * aDir.y };
 
     return {
-        kind: "hyperbolic",
+        kind: GEOMETRY_KIND.hyperbolic,
         mirrors: [g1, g2, g3],
         vertices: [v0, v1, v2],
         angles: [alpha, beta, gamma],

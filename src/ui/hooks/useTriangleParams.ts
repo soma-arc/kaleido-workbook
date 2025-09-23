@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import {
     normalizeDepth,
     validateEuclideanParams,
@@ -64,7 +65,7 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
     const [paramWarning, setParamWarning] = useState<string | null>(null);
     const [preservePresetDisplay, setPreservePresetDisplay] = useState(false);
     const [geometryMode, setGeometryMode] = useState<GeometryMode>(
-        options.initialGeometryMode ?? "hyperbolic",
+        options.initialGeometryMode ?? GEOMETRY_KIND.hyperbolic,
     );
 
     const rRange = useMemo(() => ({ min: 2, max: triangleNMax }), [triangleNMax]);
@@ -140,7 +141,7 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
             r: Number(formInputs.r),
         };
 
-        const shouldSnap = geometryMode === "hyperbolic" && snapEnabled;
+        const shouldSnap = geometryMode === GEOMETRY_KIND.hyperbolic && snapEnabled;
         const snapped = shouldSnap
             ? snapTriangleParams(parsed, {
                   nMax: triangleNMax,
@@ -163,7 +164,7 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
             }
         }
 
-        if (geometryMode === "hyperbolic") {
+        if (geometryMode === GEOMETRY_KIND.hyperbolic) {
             const validation = validateTriangleParams(snapped, {
                 requireIntegers: snapEnabled,
             });
@@ -206,7 +207,7 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
     }, [formInputs, snapEnabled, anchor, triangleNMax, preservePresetDisplay, geometryMode]);
 
     useEffect(() => {
-        if (geometryMode === "euclidean") {
+        if (geometryMode === GEOMETRY_KIND.euclidean) {
             const sum =
                 1 / Number(formInputs.p || "1") +
                 1 / Number(formInputs.q || "1") +

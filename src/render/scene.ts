@@ -1,3 +1,4 @@
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -21,13 +22,13 @@ export type GeodesicPrimitive =
     | (GeodesicPrimitiveBase & { kind: "line"; line: LineSpec });
 
 export type HyperbolicScene = {
-    geometry: "hyperbolic";
+    geometry: typeof GEOMETRY_KIND.hyperbolic;
     disk: CircleSpec;
     geodesics: GeodesicPrimitive[];
 };
 
 export type EuclideanScene = {
-    geometry: "euclidean";
+    geometry: typeof GEOMETRY_KIND.euclidean;
     halfPlanes: HalfPlane[];
 };
 
@@ -54,12 +55,15 @@ function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicP
 export function buildHyperbolicScene(params: TilingParams, vp: Viewport): HyperbolicScene {
     const { faces } = buildTiling(params);
     return {
-        geometry: "hyperbolic",
+        geometry: GEOMETRY_KIND.hyperbolic,
         disk: unitDiskSpec(vp),
         geodesics: buildGeodesicPrimitives(faces, vp),
     };
 }
 
 export function buildEuclideanScene(planes: HalfPlane[], _vp: Viewport): EuclideanScene {
-    return { geometry: "euclidean", halfPlanes: planes.map((plane) => normalizeHalfPlane(plane)) };
+    return {
+        geometry: GEOMETRY_KIND.euclidean,
+        halfPlanes: planes.map((plane) => normalizeHalfPlane(plane)),
+    };
 }

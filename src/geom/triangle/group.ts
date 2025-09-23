@@ -1,4 +1,4 @@
-import type { Vec2 } from "@/geom/core/types";
+import type { GeometryKind, Vec2 } from "@/geom/core/types";
 import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
 import { reflectAcrossGeodesic, type Transform2D } from "@/geom/transforms/reflect";
 import type {
@@ -46,7 +46,7 @@ function applyTransform<M>(
     return [R(verts[0]), R(verts[1]), R(verts[2])];
 }
 
-export function expandTriangleGroup<M, K extends "hyperbolic" | "euclidean">(
+export function expandTriangleGroup<M, K extends GeometryKind>(
     base: TrianglePrimitiveSet<M, K>,
     depth: number,
     reflector: (mirror: M) => Transform2D,

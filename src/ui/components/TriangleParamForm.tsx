@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { PqrKey } from "@/geom/triangle/snap";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import type { GeometryMode } from "../hooks/useTriangleParams";
@@ -71,7 +72,7 @@ export function TriangleParamForm({
             </label>
             <p style={{ margin: 0, color: paramError ? "#c0392b" : "#555" }}>
                 {paramError ??
-                    (geometryMode === "euclidean"
+                    (geometryMode === GEOMETRY_KIND.euclidean
                         ? "Constraint: 1/p + 1/q + 1/r = 1"
                         : "Constraint: 1/p + 1/q + 1/r < 1")}
             </p>
