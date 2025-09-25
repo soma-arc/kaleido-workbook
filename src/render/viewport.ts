@@ -17,7 +17,7 @@ export function screenToWorld(vp: Viewport, s: { x: number; y: number }): { x: n
     const sc = Number.isFinite(vp.scale) && vp.scale !== 0 ? vp.scale : 1;
     const tx = Number.isFinite(vp.tx) ? vp.tx : 0;
     const ty = Number.isFinite(vp.ty) ? vp.ty : 0;
-    return { x: (s.x - tx) / sc, y: (s.y - ty) / sc };
+    return { x: (s.x - tx) / sc, y: (ty - s.y) / sc };
 }
 
 /** Compose transforms: apply a then b (world -> a -> b). */

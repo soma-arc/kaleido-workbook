@@ -3,6 +3,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
+import { screenToWorld } from "@/render/viewport";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
 import type { Viewport } from "../render/viewport";
 import { DepthControls } from "./components/DepthControls";
@@ -108,10 +109,13 @@ export function App(): JSX.Element {
         return { scale, tx: width / 2, ty: height / 2 };
     };
 
-    const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => ({
-        x: e.clientX,
-        y: e.clientY,
-    });
+    const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        };
+    };
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (geometryMode !== GEOMETRY_KIND.euclidean) return;
@@ -129,7 +133,23 @@ export function App(): JSX.Element {
         } catch {
             // ignore
         }
-        setDrag({ index: idx, startOffset: unit.offset, startScreen: screen, normal: unit.normal });
+        const p0 = screenToWorld(viewport, screen);
+        const snappedStartOffset = -(unit.normal.x * p0.x + unit.normal.y * p0.y);
+        const planesNow = (editableHalfPlanes ?? base).map((p) => normalizeHalfPlane(p));
+        const updatedNow = planesNow.map((p, i) =>
+            i === idx ? { normal: p.normal, offset: snappedStartOffset } : p,
+        );
+        setEditableHalfPlanes(updatedNow);
+        renderEngineRef.current?.render({
+            geometry: GEOMETRY_KIND.euclidean,
+            halfPlanes: updatedNow,
+        });
+        setDrag({
+            index: idx,
+            startOffset: snappedStartOffset,
+            startScreen: screen,
+            normal: unit.normal,
+        });
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
