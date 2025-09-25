@@ -14,10 +14,6 @@
 ## TDD ルール
 - Red → Green → Refactor を徹底。
 - 受け入れテストはロック。AI/エージェントは変更しない。
-- 最初の対象: circle×circle
-  - API: `circleCircleIntersection(a: Circle, b: Circle): IntersectResult`
-  - 返却: `kind in {'none','tangent','two','concentric','coincident'}` と `points?`
-  - 2点は x→y の昇順（安定ソート）
 - プロパティテスト: fast-check（@fast-check/vitest）
   - 性質: 両円を満たす、回転/並進/一様スケール不変、入力順対称
   - 既定: `seed=424242`, `numRuns=200`（`vitest.setup.ts`。環境変数で上書き可）
@@ -34,9 +30,10 @@
 - PR が対象 Issue を `Closes #<number>` で関連付け、GitHub Project 上の該当アイテムが `Done` に遷移
 
 ## コミット/PR ポリシー（最小）
-- 1 タスク = 1 コミット（束ねない）
+- １作業単位で細かくコミットする
 - pre-commit: `pnpm lint` / `pnpm format` / `pnpm test` を実行し失敗時ブロック
 - pre-push: 少なくとも `pnpm test`（または `pnpm test:sandbox`）
+- commit message: Conventional Commits (英語)
 - CI: typecheck / biome(lint/format-check) / test(coverage v8)
 
 ## 参照
@@ -48,14 +45,15 @@
 メタ: Serena メモリを最新ルールに同期（2025-09-07）。
 
 
-リポ内の次のSSOTを読んで遵守してください:
+タスクに応じてリポ内の次のSSOTを読んで遵守してください:
 ops/ai/prompts/v1/implement_issue.md # 実装フローの契約
 ops/ai/playbooks/v1/dev_flow.md # Storybook用スタイル/DoD/テスト規約
+
 実行:
 ISSUE_NUMBERを基準に、依存が無いことを確認 → ブランチ {BRANCH_PREFIX}/{ISSUE_NUMBER}-{slug} を作成
 storybook.md の規約に従ってコンポーネントのCSF3 stories/Controls/Docs/アクセシビリティ/Playテストを整備
 小さくコミット（Conventional Commits、末尾に Refs #<id>）、lint/typecheck/test緑化
-PR作成（テンプレを埋め、本文先頭に Closes #<id>）。レビュー依頼も行う
+PULL_REQUEST_TEMPLATEにしたがってPR作成（テンプレを埋め、本文先頭に Closes #<id>）。
 残件があれば新Issue提案（Epic/Parentに紐付け）
 出力:
 使ったSSOTのパスとバージョン（先頭行のv表記）を明記
