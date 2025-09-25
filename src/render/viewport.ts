@@ -10,7 +10,7 @@ export function worldToScreen(vp: Viewport, p: { x: number; y: number }): { x: n
     const s = Math.max(0, Number.isFinite(vp.scale) ? vp.scale : 1);
     const tx = Number.isFinite(vp.tx) ? vp.tx : 0;
     const ty = Number.isFinite(vp.ty) ? vp.ty : 0;
-    return { x: p.x * s + tx, y: p.y * s + ty };
+    return { x: p.x * s + tx, y: ty - p.y * s };
 }
 
 export function screenToWorld(vp: Viewport, s: { x: number; y: number }): { x: number; y: number } {
@@ -38,6 +38,6 @@ export function invert(vp: Viewport): Viewport {
     return {
         scale: invS,
         tx: -vp.tx * invS,
-        ty: -vp.ty * invS,
+        ty: vp.ty * invS,
     };
 }
