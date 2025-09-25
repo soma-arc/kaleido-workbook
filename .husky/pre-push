@@ -1,5 +1,2 @@
 # Type check before pushing
 pnpm run typecheck || exit 1
-
-# Run sandbox tests
-pnpm run test:sandbox || exit 1

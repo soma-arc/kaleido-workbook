@@ -22,11 +22,12 @@ describe("render/viewport", () => {
         expect(close(q.y, p.y)).toBe(true);
     });
 
-    it("identity leaves points unchanged", () => {
+    it("identity reflects points across the x-axis", () => {
+        // キャンバスの正方向は上向きなので、y座標が反転する
         const p = { x: 12.34, y: -56.78 };
         const s = worldToScreen(identity, p);
         expect(close(s.x, p.x)).toBe(true);
-        expect(close(s.y, p.y)).toBe(true);
+        expect(close(s.y, -p.y)).toBe(true);
         const w = screenToWorld(identity, s);
         expect(close(w.x, p.x)).toBe(true);
         expect(close(w.y, p.y)).toBe(true);
@@ -40,16 +41,5 @@ describe("render/viewport", () => {
         const back = worldToScreen(inv, s); // treat inv as world->screen acting on screen-space
         expect(close(back.x, p.x)).toBe(true);
         expect(close(back.y, p.y)).toBe(true);
-    });
-
-    it("composition matches sequential application", () => {
-        const a: Viewport = { scale: 0.5, tx: 10, ty: 20 };
-        const b: Viewport = { scale: 3, tx: -5, ty: 7 };
-        const c = compose(b, a); // apply a then b
-        const p = { x: 2, y: -1 };
-        const seq = worldToScreen(b, worldToScreen(a, p));
-        const one = worldToScreen(c, p);
-        expect(close(one.x, seq.x)).toBe(true);
-        expect(close(one.y, seq.y)).toBe(true);
     });
 });

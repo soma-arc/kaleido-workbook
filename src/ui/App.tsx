@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
+import { screenToWorld } from "@/render/viewport";
 import { createRenderEngine, detectRenderMode, type RenderEngine } from "../render/engine";
+import type { Viewport } from "../render/viewport";
 import { DepthControls } from "./components/DepthControls";
 import { ModeControls } from "./components/ModeControls";
 import { PresetSelector } from "./components/PresetSelector";
@@ -10,6 +13,7 @@ import { SnapControls } from "./components/SnapControls";
 import { StageCanvas } from "./components/StageCanvas";
 import { TriangleParamForm } from "./components/TriangleParamForm";
 import { useTriangleParams } from "./hooks/useTriangleParams";
+import { nextOffsetOnDrag, pickHalfPlaneIndex } from "./interactions/euclideanHalfPlaneDrag";
 import { getPresetsForGeometry, type TrianglePreset } from "./trianglePresets";
 
 const TRIANGLE_N_MAX = 100;
@@ -26,6 +30,13 @@ export function App(): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const renderEngineRef = useRef<RenderEngine | null>(null);
     const [renderMode] = useState(() => detectRenderMode());
+    const [editableHalfPlanes, setEditableHalfPlanes] = useState<HalfPlane[] | null>(null);
+    const [drag, setDrag] = useState<null | {
+        index: number;
+        startOffset: number;
+        startScreen: { x: number; y: number };
+        normal: { x: number; y: number };
+    }>(null);
 
     const {
         params,
@@ -80,17 +91,107 @@ export function App(): JSX.Element {
         }
     }, [geometryMode, params, paramError]);
 
+    const editingKey = `${geometryMode}:${params.p}:${params.q}:${params.r}`;
+    // Reset editing state when parameters or mode change
+    useEffect(() => {
+        void editingKey; // mark dependency usage for linter
+        setEditableHalfPlanes(null);
+        setDrag(null);
+    }, [editingKey]);
+
+    const computeViewport = (canvas: HTMLCanvasElement): Viewport => {
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || canvas.width || 1;
+        const height = rect.height || canvas.height || 1;
+        const size = Math.min(width, height);
+        const margin = 8;
+        const scale = Math.max(1, size / 2 - margin);
+        return { scale, tx: width / 2, ty: height / 2 };
+    };
+
+    const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        };
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (geometryMode !== GEOMETRY_KIND.euclidean) return;
+        const canvas = e.currentTarget;
+        const viewport = computeViewport(canvas);
+        const base = editableHalfPlanes ?? euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        if (!base || base.length === 0) return;
+        const screen = getPointer(e);
+        const idx = pickHalfPlaneIndex(base, viewport, screen, 8);
+        if (idx < 0) return;
+        const unit = normalizeHalfPlane(base[idx]);
+        if (!editableHalfPlanes) setEditableHalfPlanes(base.map((p) => normalizeHalfPlane(p)));
+        try {
+            canvas.setPointerCapture(e.pointerId);
+        } catch {
+            // ignore
+        }
+        const p0 = screenToWorld(viewport, screen);
+        const snappedStartOffset = -(unit.normal.x * p0.x + unit.normal.y * p0.y);
+        const planesNow = (editableHalfPlanes ?? base).map((p) => normalizeHalfPlane(p));
+        const updatedNow = planesNow.map((p, i) =>
+            i === idx ? { normal: p.normal, offset: snappedStartOffset } : p,
+        );
+        setEditableHalfPlanes(updatedNow);
+        renderEngineRef.current?.render({
+            geometry: GEOMETRY_KIND.euclidean,
+            halfPlanes: updatedNow,
+        });
+        setDrag({
+            index: idx,
+            startOffset: snappedStartOffset,
+            startScreen: screen,
+            normal: unit.normal,
+        });
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (!drag || geometryMode !== GEOMETRY_KIND.euclidean) return;
+        const canvas = e.currentTarget;
+        const viewport = computeViewport(canvas);
+        const planes = (editableHalfPlanes ?? euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES).map(
+            (p) => normalizeHalfPlane(p),
+        );
+        const cur = getPointer(e);
+        const next = nextOffsetOnDrag(
+            drag.normal,
+            drag.startOffset,
+            viewport,
+            drag.startScreen,
+            cur,
+        );
+        const idx = drag.index;
+        const updated = planes.map((p, i) => (i === idx ? { normal: p.normal, offset: next } : p));
+        setEditableHalfPlanes(updated);
+        renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.euclidean, halfPlanes: updated });
+    };
+
+    const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (drag) {
+            try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {
+                // ignore
+            }
+        }
+        setDrag(null);
+    };
+
     useEffect(() => {
         if (geometryMode === GEOMETRY_KIND.hyperbolic) {
             renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.hyperbolic, params });
             return;
         }
-        const halfPlanes = euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
-        renderEngineRef.current?.render({
-            geometry: GEOMETRY_KIND.euclidean,
-            halfPlanes,
-        });
-    }, [geometryMode, params, euclideanHalfPlanes]);
+        const halfPlanes = editableHalfPlanes ?? euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.euclidean, halfPlanes });
+    }, [geometryMode, params, euclideanHalfPlanes, editableHalfPlanes]);
 
     return (
         <div
@@ -138,7 +239,15 @@ export function App(): JSX.Element {
                 />
             </div>
             <div style={{ display: "grid", placeItems: "center" }}>
-                <StageCanvas ref={canvasRef} width={800} height={600} />
+                <StageCanvas
+                    ref={canvasRef}
+                    width={800}
+                    height={600}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUpOrCancel}
+                    onPointerCancel={handlePointerUpOrCancel}
+                />
             </div>
         </div>
     );

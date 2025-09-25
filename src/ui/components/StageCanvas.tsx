@@ -4,10 +4,14 @@ export type StageCanvasProps = {
     width: number;
     height: number;
     id?: string;
+    onPointerDown?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+    onPointerMove?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+    onPointerUp?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+    onPointerCancel?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
 };
 
 export const StageCanvas = forwardRef<HTMLCanvasElement, StageCanvasProps>(function StageCanvas(
-    { width, height, id = "stage" },
+    { width, height, id = "stage", onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
     ref,
 ) {
     return (
@@ -16,6 +20,10 @@ export const StageCanvas = forwardRef<HTMLCanvasElement, StageCanvasProps>(funct
             ref={ref}
             width={width}
             height={height}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
             style={{ border: "1px solid #ccc" }}
         />
     );
