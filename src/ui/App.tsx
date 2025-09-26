@@ -328,7 +328,7 @@ export function App(): JSX.Element {
                 return updatedPlanes;
             });
             if (!updatedPlanes) return;
-            const resolvedPlanes = updatedPlanes;
+            const resolvedPlanes: HalfPlane[] = updatedPlanes;
             let nextPointsForRender: HalfPlaneControlPoints[] | null = currentControlPoints;
             if (showHandles) {
                 setHandleControls((prev) => {

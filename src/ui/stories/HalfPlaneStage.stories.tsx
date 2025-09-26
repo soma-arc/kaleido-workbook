@@ -171,8 +171,9 @@ function HalfPlaneStageDemo(): JSX.Element {
             return { spacing: prev.spacing, points: updatedPoints };
         });
         if (!nextPoints) return;
+        const confirmedPoints = nextPoints;
         const nextPlanes = halfPlanes.map((plane, idx) =>
-            idx === drag.planeIndex ? deriveHalfPlaneFromPoints(nextPoints[idx]) : plane,
+            idx === drag.planeIndex ? deriveHalfPlaneFromPoints(confirmedPoints[idx]) : plane,
         );
         setHalfPlanes(nextPlanes);
         renderScene(nextPlanes, nextPoints, {
