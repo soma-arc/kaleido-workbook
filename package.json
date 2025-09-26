@@ -8,7 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "typecheck": "tsc -p tsconfig.json",
-        "lint": "biome check .",
+        "lint": "biome check . && pnpm typecheck",
         "format": "biome check --write src tests ops docs ./*.md ./*.json",
         "test": "vitest --run --pool=threads --poolOptions.threads.singleThread --no-file-parallelism",
         "test:watch": "vitest",
