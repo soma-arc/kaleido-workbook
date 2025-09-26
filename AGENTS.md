@@ -32,7 +32,7 @@
 ## コミット/PR ポリシー（最小）
 - １作業単位で細かくコミットする
 - pre-commit: `pnpm lint` / `pnpm format` / `pnpm test` を実行し失敗時ブロック
-- pre-push: 少なくとも `pnpm test`（または `pnpm test:sandbox`）
+- pre-push: 少なくとも `pnpm test`
 - commit message: Conventional Commits (英語)
 - CI: typecheck / biome(lint/format-check) / test(coverage v8)
 
