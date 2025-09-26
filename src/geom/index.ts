@@ -4,6 +4,7 @@ export * from "@/geom/core/types";
 export * from "@/geom/primitives/circle";
 export * from "@/geom/primitives/geodesic";
 export * from "@/geom/primitives/halfPlane";
+export * from "@/geom/primitives/halfPlaneControls";
 export * from "@/geom/primitives/snap";
 export * from "@/geom/primitives/unitDisk";
 
