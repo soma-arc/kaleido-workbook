@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import {
+    type ControlPointAssignment,
+    controlPointTableFromControls,
+    type HalfPlaneControlPoints,
+    resetControlPointIdCounter,
+} from "@/geom/primitives/halfPlaneControls";
 import { worldToScreen } from "@/render/viewport";
 import {
     controlPointsFromHalfPlanes,
@@ -13,6 +18,7 @@ const vp = { scale: 100, tx: 0, ty: 0 } as const;
 
 describe("halfPlaneControlPoints interactions", () => {
     it("round-trips planes via control points", () => {
+        resetControlPointIdCounter();
         const planes: HalfPlane[] = [
             { normal: { x: 1, y: 0 }, offset: 0 },
             { normal: { x: 0, y: 1 }, offset: -0.5 },
@@ -27,6 +33,7 @@ describe("halfPlaneControlPoints interactions", () => {
     });
 
     it("hitTestControlPoints finds nearest control point within tolerance", () => {
+        resetControlPointIdCounter();
         const plane: HalfPlane = { normal: { x: 1, y: 0 }, offset: 0 };
         const [points] = controlPointsFromHalfPlanes([plane], 0.5);
         const screenPoints = points.map((p) => worldToScreen(vp, p));
@@ -36,20 +43,55 @@ describe("halfPlaneControlPoints interactions", () => {
         expect(miss).toBeNull();
     });
 
-    it("updateControlPoint replaces the targeted control point only", () => {
+    it("updateControlPoint updates all shared references to the same id", () => {
+        resetControlPointIdCounter();
         const controls: HalfPlaneControlPoints[] = [
             [
-                { x: 0, y: 0 },
-                { x: 0, y: 1 },
+                { id: "a", x: 0, y: 0, fixed: false },
+                { id: "b", x: 0, y: 1, fixed: false },
             ],
             [
-                { x: 1, y: 0 },
-                { x: 1, y: 1 },
+                { id: "a", x: 0, y: 0, fixed: false },
+                { id: "c", x: 1, y: 1, fixed: false },
             ],
         ];
-        const updated = updateControlPoint(controls, 1, 0, { x: 2, y: 2 });
-        expect(updated[1][0]).toEqual({ x: 2, y: 2 });
-        expect(updated[0]).toEqual(controls[0]);
-        expect(updated[1][1]).toEqual(controls[1][1]);
+        const updated = updateControlPoint(controls, 0, 0, { x: 2, y: 2 });
+        expect(updated[0][0]).toEqual({ id: "a", x: 2, y: 2, fixed: false });
+        expect(updated[1][0]).toEqual({ id: "a", x: 2, y: 2, fixed: false });
+        expect(updated[0][1]).toBe(controls[0][1]);
+        expect(updated[1][1]).toBe(controls[1][1]);
+    });
+
+    it("updateControlPoint respects fixed control points", () => {
+        resetControlPointIdCounter();
+        const controls: HalfPlaneControlPoints[] = [
+            [
+                { id: "hinge", x: 0, y: 0, fixed: true },
+                { id: "b", x: 0, y: 1, fixed: false },
+            ],
+        ];
+        const updated = updateControlPoint(controls, 0, 0, { x: 5, y: 5 });
+        expect(updated).toBe(controls);
+    });
+
+    it("controlPointsFromHalfPlanes applies assignments for shared ids", () => {
+        resetControlPointIdCounter();
+        const planes: HalfPlane[] = [
+            { normal: { x: 1, y: 0 }, offset: 0 },
+            { normal: { x: 0, y: 1 }, offset: 0 },
+        ];
+        const assignments: ControlPointAssignment[] = [
+            { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
+            { planeIndex: 1, pointIndex: 0, id: "hinge", fixed: true },
+        ];
+        const controls = controlPointsFromHalfPlanes(planes, 0.6, assignments);
+        expect(controls[0][0].id).toBe("hinge");
+        expect(controls[1][0].id).toBe("hinge");
+        expect(controls[0][0].fixed).toBe(true);
+        expect(controls[1][0].fixed).toBe(true);
+
+        const table = controlPointTableFromControls(controls);
+        expect(Object.keys(table)).toContain("hinge");
+        expect(table.hinge.fixed).toBe(true);
     });
 });
