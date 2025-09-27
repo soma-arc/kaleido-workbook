@@ -110,6 +110,18 @@ export function TriangleSceneHost({
         }
     }, [geometryMode, scene.geometry, setGeometryMode]);
 
+    useEffect(() => {
+        if (!scene.supportsHandles) {
+            setShowHandles(false);
+            return;
+        }
+        if (scene.controlAssignments?.some((assignment) => assignment.fixed)) {
+            setShowHandles(true);
+        }
+    }, [scene.supportsHandles, scene.controlAssignments]);
+
+    const controlAssignments = scene.controlAssignments;
+
     const presets = useMemo<readonly TrianglePreset[]>(
         () => getPresetsForGeometry(scene.geometry),
         [scene.geometry],
@@ -126,8 +138,17 @@ export function TriangleSceneHost({
         };
     }, [renderMode]);
 
-    const euclideanHalfPlanes = useMemo(() => {
-        if (scene.geometry !== GEOMETRY_KIND.euclidean || paramError) {
+    const baseHalfPlanes = useMemo(() => {
+        if (scene.geometry !== GEOMETRY_KIND.euclidean) {
+            return null;
+        }
+        if (scene.initialHalfPlanes) {
+            return scene.initialHalfPlanes.map((plane) => ({
+                normal: { ...plane.normal },
+                offset: plane.offset,
+            }));
+        }
+        if (paramError) {
             return null;
         }
         try {
@@ -136,16 +157,16 @@ export function TriangleSceneHost({
         } catch {
             return null;
         }
-    }, [scene.geometry, params, paramError]);
+    }, [scene.geometry, scene.initialHalfPlanes, params, paramError]);
 
     const normalizedHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
             return null;
         }
-        const base = editableHalfPlanes ?? euclideanHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        const base = editableHalfPlanes ?? baseHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
         if (!base) return null;
         return base.map((plane) => normalizeHalfPlane(plane));
-    }, [scene.geometry, editableHalfPlanes, euclideanHalfPlanes]);
+    }, [scene.geometry, editableHalfPlanes, baseHalfPlanes]);
 
     const editingKey = `${scene.id}:${params.p}:${params.q}:${params.r}`;
     useEffect(() => {
@@ -182,12 +203,22 @@ export function TriangleSceneHost({
             ) {
                 return {
                     spacing: handleSpacing,
-                    points: controlPointsFromHalfPlanes(normalizedHalfPlanes, handleSpacing),
+                    points: controlPointsFromHalfPlanes(
+                        normalizedHalfPlanes,
+                        handleSpacing,
+                        controlAssignments,
+                    ),
                 };
             }
             return prev;
         });
-    }, [scene.supportsHandles, showHandles, handleSpacing, normalizedHalfPlanes]);
+    }, [
+        scene.supportsHandles,
+        showHandles,
+        handleSpacing,
+        normalizedHalfPlanes,
+        controlAssignments,
+    ]);
 
     const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -198,6 +229,7 @@ export function TriangleSceneHost({
     };
 
     const currentControlPoints = handleControls?.points ?? null;
+    const allowPlaneDrag = scene.allowPlaneDrag !== false;
     const activeHandle =
         drag?.type === "handle"
             ? { planeIndex: drag.planeIndex, pointIndex: drag.pointIndex }
@@ -280,6 +312,10 @@ export function TriangleSceneHost({
             }
         }
 
+        if (!allowPlaneDrag) {
+            return;
+        }
+
         const idx = pickHalfPlaneIndex(normalizedHalfPlanes, viewport, screen, 8);
         if (idx < 0) return;
         const unit = normalizedHalfPlanes[idx];
@@ -299,7 +335,11 @@ export function TriangleSceneHost({
                 if (!prev || prev.points.length !== updatedPlanes.length) {
                     return {
                         spacing: handleSpacing,
-                        points: controlPointsFromHalfPlanes(updatedPlanes, handleSpacing),
+                        points: controlPointsFromHalfPlanes(
+                            updatedPlanes,
+                            handleSpacing,
+                            controlAssignments,
+                        ),
                     };
                 }
                 const nextPoints = prev.points.map((points, planeIndex) =>
@@ -351,7 +391,11 @@ export function TriangleSceneHost({
             if (scene.supportsHandles && showHandles) {
                 setHandleControls((prev) => {
                     if (!prev || prev.points.length !== resolvedPlanes.length) {
-                        const points = controlPointsFromHalfPlanes(resolvedPlanes, handleSpacing);
+                        const points = controlPointsFromHalfPlanes(
+                            resolvedPlanes,
+                            handleSpacing,
+                            controlAssignments,
+                        );
                         nextPointsForRender = points;
                         return { spacing: handleSpacing, points };
                     }
@@ -492,7 +536,12 @@ export function TriangleSceneHost({
                     onDepthChange={updateDepth}
                 />
             </div>
-            <div style={{ display: "grid", placeItems: "center" }}>
+            <div style={{ display: "grid", placeItems: "center", position: "relative" }}>
+                {handleControls && scene.supportsHandles ? (
+                    <span data-testid="handle-coordinates" style={{ display: "none" }}>
+                        {JSON.stringify(handleControls.points)}
+                    </span>
+                ) : null}
                 <StageCanvas
                     ref={canvasRef}
                     width={800}
