@@ -1,33 +1,30 @@
-import type { GeometryKind } from "@/geom/core/types";
-import { GEOMETRY_KIND } from "@/geom/core/types";
-import type { GeometryMode } from "../hooks/useTriangleParams";
+import type { SceneDefinition, SceneId } from "@/ui/scenes";
 
 export type ModeControlsProps = {
-    geometryMode: GeometryMode;
-    onGeometryChange: (mode: GeometryMode) => void;
+    scenes: SceneDefinition[];
+    activeSceneId: SceneId;
+    onSceneChange: (sceneId: SceneId) => void;
     renderBackend: string;
 };
 
-const MODES: GeometryMode[] = [GEOMETRY_KIND.hyperbolic, GEOMETRY_KIND.euclidean];
-
-const LABELS: Record<GeometryKind, string> = {
-    [GEOMETRY_KIND.hyperbolic]: "Hyperbolic",
-    [GEOMETRY_KIND.euclidean]: "Euclidean",
-};
-
-export function ModeControls({ geometryMode, onGeometryChange, renderBackend }: ModeControlsProps) {
+export function ModeControls({
+    scenes,
+    activeSceneId,
+    onSceneChange,
+    renderBackend,
+}: ModeControlsProps) {
     return (
         <div style={{ display: "grid", gap: "8px" }}>
             <div style={{ display: "grid", gap: "4px" }}>
-                <span style={{ fontWeight: 600 }}>Geometry Mode</span>
+                <span style={{ fontWeight: 600 }}>Scene</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {MODES.map((mode) => {
-                        const active = mode === geometryMode;
+                    {scenes.map((scene) => {
+                        const active = scene.id === activeSceneId;
                         return (
                             <button
-                                key={mode}
+                                key={scene.id}
                                 type="button"
-                                onClick={() => onGeometryChange(mode)}
+                                onClick={() => onSceneChange(scene.id)}
                                 style={{
                                     padding: "4px 8px",
                                     border: active ? "1px solid #4a90e2" : "1px solid #bbb",
@@ -35,7 +32,7 @@ export function ModeControls({ geometryMode, onGeometryChange, renderBackend }: 
                                     cursor: "pointer",
                                 }}
                             >
-                                {LABELS[mode]}
+                                {scene.label}
                             </button>
                         );
                     })}

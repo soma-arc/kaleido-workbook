@@ -1,7 +1,9 @@
 import { act, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { PqrKey } from "@/geom/triangle/snap";
+import type { SceneDefinition, SceneId } from "@/ui/scenes";
 import { DepthControls } from "../../../src/ui/components/DepthControls";
 import { ModeControls } from "../../../src/ui/components/ModeControls";
 import { PresetSelector } from "../../../src/ui/components/PresetSelector";
@@ -69,15 +71,34 @@ describe("UI components", () => {
         });
     });
 
-    it("allows switching geometry modes", () => {
+    it("allows switching scenes", () => {
         const onChange = vi.fn();
+        const scenes: SceneDefinition[] = [
+            {
+                id: "triangle:hyperbolic",
+                label: "Hyperbolic",
+                category: "triangle",
+                geometry: GEOMETRY_KIND.hyperbolic,
+                supportsHandles: false,
+                editable: false,
+            },
+            {
+                id: "triangle:euclidean",
+                label: "Euclidean",
+                category: "triangle",
+                geometry: GEOMETRY_KIND.euclidean,
+                supportsHandles: true,
+                editable: true,
+            },
+        ];
         const container = document.createElement("div");
         const root = createRoot(container);
         act(() => {
             root.render(
                 <ModeControls
-                    geometryMode="hyperbolic"
-                    onGeometryChange={onChange}
+                    scenes={scenes}
+                    activeSceneId={"triangle:hyperbolic" satisfies SceneId}
+                    onSceneChange={onChange}
                     renderBackend="hybrid"
                 />,
             );
@@ -87,7 +108,7 @@ describe("UI components", () => {
         act(() => {
             buttons[1]?.click();
         });
-        expect(onChange).toHaveBeenCalledWith("euclidean");
+        expect(onChange).toHaveBeenCalledWith("triangle:euclidean");
         act(() => {
             root.unmount();
         });
