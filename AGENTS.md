@@ -36,6 +36,9 @@
 - commit message: Conventional Commits (英語)
 - CI: typecheck / biome(lint/format-check) / test(coverage v8)
 
+## コーディング規約
+- 主要な公開 API（関数・クラス・型エイリアスなど）には TSDoc を付与すること
+
 ## 参照
 - docs/ROADMAP.md（Now/Next/Later の方向性）
 - README.md（クイックスタート/コマンド）
