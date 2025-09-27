@@ -23,6 +23,9 @@ export type HalfPlaneHandleOverlay = {
     radius?: number;
     fillStyle?: string;
     strokeStyle?: string;
+    fixedFillStyle?: string;
+    fixedStrokeStyle?: string;
+    fixedSize?: number;
 };
 
 export type CanvasTileRenderOptions = CanvasTileStyle & {
@@ -104,21 +107,30 @@ function drawHalfPlaneHandles(
     const radius = overlay.radius ?? 6;
     const fillStyle = overlay.fillStyle ?? "rgba(255, 165, 0, 0.85)";
     const strokeStyle = overlay.strokeStyle ?? "#222";
+    const fixedFillStyle = overlay.fixedFillStyle ?? "#4caf50";
+    const fixedStrokeStyle = overlay.fixedStrokeStyle ?? "#1b5e20";
+    const fixedSize = overlay.fixedSize ?? radius * 2;
     const active = overlay.active;
     ctx.save();
     for (const handle of overlay.handles) {
         handle.points.forEach((point, pointIndex) => {
             const projected = worldToScreen(viewport, point);
+            const isActive =
+                Boolean(active) &&
+                active?.planeIndex === handle.planeIndex &&
+                active?.pointIndex === pointIndex;
+            if (point.fixed) {
+                const half = fixedSize / 2;
+                ctx.fillStyle = isActive ? "#ff5722" : fixedFillStyle;
+                ctx.fillRect(projected.x - half, projected.y - half, fixedSize, fixedSize);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = isActive ? "#ff5722" : fixedStrokeStyle;
+                ctx.strokeRect(projected.x - half, projected.y - half, fixedSize, fixedSize);
+                return;
+            }
             ctx.beginPath();
             ctx.arc(projected.x, projected.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = fillStyle;
-            if (
-                active &&
-                active.planeIndex === handle.planeIndex &&
-                active.pointIndex === pointIndex
-            ) {
-                ctx.fillStyle = "#ff5722";
-            }
+            ctx.fillStyle = isActive ? "#ff5722" : fillStyle;
             ctx.fill();
             ctx.lineWidth = 1;
             ctx.strokeStyle = strokeStyle;
