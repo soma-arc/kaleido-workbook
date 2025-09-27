@@ -48,6 +48,7 @@ type HandleDragState = {
     pointerId: number;
     planeIndex: number;
     pointIndex: 0 | 1;
+    controlPointId: string | null;
 };
 
 type DragState = PlaneDragState | HandleDragState;
@@ -255,6 +256,25 @@ export function TriangleSceneHost({
             ? { planeIndex: drag.planeIndex, pointIndex: drag.pointIndex }
             : null;
 
+    const recomputePlanesFromControls = useCallback(
+        (
+            sourcePlanes: HalfPlane[],
+            points: HalfPlaneControlPoints[],
+            controlPointId: string | null,
+            primaryIndex: number,
+        ): HalfPlane[] => {
+            return sourcePlanes.map((plane, idx) => {
+                const pair = points[idx];
+                if (!pair) return plane;
+                const shouldUpdate = controlPointId
+                    ? pair.some((point) => point.id === controlPointId)
+                    : idx === primaryIndex;
+                return shouldUpdate ? deriveHalfPlaneFromPoints(pair) : plane;
+            });
+        },
+        [],
+    );
+
     const renderEuclideanScene = useCallback(
         (
             planes: HalfPlane[],
@@ -310,14 +330,19 @@ export function TriangleSceneHost({
                     // ignore
                 }
                 const worldPoint = screenToWorld(viewport, screen);
+                const draggedControlPointId =
+                    currentControlPoints[hit.planeIndex]?.[hit.pointIndex]?.id ?? null;
                 const nextPoints = updateControlPoint(
                     currentControlPoints,
                     hit.planeIndex,
                     hit.pointIndex,
                     worldPoint,
                 );
-                const nextPlanes = normalizedHalfPlanes.map((plane, idx) =>
-                    idx === hit.planeIndex ? deriveHalfPlaneFromPoints(nextPoints[idx]) : plane,
+                const nextPlanes = recomputePlanesFromControls(
+                    normalizedHalfPlanes,
+                    nextPoints,
+                    draggedControlPointId,
+                    hit.planeIndex,
                 );
                 setEditableHalfPlanes(nextPlanes);
                 setHandleControls({ spacing: handleSpacing, points: nextPoints });
@@ -326,6 +351,7 @@ export function TriangleSceneHost({
                     pointerId: e.pointerId,
                     planeIndex: hit.planeIndex,
                     pointIndex: hit.pointIndex,
+                    controlPointId: draggedControlPointId,
                 });
                 renderEuclideanScene(nextPlanes, nextPoints, hit);
                 return;
@@ -452,13 +478,15 @@ export function TriangleSceneHost({
         if (!nextPoints) return;
         let updatedPlanes: HalfPlane[] | null = null;
         setEditableHalfPlanes((prev) => {
+            if (!nextPoints) return prev;
             const basePlanes = (prev ?? normalizedHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES).map(
                 (plane) => normalizeHalfPlane(plane),
             );
-            updatedPlanes = basePlanes.map((plane, idx) =>
-                idx === drag.planeIndex && nextPoints
-                    ? deriveHalfPlaneFromPoints(nextPoints[idx])
-                    : plane,
+            updatedPlanes = recomputePlanesFromControls(
+                basePlanes,
+                nextPoints,
+                drag.controlPointId,
+                drag.planeIndex,
             );
             return updatedPlanes;
         });
