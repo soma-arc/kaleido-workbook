@@ -1,10 +1,17 @@
 import type { GeometryKind } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import type { ControlPointAssignment } from "@/geom/primitives/halfPlaneControls";
+import type {
+    ControlPointAssignment,
+    HalfPlaneControlPoints,
+} from "@/geom/primitives/halfPlaneControls";
 
 export type SceneCategory = "triangle";
 
-export type SceneId = "triangle:hyperbolic" | "triangle:euclidean" | "triangle:hinge";
+export type SceneId =
+    | "triangle:hyperbolic"
+    | "triangle:euclidean"
+    | "triangle:hinge"
+    | "triangle:regular-square";
 
 export interface SceneDefinition {
     id: SceneId;
@@ -17,6 +24,8 @@ export interface SceneDefinition {
     allowPlaneDrag?: boolean;
     initialHalfPlanes?: HalfPlane[];
     controlAssignments?: ControlPointAssignment[];
+    initialControlPoints?: HalfPlaneControlPoints[];
+    defaultHandleSpacing?: number;
 }
 
 export type SceneRegistry = {

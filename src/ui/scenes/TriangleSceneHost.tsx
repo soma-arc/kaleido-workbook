@@ -115,10 +115,19 @@ export function TriangleSceneHost({
             setShowHandles(false);
             return;
         }
-        if (scene.controlAssignments?.some((assignment) => assignment.fixed)) {
+        if (
+            scene.controlAssignments?.some((assignment) => assignment.fixed) ||
+            scene.initialControlPoints
+        ) {
             setShowHandles(true);
         }
-    }, [scene.supportsHandles, scene.controlAssignments]);
+    }, [scene.supportsHandles, scene.controlAssignments, scene.initialControlPoints]);
+
+    useEffect(() => {
+        if (!scene.supportsHandles) return;
+        const nextSpacing = scene.defaultHandleSpacing ?? HANDLE_DEFAULT_SPACING;
+        setHandleSpacing(nextSpacing);
+    }, [scene.supportsHandles, scene.defaultHandleSpacing]);
 
     const controlAssignments = scene.controlAssignments;
 
@@ -196,11 +205,18 @@ export function TriangleSceneHost({
             return;
         }
         setHandleControls((prev) => {
-            if (
-                !prev ||
-                prev.points.length !== normalizedHalfPlanes.length ||
-                prev.spacing !== handleSpacing
-            ) {
+            const planeCount = normalizedHalfPlanes.length;
+            if (!prev || prev.points.length !== planeCount) {
+                if (
+                    scene.initialControlPoints &&
+                    scene.initialControlPoints.length === planeCount
+                ) {
+                    const cloned = scene.initialControlPoints.map((pair) => [
+                        { ...pair[0] },
+                        { ...pair[1] },
+                    ]) as HalfPlaneControlPoints[];
+                    return { spacing: handleSpacing, points: cloned };
+                }
                 return {
                     spacing: handleSpacing,
                     points: controlPointsFromHalfPlanes(
@@ -210,6 +226,9 @@ export function TriangleSceneHost({
                     ),
                 };
             }
+            if (prev.spacing !== handleSpacing) {
+                return { spacing: handleSpacing, points: prev.points };
+            }
             return prev;
         });
     }, [
@@ -218,6 +237,7 @@ export function TriangleSceneHost({
         handleSpacing,
         normalizedHalfPlanes,
         controlAssignments,
+        scene.initialControlPoints,
     ]);
 
     const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {

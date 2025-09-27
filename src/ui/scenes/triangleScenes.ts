@@ -1,16 +1,46 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import type { SceneDefinition, SceneId } from "./types";
 
 export const TRIANGLE_SCENE_IDS = {
     hyperbolic: "triangle:hyperbolic" as const,
     euclidean: "triangle:euclidean" as const,
     hinge: "triangle:hinge" as const,
+    regularSquare: "triangle:regular-square" as const,
 };
 
 const HINGE_HALF_PLANES = [
     { normal: { x: 1, y: 0 }, offset: 0 },
     { normal: { x: 0, y: 1 }, offset: 0 },
 ] as const;
+
+const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
+    sides: 4,
+    radius: 0.7,
+    initialAngle: Math.PI / 4,
+});
+
+function cloneHalfPlanes(planes: readonly { normal: { x: number; y: number }; offset: number }[]) {
+    return planes.map((plane) => ({
+        normal: { x: plane.normal.x, y: plane.normal.y },
+        offset: plane.offset,
+    }));
+}
+
+function cloneControlPointsList(
+    controlPoints: readonly [
+        { id: string; x: number; y: number; fixed: boolean },
+        { id: string; x: number; y: number; fixed: boolean },
+    ][],
+): [
+    { id: string; x: number; y: number; fixed: boolean },
+    { id: string; x: number; y: number; fixed: boolean },
+][] {
+    return controlPoints.map((pair) => [
+        { id: pair[0].id, x: pair[0].x, y: pair[0].y, fixed: pair[0].fixed },
+        { id: pair[1].id, x: pair[1].x, y: pair[1].y, fixed: pair[1].fixed },
+    ]);
+}
 
 export const TRIANGLE_SCENES: Record<SceneId, SceneDefinition> = {
     [TRIANGLE_SCENE_IDS.hyperbolic]: {
@@ -49,12 +79,27 @@ export const TRIANGLE_SCENES: Record<SceneId, SceneDefinition> = {
             { planeIndex: 1, pointIndex: 0, id: "hinge", fixed: true },
         ],
     },
+    [TRIANGLE_SCENE_IDS.regularSquare]: {
+        id: TRIANGLE_SCENE_IDS.regularSquare,
+        label: "Regular Square",
+        category: "triangle",
+        geometry: GEOMETRY_KIND.euclidean,
+        description: "Four half-planes form a square with shared draggable vertices.",
+        supportsHandles: true,
+        editable: true,
+        allowPlaneDrag: false,
+        defaultHandleSpacing: REGULAR_SQUARE_CONFIG.defaultHandleSpacing,
+        initialHalfPlanes: cloneHalfPlanes(REGULAR_SQUARE_CONFIG.halfPlanes),
+        controlAssignments: [...REGULAR_SQUARE_CONFIG.controlAssignments],
+        initialControlPoints: cloneControlPointsList(REGULAR_SQUARE_CONFIG.initialControlPoints),
+    },
 };
 
 export const TRIANGLE_SCENE_ORDER: SceneId[] = [
     TRIANGLE_SCENE_IDS.hyperbolic,
     TRIANGLE_SCENE_IDS.euclidean,
     TRIANGLE_SCENE_IDS.hinge,
+    TRIANGLE_SCENE_IDS.regularSquare,
 ];
 
 export const DEFAULT_TRIANGLE_SCENE_ID: SceneId = TRIANGLE_SCENE_IDS.hyperbolic;
