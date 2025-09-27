@@ -1,17 +1,15 @@
-import { forwardRef } from "react";
+import { type ComponentPropsWithoutRef, forwardRef } from "react";
+
+type CanvasProps = ComponentPropsWithoutRef<"canvas">;
 
 export type StageCanvasProps = {
     width: number;
     height: number;
     id?: string;
-    onPointerDown?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
-    onPointerMove?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
-    onPointerUp?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
-    onPointerCancel?: (e: React.PointerEvent<HTMLCanvasElement>) => void;
-};
+} & Omit<CanvasProps, "width" | "height" | "ref" | "id">;
 
 export const StageCanvas = forwardRef<HTMLCanvasElement, StageCanvasProps>(function StageCanvas(
-    { width, height, id = "stage", onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
+    { width, height, id = "stage", style, ...rest },
     ref,
 ) {
     return (
@@ -20,11 +18,8 @@ export const StageCanvas = forwardRef<HTMLCanvasElement, StageCanvasProps>(funct
             ref={ref}
             width={width}
             height={height}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-            style={{ border: "1px solid #ccc" }}
+            style={{ border: "1px solid #ccc", ...(style ?? {}) }}
+            {...rest}
         />
     );
 });

@@ -26,7 +26,6 @@ pnpm test           # coverage provider: v8
 ```
 
 補助:
-- `pnpm test:sandbox` — シングルスレッド・非並列で安定実行
 - `pnpm coverage` — V8 カバレッジ
 
 ## 3. 開発フロー（TDD）
@@ -48,7 +47,7 @@ pnpm test           # coverage provider: v8
 ## 5. コミット/PR ポリシー
 - 1 タスク = 1 コミット（束ねない）。小さく焦点化。
 - pre-commit（手元）: `pnpm lint` / `pnpm format` / `pnpm test` を実行し、失敗時はコミットしない。
-- pre-push: `pnpm test`（または `pnpm test:sandbox`）
+- pre-push: `pnpm test`
 - PR 説明に目的・最小差分・確認観点を明記。必要に応じて関連 Issue/Epic をリンク。
 - `TODO.md` の該当項目は同一コミットで `[x]` に更新（Issue を正とする運用）。
 

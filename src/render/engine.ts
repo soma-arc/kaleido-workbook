@@ -1,17 +1,29 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
-import { type CanvasTileStyle, renderTileLayer } from "./canvasLayers";
+import { type CanvasTileRenderOptions, renderTileLayer } from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
 
+export type HalfPlaneHandleRequest = {
+    visible: boolean;
+    items: Array<{ planeIndex: number; points: HalfPlaneControlPoints }>;
+    active?: { planeIndex: number; pointIndex: 0 | 1 } | null;
+    radius?: number;
+};
+
 export type GeometryRenderRequest =
     | { geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams }
-    | { geometry: typeof GEOMETRY_KIND.euclidean; halfPlanes: HalfPlane[] };
+    | {
+          geometry: typeof GEOMETRY_KIND.euclidean;
+          halfPlanes: HalfPlane[];
+          handles?: HalfPlaneHandleRequest;
+      };
 
 export interface RenderEngine {
     render(request: GeometryRenderRequest): void;
@@ -63,11 +75,25 @@ export function createRenderEngine(
                 ? buildHyperbolicScene(request.params, viewport)
                 : buildEuclideanScene(request.halfPlanes, viewport);
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
-        const canvasStyle: CanvasTileStyle = {
+        const canvasStyle: CanvasTileRenderOptions = {
             drawDisk: scene.geometry === GEOMETRY_KIND.hyperbolic,
         };
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
+        }
+        if (
+            scene.geometry === GEOMETRY_KIND.euclidean &&
+            request.geometry === GEOMETRY_KIND.euclidean
+        ) {
+            const handles = request.handles;
+            if (handles?.visible) {
+                canvasStyle.handleOverlay = {
+                    visible: true,
+                    handles: handles.items,
+                    active: handles.active ?? null,
+                    radius: handles.radius,
+                };
+            }
         }
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
@@ -108,9 +134,9 @@ function renderCanvasLayer(
     ctx: CanvasRenderingContext2D,
     scene: RenderScene,
     viewport: Viewport,
-    style?: CanvasTileStyle,
+    options?: CanvasTileRenderOptions,
 ) {
-    renderTileLayer(ctx, scene, viewport, style);
+    renderTileLayer(ctx, scene, viewport, options);
 }
 
 function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {

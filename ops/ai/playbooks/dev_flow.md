@@ -79,7 +79,7 @@ pnpm i
    - 最小の失敗テスト → 実装 → 緑化  
    - 小さくコミット（Conventional Commits、`Refs #<id>`）  
    - コミットメッセージは英語にする
-   - `pnpm run lint && pnpm typecheck && pnpm run test:sandbox` を都度通す
+   - `pnpm run lint && pnpm typecheck && pnpm test` を都度通す
    - `pnpm run format` で都度フォーマット（import 並び替え/整形を含む）
 4) **PR 作成**（Draft 可）  
    - `gh pr create -B main -H $(git branch --show-current) -t "<短いタイトル>" -b $'Closes #<id>

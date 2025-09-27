@@ -13,14 +13,14 @@ pnpm dev            # http://localhost:5173
 pnpm typecheck
 pnpm lint && pnpm format
 pnpm test           # coverage provider: v8
-pnpm ci             # biome ci + typecheck + test:sandbox
+pnpm ci             # biome ci + typecheck + test
 ```
 
 主なスクリプト（`package.json`）
 - dev/build/preview
 - typecheck
 - lint/format（Biome・4スペース）
-- test/test:sandbox/coverage（Vitest v8 coverage）
+- test/coverage（Vitest v8 coverage）
 
 ### UI Controls
 - `(p,q,r)` preset buttons anchor `p` と `q` を固定（Custom でアンカー解除）。
@@ -31,7 +31,7 @@ pnpm ci             # biome ci + typecheck + test:sandbox
 
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。
-- pre-push: `pnpm typecheck` と `pnpm test:sandbox` を実行します。失敗すると push はブロックされます。
+- pre-push: `pnpm typecheck` と `pnpm test` を実行します。失敗すると push はブロックされます。
 - 一時的に回避したい場合は `--no-verify` を付けて `git commit`/`git push` を実行してください（常用は非推奨）。
 
 ## 最低限の方針

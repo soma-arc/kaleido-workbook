@@ -1,8 +1,8 @@
 # TODO Archive (2025-09-07)
 
 - install dependencies — `pnpm i` DoD: 依存が解決し `pnpm test` が起動する。
-- tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test`（制限環境では `pnpm test:sandbox`）が 0 テストで成功起動する。
-- package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test`（制限環境では `pnpm test:sandbox`）が Vitest を実行する。
+- tests config: vitest include globs — `vitest.config.ts` DoD: `pnpm test` が 0 テストで成功起動する。
+- package scripts: add test/coverage/typecheck — `package.json` DoD: `pnpm test` が Vitest を実行する。
 - geometry types: define `Vec/Circle/IntersectResult` — `src/geom/types.ts` DoD: 型エラーなくインポートできる。
 - API skeleton: export `circleCircleIntersection(a: Circle, b: Circle)` — `src/geom/circle.ts` DoD: 署名どおりのスタブをエクスポート。
 - unit test (Red): none-case classification — `tests/unit/geom/circle.kind-none.test.ts` DoD: 現状実装で失敗する。
