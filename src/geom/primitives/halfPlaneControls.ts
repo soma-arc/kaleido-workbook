@@ -2,9 +2,36 @@ import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 
-export type HalfPlaneControlPoints = [Vec2, Vec2];
+export type ControlPointId = string;
+
+export type ControlPoint = Vec2 & {
+    id: ControlPointId;
+    fixed: boolean;
+};
+
+export type HalfPlaneControlPoints = [ControlPoint, ControlPoint];
+
+export type ControlPointAssignment = {
+    planeIndex: number;
+    pointIndex: 0 | 1;
+    id: ControlPointId;
+    fixed?: boolean;
+};
+
+export type ControlPointTable = Record<ControlPointId, ControlPoint>;
 
 const EPS = 1e-12;
+
+let controlPointCounter = 0;
+
+function nextControlPointId(): ControlPointId {
+    controlPointCounter += 1;
+    return `cp-${controlPointCounter.toString(36)}`;
+}
+
+export function resetControlPointIdCounter(): void {
+    controlPointCounter = 0;
+}
 
 function rotate90CW(v: Vec2): Vec2 {
     return { x: v.y, y: -v.x };
@@ -14,7 +41,30 @@ function rotate90CCW(v: Vec2): Vec2 {
     return { x: -v.y, y: v.x };
 }
 
-export function deriveHalfPlaneFromPoints(points: HalfPlaneControlPoints): HalfPlane {
+function createControlPoint(
+    base: Vec2,
+    id: ControlPointId | undefined,
+    registry: ControlPointTable,
+    fixed = false,
+): ControlPoint {
+    const resolvedId = id ?? nextControlPointId();
+    const existing = registry[resolvedId];
+    if (existing) {
+        const shouldFix = existing.fixed || fixed;
+        const samePosition = existing.x === base.x && existing.y === base.y;
+        if (samePosition && shouldFix === existing.fixed) {
+            return existing;
+        }
+        const updated: ControlPoint = { id: resolvedId, x: base.x, y: base.y, fixed: shouldFix };
+        registry[resolvedId] = updated;
+        return updated;
+    }
+    const created: ControlPoint = { id: resolvedId, x: base.x, y: base.y, fixed };
+    registry[resolvedId] = created;
+    return created;
+}
+
+export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfPlane {
     const [a, b] = points;
     const tangent = { x: b.x - a.x, y: b.y - a.y };
     const tangentLen = Math.hypot(tangent.x, tangent.y);
@@ -27,10 +77,7 @@ export function deriveHalfPlaneFromPoints(points: HalfPlaneControlPoints): HalfP
     return normalizeHalfPlane({ normal, offset });
 }
 
-export function derivePointsFromHalfPlane(
-    plane: HalfPlane,
-    spacing: number,
-): HalfPlaneControlPoints {
+export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [Vec2, Vec2] {
     if (!(spacing > EPS)) {
         throw new Error("Half-plane control spacing must be positive");
     }
@@ -47,4 +94,36 @@ export function derivePointsFromHalfPlane(
             y: origin.y + tangent.y * spacing,
         },
     ];
+}
+
+export function controlPointsFromHalfPlanes(
+    planes: HalfPlane[],
+    spacing: number,
+    assignments: ControlPointAssignment[] = [],
+): HalfPlaneControlPoints[] {
+    const registry: ControlPointTable = {};
+    const assignmentMap = new Map<string, ControlPointAssignment>();
+    for (const assignment of assignments) {
+        const key = `${assignment.planeIndex}:${assignment.pointIndex}`;
+        assignmentMap.set(key, assignment);
+    }
+
+    return planes.map((plane, planeIndex) => {
+        const [p0, p1] = derivePointsFromHalfPlane(plane, spacing);
+        const assignment0 = assignmentMap.get(`${planeIndex}:0`);
+        const assignment1 = assignmentMap.get(`${planeIndex}:1`);
+        const cp0 = createControlPoint(p0, assignment0?.id, registry, assignment0?.fixed ?? false);
+        const cp1 = createControlPoint(p1, assignment1?.id, registry, assignment1?.fixed ?? false);
+        return [cp0, cp1];
+    });
+}
+
+export function controlPointTableFromControls(
+    controls: HalfPlaneControlPoints[],
+): ControlPointTable {
+    return controls.reduce<ControlPointTable>((table, [a, b]) => {
+        table[a.id] = a;
+        table[b.id] = b;
+        return table;
+    }, {});
 }
