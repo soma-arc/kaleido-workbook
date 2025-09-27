@@ -1,9 +1,12 @@
 import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import type {
+    ControlPointAssignment,
+    HalfPlaneControlPoints,
+} from "@/geom/primitives/halfPlaneControls";
 import {
+    controlPointsFromHalfPlanes as buildControlPoints,
     deriveHalfPlaneFromPoints,
-    derivePointsFromHalfPlane,
 } from "@/geom/primitives/halfPlaneControls";
 import type { Viewport } from "@/render/viewport";
 import { worldToScreen } from "@/render/viewport";
@@ -11,12 +14,18 @@ import { worldToScreen } from "@/render/viewport";
 export function controlPointsFromHalfPlanes(
     planes: HalfPlane[],
     spacing: number,
+    assignments?: ControlPointAssignment[],
 ): HalfPlaneControlPoints[] {
-    return planes.map((plane) => derivePointsFromHalfPlane(plane, spacing));
+    return buildControlPoints(planes, spacing, assignments);
 }
 
 export function halfPlanesFromControlPoints(controls: HalfPlaneControlPoints[]): HalfPlane[] {
-    return controls.map((points) => deriveHalfPlaneFromPoints(points));
+    return controls.map((points) =>
+        deriveHalfPlaneFromPoints([
+            { x: points[0].x, y: points[0].y },
+            { x: points[1].x, y: points[1].y },
+        ]),
+    );
 }
 
 export function hitTestControlPoints(
@@ -53,7 +62,25 @@ export function updateControlPoint(
     pointIndex: 0 | 1,
     worldPoint: Vec2,
 ): HalfPlaneControlPoints[] {
-    const next = controls.map((points) => [...points] as HalfPlaneControlPoints);
-    next[planeIndex][pointIndex] = worldPoint;
-    return next;
+    const targetPlane = controls[planeIndex];
+    if (!targetPlane) return controls;
+    const target = targetPlane[pointIndex];
+    if (!target || target.fixed) {
+        return controls;
+    }
+
+    let changed = false;
+    const next = controls.map((points) => {
+        const nextPoints: HalfPlaneControlPoints = [...points] as HalfPlaneControlPoints;
+        for (let i = 0; i < nextPoints.length; i++) {
+            const point = nextPoints[i];
+            if (point.id !== target.id || point.fixed) continue;
+            if (point.x === worldPoint.x && point.y === worldPoint.y) continue;
+            nextPoints[i] = { ...point, x: worldPoint.x, y: worldPoint.y };
+            changed = true;
+        }
+        return nextPoints;
+    });
+
+    return changed ? next : controls;
 }

@@ -14,10 +14,13 @@ function length(v: Vec2): number {
 describe("halfPlaneControls", () => {
     it("derives a unit half-plane from two points", () => {
         const points: HalfPlaneControlPoints = [
-            { x: 0, y: 0 },
-            { x: 0, y: 1 },
+            { id: "p0", x: 0, y: 0, fixed: false },
+            { id: "p1", x: 0, y: 1, fixed: false },
         ];
-        const plane = deriveHalfPlaneFromPoints(points);
+        const plane = deriveHalfPlaneFromPoints([
+            { x: points[0].x, y: points[0].y },
+            { x: points[1].x, y: points[1].y },
+        ]);
         expect(length(plane.normal)).toBeCloseTo(1, 12);
         expect(plane.normal.x).toBeCloseTo(1, 12);
         expect(plane.normal.y).toBeCloseTo(0, 12);
