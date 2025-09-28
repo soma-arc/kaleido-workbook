@@ -29,6 +29,13 @@ pnpm ci             # biome ci + typecheck + test
 - `R` スライダは分母の範囲 `[2, 100]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 
+### Embed Mode
+- `?scene=<SceneId>` で起動時のシーンを指定できます（例: `triangle:regular-hexagon`）。無効値の場合は既定シーンにフォールバックします。
+- `?embed=1` を付与すると 16:9 レイアウトに切り替わり、コントロール UI を非表示にした埋め込み表示になります。
+- `scene`/`embed` パラメータは UI 操作と同期し、履歴操作（戻る/進む）にも対応します。
+- Storybook の `Scenes/Embedded Preview` で iframe 埋め込み時の見た目を検証できます。
+- iframe で利用する場合は `https://<host>/?scene=<SceneId>&embed=1` のようにクエリを付与してください。
+
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。
 - pre-push: `pnpm typecheck` と `pnpm test` を実行します。失敗すると push はブロックされます。
