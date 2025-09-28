@@ -3,7 +3,12 @@ import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import { attachResize, setCanvasDPR } from "./canvas";
-import { type CanvasTileRenderOptions, renderTileLayer } from "./canvasLayers";
+import {
+    type CanvasTileRenderOptions,
+    type HalfPlaneHandleOverlay,
+    renderHandleOverlay,
+    renderTileLayer,
+} from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
@@ -78,6 +83,7 @@ export function createRenderEngine(
         const canvasStyle: CanvasTileRenderOptions = {
             drawDisk: scene.geometry === GEOMETRY_KIND.hyperbolic,
         };
+        let handleOverlay: HalfPlaneHandleOverlay | null = null;
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
@@ -87,7 +93,7 @@ export function createRenderEngine(
         ) {
             const handles = request.handles;
             if (handles?.visible) {
-                canvasStyle.handleOverlay = {
+                handleOverlay = {
                     visible: true,
                     handles: handles.items,
                     active: handles.active ?? null,
@@ -107,6 +113,9 @@ export function createRenderEngine(
             } else {
                 webgl.renderer.render(scene, viewport, { clipToDisk });
             }
+        }
+        if (handleOverlay?.visible) {
+            renderHandleOverlay(ctx, viewport, handleOverlay);
         }
     };
 

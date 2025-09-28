@@ -28,9 +28,7 @@ export type HalfPlaneHandleOverlay = {
     fixedSize?: number;
 };
 
-export type CanvasTileRenderOptions = CanvasTileStyle & {
-    handleOverlay?: HalfPlaneHandleOverlay;
-};
+export type CanvasTileRenderOptions = CanvasTileStyle;
 
 export function renderTileLayer(
     ctx: CanvasRenderingContext2D,
@@ -56,10 +54,6 @@ export function renderTileLayer(
 
     for (const plane of scene.halfPlanes) {
         drawHalfPlaneBoundary(ctx, plane, viewport, { strokeStyle: tileStroke, lineWidth });
-    }
-
-    if (options.handleOverlay?.visible) {
-        drawHalfPlaneHandles(ctx, viewport, options.handleOverlay);
     }
 }
 
@@ -99,7 +93,7 @@ function drawHalfPlaneBoundary(
     drawLine(ctx, { x1: a.x, y1: a.y, x2: b.x, y2: b.y }, style);
 }
 
-function drawHalfPlaneHandles(
+export function renderHandleOverlay(
     ctx: CanvasRenderingContext2D,
     viewport: Viewport,
     overlay: HalfPlaneHandleOverlay,

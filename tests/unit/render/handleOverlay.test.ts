@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { renderTileLayer } from "@/render/canvasLayers";
+import { renderHandleOverlay, renderTileLayer } from "@/render/canvasLayers";
 
 function createMockContext(): CanvasRenderingContext2D {
     const canvas = document.createElement("canvas");
@@ -32,19 +32,21 @@ describe("renderTileLayer handle overlay", () => {
             ctx,
             { geometry: GEOMETRY_KIND.euclidean, halfPlanes: [] },
             { scale: 100, tx: 0, ty: 0 },
+        );
+        renderHandleOverlay(
+            ctx,
+            { scale: 100, tx: 0, ty: 0 },
             {
-                handleOverlay: {
-                    visible: true,
-                    handles: [
-                        {
-                            planeIndex: 0,
-                            points: [
-                                { id: "hinge", x: 0, y: 0, fixed: true },
-                                { id: "free", x: 1, y: 0, fixed: false },
-                            ],
-                        },
-                    ],
-                },
+                visible: true,
+                handles: [
+                    {
+                        planeIndex: 0,
+                        points: [
+                            { id: "hinge", x: 0, y: 0, fixed: true },
+                            { id: "free", x: 1, y: 0, fixed: false },
+                        ],
+                    },
+                ],
             },
         );
         expect(ctx.fillRect).toHaveBeenCalled();
