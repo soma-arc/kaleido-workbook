@@ -58,7 +58,7 @@ function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
         if (!doc) return;
         doc.open();
         doc.write(
-            `<!doctype html><html><head><style>html,body{margin:0;background:#0b0b0b;height:100%;overflow:hidden;}#root{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}</style></head><body><div id="root"></div></body></html>`,
+            `<!doctype html><html><head><style>html,body{margin:0;background:#111827;height:100%;overflow:hidden;}#root{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111827;border:1px solid rgba(148,163,184,0.35);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,0.45);}</style></head><body><div id="root"></div></body></html>`,
         );
         doc.close();
         const mountNode = doc.getElementById("root");

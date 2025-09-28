@@ -6,6 +6,9 @@ export type SceneEmbedQuery = {
 };
 
 const EMBED_CLASS = "embed-mode";
+const EMBED_BACKGROUND = "#111827";
+const EMBED_BORDER = "1px solid rgba(148, 163, 184, 0.35)";
+const ROOT_ELEMENT_ID = "root";
 
 function hasWindow(): boolean {
     return typeof window !== "undefined" && typeof window.location !== "undefined";
@@ -63,10 +66,28 @@ export function applyEmbedClass(embed: boolean): void {
         }
     }
     if (embed) {
-        document.documentElement.style.backgroundColor = "#0b0b0b";
+        document.documentElement.style.backgroundColor = EMBED_BACKGROUND;
+        document.body.style.backgroundColor = EMBED_BACKGROUND;
         document.body.style.margin = "0";
     } else {
         document.documentElement.style.backgroundColor = "";
+        document.body.style.backgroundColor = "";
         document.body.style.margin = "";
+    }
+
+    const root = document.getElementById(ROOT_ELEMENT_ID);
+    if (!root) return;
+    if (embed) {
+        root.style.backgroundColor = EMBED_BACKGROUND;
+        root.style.border = EMBED_BORDER;
+        root.style.borderRadius = "12px";
+        root.style.boxShadow = "0 12px 32px rgba(15, 23, 42, 0.45)";
+        root.style.overflow = "hidden";
+    } else {
+        root.style.backgroundColor = "";
+        root.style.border = "";
+        root.style.borderRadius = "";
+        root.style.boxShadow = "";
+        root.style.overflow = "";
     }
 }
