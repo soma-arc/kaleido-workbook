@@ -75,10 +75,17 @@ export function createRenderEngine(
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
-        const scene: RenderScene =
-            request.geometry === GEOMETRY_KIND.hyperbolic
-                ? buildHyperbolicScene(request.params, viewport)
-                : buildEuclideanScene(request.halfPlanes, viewport);
+        let scene: RenderScene;
+        try {
+            scene =
+                request.geometry === GEOMETRY_KIND.hyperbolic
+                    ? buildHyperbolicScene(request.params, viewport)
+                    : buildEuclideanScene(request.halfPlanes, viewport);
+        } catch (error) {
+            console.error("[RenderEngine] Failed to build scene", error);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
         const hasWebGLOutput = Boolean(webgl?.ready && webgl.canvas);
         const canvasStyle: CanvasTileRenderOptions = {
             drawDisk: scene.geometry === GEOMETRY_KIND.hyperbolic,
