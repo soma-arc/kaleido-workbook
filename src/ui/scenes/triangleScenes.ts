@@ -7,6 +7,7 @@ export const TRIANGLE_SCENE_IDS = {
     euclidean: "triangle:euclidean" as const,
     hinge: "triangle:hinge" as const,
     regularSquare: "triangle:regular-square" as const,
+    regularPentagon: "triangle:regular-pentagon" as const,
 };
 
 const HINGE_HALF_PLANES = [
@@ -18,6 +19,12 @@ const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
     sides: 4,
     radius: 0.7,
     initialAngle: Math.PI / 4,
+});
+
+const REGULAR_PENTAGON_CONFIG = createRegularPolygonSceneConfig({
+    sides: 5,
+    radius: 0.7,
+    initialAngle: Math.PI / 2,
 });
 
 function cloneHalfPlanes(planes: readonly { normal: { x: number; y: number }; offset: number }[]) {
@@ -93,6 +100,20 @@ export const TRIANGLE_SCENES: Record<SceneId, SceneDefinition> = {
         controlAssignments: [...REGULAR_SQUARE_CONFIG.controlAssignments],
         initialControlPoints: cloneControlPointsList(REGULAR_SQUARE_CONFIG.initialControlPoints),
     },
+    [TRIANGLE_SCENE_IDS.regularPentagon]: {
+        id: TRIANGLE_SCENE_IDS.regularPentagon,
+        label: "Regular Pentagon",
+        category: "triangle",
+        geometry: GEOMETRY_KIND.euclidean,
+        description: "Five half-planes form a regular pentagon with shared draggable vertices.",
+        supportsHandles: true,
+        editable: true,
+        allowPlaneDrag: false,
+        defaultHandleSpacing: REGULAR_PENTAGON_CONFIG.defaultHandleSpacing,
+        initialHalfPlanes: cloneHalfPlanes(REGULAR_PENTAGON_CONFIG.halfPlanes),
+        controlAssignments: [...REGULAR_PENTAGON_CONFIG.controlAssignments],
+        initialControlPoints: cloneControlPointsList(REGULAR_PENTAGON_CONFIG.initialControlPoints),
+    },
 };
 
 export const TRIANGLE_SCENE_ORDER: SceneId[] = [
@@ -100,6 +121,7 @@ export const TRIANGLE_SCENE_ORDER: SceneId[] = [
     TRIANGLE_SCENE_IDS.euclidean,
     TRIANGLE_SCENE_IDS.hinge,
     TRIANGLE_SCENE_IDS.regularSquare,
+    TRIANGLE_SCENE_IDS.regularPentagon,
 ];
 
 export const DEFAULT_TRIANGLE_SCENE_ID: SceneId = TRIANGLE_SCENE_IDS.hyperbolic;
