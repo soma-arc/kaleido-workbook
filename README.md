@@ -30,11 +30,16 @@ pnpm ci             # biome ci + typecheck + test
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 
 ### Embed Mode
-- `?scene=<SceneId>` で起動時のシーンを指定できます（例: `triangle:regular-hexagon`）。無効値の場合は既定シーンにフォールバックします。
-- `?embed=1` を付与すると 16:9 レイアウトに切り替わり、コントロール UI を非表示にした埋め込み表示になります。
-- `scene`/`embed` パラメータは UI 操作と同期し、履歴操作（戻る/進む）にも対応します。
-- Storybook の `Scenes/Embedded Preview` で iframe 埋め込み時の見た目を検証できます。
-- iframe で利用する場合は `https://<host>/?scene=<SceneId>&embed=1` のようにクエリを付与してください。
+
+| Parameter | 値の例 | 説明 |
+|-----------|--------|------|
+| `scene`   | `triangle:hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`triangle:hyperbolic`, `triangle:euclidean`, `triangle:hinge`, `triangle:regular-square`, `triangle:regular-pentagon`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
+
+- URL 例: `https://<host>/?scene=triangle:hinge&embed=1`
+- `scene` / `embed` は UI 操作と同期し、履歴操作（戻る/進む）でも状態が復元されます。
+- Storybook の `Scenes/Embedded Preview` ストーリーで iframe 埋め込み時の見た目を検証できます。
+- iframe で埋め込む場合は `<iframe src="https://<host>/?scene=<SceneId>&embed=1" />` のようにクエリを付与してください。
 
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。
