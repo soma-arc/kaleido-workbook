@@ -5,7 +5,7 @@ import { detectRenderMode } from "@/render/engine";
 import { type Viewport, worldToScreen } from "@/render/viewport";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS, type SceneId } from "@/ui/scenes";
-import { TriangleSceneHost } from "@/ui/scenes/TriangleSceneHost";
+import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
 import { REGULAR_POLYGON_COMPONENT_DOC, REGULAR_POLYGON_PLAY_DOC } from "./regularPolygonDocs";
 
@@ -24,11 +24,11 @@ function computeViewport(canvas: HTMLCanvasElement): Viewport {
 }
 
 function RegularHexagonDemo(): JSX.Element {
-    const { triangleScenes } = useSceneRegistry();
-    const [sceneId, setSceneId] = useState<SceneId>(SCENE_IDS.regularHexagon);
+    const { scenes } = useSceneRegistry();
+    const [sceneId, setSceneId] = useState<SceneId>(SCENE_IDS.euclideanRegularHexagon);
     const scene = useMemo(
-        () => triangleScenes.find((item) => item.id === sceneId) ?? triangleScenes[0],
-        [sceneId, triangleScenes],
+        () => scenes.find((item) => item.id === sceneId) ?? scenes[0],
+        [sceneId, scenes],
     );
     const renderMode = useMemo(() => detectRenderMode(), []);
     const triangleParams = useTriangleParams({
@@ -40,9 +40,9 @@ function RegularHexagonDemo(): JSX.Element {
 
     return (
         <div style={{ height: "600px", width: "100%" }}>
-            <TriangleSceneHost
+            <EuclideanSceneHost
                 scene={scene}
-                scenes={triangleScenes}
+                scenes={scenes}
                 activeSceneId={sceneId}
                 onSceneChange={setSceneId}
                 renderMode={renderMode}

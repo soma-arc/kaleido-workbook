@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { detectRenderMode } from "@/render/engine";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { getSceneDefinition, SCENE_IDS, type SceneId } from "@/ui/scenes";
-import { TriangleSceneHost } from "@/ui/scenes/TriangleSceneHost";
+import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
 
 const TRIANGLE_N_MAX = 100;
@@ -16,7 +16,7 @@ type EmbeddedSceneProps = {
 };
 
 function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
-    const { triangleScenes } = useSceneRegistry();
+    const { scenes } = useSceneRegistry();
     const [renderMode] = useState(() => detectRenderMode());
     const scene = useMemo(() => getSceneDefinition(sceneId), [sceneId]);
     const triangleParams = useTriangleParams({
@@ -27,9 +27,9 @@ function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
     });
 
     return (
-        <TriangleSceneHost
+        <EuclideanSceneHost
             scene={scene}
-            scenes={triangleScenes}
+            scenes={scenes}
             activeSceneId={sceneId}
             onSceneChange={() => {
                 /* no-op in embed preview */
@@ -96,7 +96,7 @@ const meta: Meta<typeof EmbeddedSceneIframe> = {
         },
     },
     args: {
-        sceneId: SCENE_IDS.regularSquare,
+        sceneId: SCENE_IDS.euclideanRegularSquare,
     },
 };
 

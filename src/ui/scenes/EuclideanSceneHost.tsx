@@ -53,7 +53,7 @@ type HandleDragState = {
 
 type DragState = PlaneDragState | HandleDragState;
 
-export type TriangleSceneHostProps = {
+export type EuclideanSceneHostProps = {
     scene: SceneDefinition;
     scenes: SceneDefinition[];
     activeSceneId: SceneId;
@@ -68,7 +68,7 @@ type HandleControlsState = {
     points: HalfPlaneControlPoints[];
 };
 
-export function TriangleSceneHost({
+export function EuclideanSceneHost({
     scene,
     scenes,
     activeSceneId,
@@ -76,7 +76,7 @@ export function TriangleSceneHost({
     renderMode,
     triangle,
     embed = false,
-}: TriangleSceneHostProps): JSX.Element {
+}: EuclideanSceneHostProps): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const renderEngineRef = useRef<RenderEngine | null>(null);
     const latestEuclideanPlanesRef = useRef<HalfPlane[] | null>(null);

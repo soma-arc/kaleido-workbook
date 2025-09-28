@@ -77,16 +77,16 @@ describe("UI components", () => {
             {
                 id: "hyperbolic-tiling",
                 label: "Hyperbolic",
-                category: "triangle",
                 geometry: GEOMETRY_KIND.hyperbolic,
+                variant: "tiling",
                 supportsHandles: false,
                 editable: false,
             },
             {
                 id: "euclidean-half-planes",
                 label: "Euclidean",
-                category: "triangle",
                 geometry: GEOMETRY_KIND.euclidean,
+                variant: "half-planes",
                 supportsHandles: true,
                 editable: true,
             },

@@ -3,22 +3,22 @@ import { act } from "react-dom/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/ui/App";
 import { SCENE_IDS } from "@/ui/scenes";
-import type { TriangleSceneHostProps } from "@/ui/scenes/TriangleSceneHost";
+import type { EuclideanSceneHostProps } from "@/ui/scenes/EuclideanSceneHost";
 
-const hostSpy = vi.fn<(props: TriangleSceneHostProps) => void>();
+const hostSpy = vi.fn<(props: EuclideanSceneHostProps) => void>();
 
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 
-vi.mock("@/ui/scenes/TriangleSceneHost", async () => {
-    const actual = await vi.importActual<typeof import("@/ui/scenes/TriangleSceneHost")>(
-        "@/ui/scenes/TriangleSceneHost",
+vi.mock("@/ui/scenes/EuclideanSceneHost", async () => {
+    const actual = await vi.importActual<typeof import("@/ui/scenes/EuclideanSceneHost")>(
+        "@/ui/scenes/EuclideanSceneHost",
     );
     return {
         ...actual,
-        TriangleSceneHost: (props: TriangleSceneHostProps) => {
+        EuclideanSceneHost: (props: EuclideanSceneHostProps) => {
             hostSpy(props);
-            return <div data-testid="triangle-scene-host" />;
+            return <div data-testid="euclidean-scene-host" />;
         },
     };
 });
@@ -70,14 +70,14 @@ describe("App query parameters", () => {
     });
 
     it("selects scene and embed mode from query", () => {
-        setSearchParams({ scene: SCENE_IDS.regularSquare, embed: "1" });
+        setSearchParams({ scene: SCENE_IDS.euclideanRegularSquare, embed: "1" });
         renderApp();
         const lastCall = hostSpy.mock.calls.at(-1);
         expect(lastCall).toBeTruthy();
         const props = lastCall?.[0];
         expect(props).toBeTruthy();
         if (!props) return;
-        expect(props.activeSceneId).toBe(SCENE_IDS.regularSquare);
+        expect(props.activeSceneId).toBe(SCENE_IDS.euclideanRegularSquare);
         expect(props.embed).toBe(true);
         expect(document.body.classList.contains("embed-mode")).toBe(true);
     });
@@ -101,14 +101,14 @@ describe("App query parameters", () => {
         expect(initial).toBeTruthy();
         if (!initial) return;
         act(() => {
-            initial.onSceneChange(SCENE_IDS.hinge);
+            initial.onSceneChange(SCENE_IDS.euclideanHinge);
         });
         const next = hostSpy.mock.calls.at(-1)?.[0];
         expect(next).toBeTruthy();
         if (!next) return;
-        expect(next.activeSceneId).toBe(SCENE_IDS.hinge);
+        expect(next.activeSceneId).toBe(SCENE_IDS.euclideanHinge);
         const params = new URLSearchParams(window.location.search);
-        expect(params.get("scene")).toBe(SCENE_IDS.hinge);
+        expect(params.get("scene")).toBe(SCENE_IDS.euclideanHinge);
         expect(params.get("embed")).toBe("1");
     });
 });
