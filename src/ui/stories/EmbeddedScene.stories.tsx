@@ -51,7 +51,7 @@ function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
         if (!doc) return;
         doc.open();
         doc.write(
-            `<!doctype html><html><head><style>html,body{margin:0;background:#0b0b0b;height:100%;}</style></head><body><div id="root" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div></body></html>`,
+            `<!doctype html><html><head><style>html,body{margin:0;background:#0b0b0b;height:100%;overflow:hidden;}#root{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}</style></head><body><div id="root"></div></body></html>`,
         );
         doc.close();
         const mountNode = doc.getElementById("root");
@@ -67,7 +67,7 @@ function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
         <div style={{ width: "100%", maxWidth: "960px", margin: "0 auto" }}>
             <iframe
                 ref={iframeRef}
-                style={{ border: "none", width: "100%", aspectRatio: "16 / 9" }}
+                style={{ border: "none", width: "100%", aspectRatio: "16 / 9", overflow: "hidden" }}
                 title={`Embedded scene ${sceneId}`}
             />
         </div>
