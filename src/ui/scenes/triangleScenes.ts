@@ -8,6 +8,7 @@ export const TRIANGLE_SCENE_IDS = {
     hinge: "triangle:hinge" as const,
     regularSquare: "triangle:regular-square" as const,
     regularPentagon: "triangle:regular-pentagon" as const,
+    regularHexagon: "triangle:regular-hexagon" as const,
 };
 
 const HINGE_HALF_PLANES = [
@@ -25,6 +26,12 @@ const REGULAR_PENTAGON_CONFIG = createRegularPolygonSceneConfig({
     sides: 5,
     radius: 0.7,
     initialAngle: Math.PI / 2,
+});
+
+const REGULAR_HEXAGON_CONFIG = createRegularPolygonSceneConfig({
+    sides: 6,
+    radius: 0.7,
+    initialAngle: Math.PI / 6,
 });
 
 function cloneHalfPlanes(planes: readonly { normal: { x: number; y: number }; offset: number }[]) {
@@ -114,6 +121,20 @@ export const TRIANGLE_SCENES: Record<SceneId, SceneDefinition> = {
         controlAssignments: [...REGULAR_PENTAGON_CONFIG.controlAssignments],
         initialControlPoints: cloneControlPointsList(REGULAR_PENTAGON_CONFIG.initialControlPoints),
     },
+    [TRIANGLE_SCENE_IDS.regularHexagon]: {
+        id: TRIANGLE_SCENE_IDS.regularHexagon,
+        label: "Regular Hexagon",
+        category: "triangle",
+        geometry: GEOMETRY_KIND.euclidean,
+        description: "Six half-planes form a regular hexagon with shared draggable vertices.",
+        supportsHandles: true,
+        editable: true,
+        allowPlaneDrag: false,
+        defaultHandleSpacing: REGULAR_HEXAGON_CONFIG.defaultHandleSpacing,
+        initialHalfPlanes: cloneHalfPlanes(REGULAR_HEXAGON_CONFIG.halfPlanes),
+        controlAssignments: [...REGULAR_HEXAGON_CONFIG.controlAssignments],
+        initialControlPoints: cloneControlPointsList(REGULAR_HEXAGON_CONFIG.initialControlPoints),
+    },
 };
 
 export const TRIANGLE_SCENE_ORDER: SceneId[] = [
@@ -122,6 +143,7 @@ export const TRIANGLE_SCENE_ORDER: SceneId[] = [
     TRIANGLE_SCENE_IDS.hinge,
     TRIANGLE_SCENE_IDS.regularSquare,
     TRIANGLE_SCENE_IDS.regularPentagon,
+    TRIANGLE_SCENE_IDS.regularHexagon,
 ];
 
 export const DEFAULT_TRIANGLE_SCENE_ID: SceneId = TRIANGLE_SCENE_IDS.hyperbolic;

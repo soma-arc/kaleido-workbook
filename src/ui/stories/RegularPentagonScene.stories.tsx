@@ -7,6 +7,7 @@ import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS, type SceneId } from "@/ui/scenes";
 import { TriangleSceneHost } from "@/ui/scenes/TriangleSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
+import { REGULAR_POLYGON_COMPONENT_DOC, REGULAR_POLYGON_PLAY_DOC } from "./regularPolygonDocs";
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;
@@ -62,8 +63,7 @@ const meta: Meta<typeof RegularPentagonDemo> = {
         },
         docs: {
             description: {
-                component:
-                    "正五角形の半平面シーン。5つの共有頂点をドラッグして一般五角形へ変形できます。",
+                component: `${REGULAR_POLYGON_COMPONENT_DOC}\n\n正五角形シーンでは奇数頂点での共有制御点挙動を検証できます。`,
             },
         },
     },
@@ -77,7 +77,7 @@ export const Default: Story = {
     parameters: {
         docs: {
             description: {
-                story: "Play テストでは任意の頂点をドラッグし、変形後に初期位置へ戻せることを検証します。",
+                story: `${REGULAR_POLYGON_PLAY_DOC}\n五角形では単一頂点の往復操作を対象とします。`,
             },
         },
     },
