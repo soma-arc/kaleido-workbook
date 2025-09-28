@@ -1,9 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { detectRenderMode } from "@/render/engine";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
-import { getSceneDefinition, SCENE_IDS, type SceneId } from "@/ui/scenes";
+import {
+    getSceneDefinition,
+    SCENE_IDS,
+    SCENE_ORDER,
+    type SceneDefinition,
+    type SceneId,
+} from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
 
@@ -74,6 +81,10 @@ function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
     );
 }
 
+function formatSceneLabel(scene: SceneDefinition): string {
+    return scene.label ?? scene.id;
+}
+
 const meta: Meta<typeof EmbeddedSceneIframe> = {
     title: "Scenes/Embedded Preview",
     component: EmbeddedSceneIframe,
@@ -91,12 +102,21 @@ const meta: Meta<typeof EmbeddedSceneIframe> = {
     },
     argTypes: {
         sceneId: {
-            options: Object.values(SCENE_IDS),
-            control: { type: "select" },
+            options: SCENE_ORDER,
+            control: {
+                type: "select",
+                labels: SCENE_ORDER.reduce<Record<SceneId, string>>(
+                    (acc, sceneId) => {
+                        acc[sceneId] = formatSceneLabel(getSceneDefinition(sceneId));
+                        return acc;
+                    },
+                    {} as Record<SceneId, string>,
+                ),
+            },
         },
     },
     args: {
-        sceneId: SCENE_IDS.euclideanRegularSquare,
+        sceneId: SCENE_ORDER[0] ?? SCENE_IDS.euclideanRegularSquare,
     },
 };
 
@@ -105,3 +125,36 @@ export default meta;
 type Story = StoryObj<typeof EmbeddedSceneIframe>;
 
 export const Default: Story = {};
+
+const galleryStyles: CSSProperties = {
+    display: "grid",
+    gap: "24px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+    width: "100%",
+};
+
+export const AllScenes: Story = {
+    render: () => (
+        <div style={galleryStyles}>
+            {SCENE_ORDER.map((sceneId) => {
+                const scene = getSceneDefinition(sceneId);
+                return (
+                    <div
+                        key={sceneId}
+                        style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+                    >
+                        <strong>{formatSceneLabel(scene)}</strong>
+                        <EmbeddedScene sceneId={sceneId} />
+                    </div>
+                );
+            })}
+        </div>
+    ),
+    parameters: {
+        docs: {
+            description: {
+                story: "定義済みのすべてのシーンIDを自動的に並べてプレビューします。シーンが追加されると、この一覧も自動更新されます。",
+            },
+        },
+    },
+};
