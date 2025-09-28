@@ -12,7 +12,8 @@ export type SceneId =
     | "triangle:euclidean"
     | "triangle:hinge"
     | "triangle:regular-square"
-    | "triangle:regular-pentagon";
+    | "triangle:regular-pentagon"
+    | "triangle:regular-hexagon";
 
 export interface SceneDefinition {
     id: SceneId;
