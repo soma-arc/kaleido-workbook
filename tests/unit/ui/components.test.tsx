@@ -75,18 +75,18 @@ describe("UI components", () => {
         const onChange = vi.fn();
         const scenes: SceneDefinition[] = [
             {
-                id: "triangle:hyperbolic",
+                id: "hyperbolic-tiling",
                 label: "Hyperbolic",
-                category: "triangle",
                 geometry: GEOMETRY_KIND.hyperbolic,
+                variant: "tiling",
                 supportsHandles: false,
                 editable: false,
             },
             {
-                id: "triangle:euclidean",
+                id: "euclidean-half-planes",
                 label: "Euclidean",
-                category: "triangle",
                 geometry: GEOMETRY_KIND.euclidean,
+                variant: "half-planes",
                 supportsHandles: true,
                 editable: true,
             },
@@ -97,7 +97,7 @@ describe("UI components", () => {
             root.render(
                 <ModeControls
                     scenes={scenes}
-                    activeSceneId={"triangle:hyperbolic" satisfies SceneId}
+                    activeSceneId={"hyperbolic-tiling" satisfies SceneId}
                     onSceneChange={onChange}
                     renderBackend="hybrid"
                 />,
@@ -108,7 +108,7 @@ describe("UI components", () => {
         act(() => {
             buttons[1]?.click();
         });
-        expect(onChange).toHaveBeenCalledWith("triangle:euclidean");
+        expect(onChange).toHaveBeenCalledWith("euclidean-half-planes");
         act(() => {
             root.unmount();
         });

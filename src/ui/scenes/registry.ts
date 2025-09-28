@@ -1,36 +1,32 @@
 import {
-    DEFAULT_TRIANGLE_SCENE_ID,
-    TRIANGLE_SCENE_IDS,
-    TRIANGLE_SCENE_ORDER,
-    TRIANGLE_SCENES,
-} from "./triangleScenes";
+    DEFAULT_SCENE_ID,
+    SCENE_IDS,
+    SCENE_ORDER,
+    SCENES_BY_GEOMETRY,
+    SCENES_BY_ID,
+} from "./sceneDefinitions";
 import type { SceneDefinition, SceneId, SceneRegistry } from "./types";
 
-const SCENE_MAP: Record<SceneId, SceneDefinition> = {
-    ...TRIANGLE_SCENES,
-};
-
-const SCENE_ORDER: SceneId[] = [...TRIANGLE_SCENE_ORDER];
-
-export const DEFAULT_SCENE_ID: SceneId = DEFAULT_TRIANGLE_SCENE_ID;
-
 export const SCENE_REGISTRY: SceneRegistry = {
-    byId: SCENE_MAP,
+    byId: SCENES_BY_ID,
     order: SCENE_ORDER,
+    byGeometry: SCENES_BY_GEOMETRY,
 };
 
 export function listScenes(): SceneDefinition[] {
-    return SCENE_ORDER.map((id) => SCENE_MAP[id]);
+    return SCENE_ORDER.map((id) => SCENES_BY_ID[id]);
+}
+
+export function listScenesByGeometry(geometry: SceneDefinition["geometry"]): SceneDefinition[] {
+    return SCENE_REGISTRY.byGeometry[geometry];
 }
 
 export function getSceneDefinition(id: SceneId): SceneDefinition {
-    const entry = SCENE_MAP[id];
+    const entry = SCENES_BY_ID[id];
     if (!entry) {
         throw new Error(`Unknown scene id: ${id}`);
     }
     return entry;
 }
 
-export const SCENE_IDS = {
-    ...TRIANGLE_SCENE_IDS,
-};
+export { DEFAULT_SCENE_ID, SCENE_IDS };

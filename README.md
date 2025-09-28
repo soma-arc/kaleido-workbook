@@ -29,6 +29,45 @@ pnpm ci             # biome ci + typecheck + test
 - `R` スライダは分母の範囲 `[2, 100]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 
+### Embed Mode
+
+| Parameter | 値の例 | 説明 |
+|-----------|--------|------|
+| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
+
+- URL 例: `https://<host>/?scene=euclidean-hinge&embed=1`
+- `scene` / `embed` は UI 操作と同期し、履歴操作（戻る/進む）でも状態が復元されます。
+- Storybook の `Scenes/Embedded Preview` ストーリーで iframe 埋め込み時の見た目を検証できます。
+- iframe で埋め込む場合は `<iframe src="https://<host>/?scene=<SceneId>&embed=1" />` のようにクエリを付与してください。
+
+#### 埋め込みスタイル例
+
+Marp `theme: default` + `class: invert` などダーク系スライドに調和させるには、下記のようにラッパー要素へ背景色と枠線を与えると境界が自然に見えるようになります。アプリ本体の `embed-mode` と同じ配色（背景 `#111827`、枠 `rgba(148, 163, 184, 0.35)`）を使用しています。
+
+```html
+<div
+  style="
+    background:#111827;
+    border:1px solid rgba(148,163,184,0.35);
+    border-radius:12px;
+    box-shadow:0 12px 32px rgba(15,23,42,0.45);
+    overflow:hidden;
+    max-width:960px;
+    margin:0 auto;
+  "
+>
+  <iframe
+    src="https://example.com/?scene=euclidean-hinge&embed=1"
+    style="width:100%;aspect-ratio:16/9;border:none;"
+    title="Euclidean hinge scene"
+    allow="fullscreen"
+  ></iframe>
+</div>
+```
+
+シーンが増えた場合でも、`scene=<SceneId>` の値を差し替えるだけで同じスタイルを再利用できます。
+
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。
 - pre-push: `pnpm typecheck` と `pnpm test` を実行します。失敗すると push はブロックされます。

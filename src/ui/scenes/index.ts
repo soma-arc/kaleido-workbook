@@ -1,4 +1,4 @@
 export * from "./registry";
-export * from "./triangleScenes";
+export * from "./sceneDefinitions";
 export * from "./types";
 export * from "./useSceneRegistry";
