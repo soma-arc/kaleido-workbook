@@ -53,13 +53,14 @@ type HandleDragState = {
 
 type DragState = PlaneDragState | HandleDragState;
 
-type TriangleSceneHostProps = {
+export type TriangleSceneHostProps = {
     scene: SceneDefinition;
     scenes: SceneDefinition[];
     activeSceneId: SceneId;
     onSceneChange: (id: SceneId) => void;
     renderMode: RenderMode;
     triangle: UseTriangleParamsResult;
+    embed?: boolean;
 };
 
 type HandleControlsState = {
@@ -74,6 +75,7 @@ export function TriangleSceneHost({
     onSceneChange,
     renderMode,
     triangle,
+    embed = false,
 }: TriangleSceneHostProps): JSX.Element {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const renderEngineRef = useRef<RenderEngine | null>(null);
@@ -530,6 +532,67 @@ export function TriangleSceneHost({
         renderHyperbolicScene,
     ]);
 
+    const stageContainer = (
+        <div
+            style={
+                embed
+                    ? {
+                          position: "relative",
+                          width: "100%",
+                          maxWidth: "1280px",
+                          aspectRatio: "16 / 9",
+                          background: "#111",
+                          borderRadius: 8,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                          overflow: "hidden",
+                      }
+                    : { display: "grid", placeItems: "center", position: "relative" }
+            }
+        >
+            {handleControls && scene.supportsHandles ? (
+                <span data-testid="handle-coordinates" style={{ display: "none" }}>
+                    {JSON.stringify(handleControls.points)}
+                </span>
+            ) : null}
+            <StageCanvas
+                ref={canvasRef}
+                width={embed ? 1280 : 800}
+                height={embed ? 720 : 600}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUpOrCancel}
+                onPointerCancel={handlePointerUpOrCancel}
+                style={
+                    embed
+                        ? {
+                              border: "none",
+                              width: "100%",
+                              height: "100%",
+                          }
+                        : undefined
+                }
+            />
+        </div>
+    );
+
+    if (embed) {
+        return (
+            <div
+                style={{
+                    boxSizing: "border-box",
+                    display: "grid",
+                    placeItems: "center",
+                    width: "100%",
+                    minHeight: "100vh",
+                    padding: "24px",
+                    background: "#0b0b0b",
+                }}
+            >
+                {stageContainer}
+            </div>
+        );
+    }
+
     return (
         <div
             style={{
@@ -584,22 +647,7 @@ export function TriangleSceneHost({
                     onDepthChange={updateDepth}
                 />
             </div>
-            <div style={{ display: "grid", placeItems: "center", position: "relative" }}>
-                {handleControls && scene.supportsHandles ? (
-                    <span data-testid="handle-coordinates" style={{ display: "none" }}>
-                        {JSON.stringify(handleControls.points)}
-                    </span>
-                ) : null}
-                <StageCanvas
-                    ref={canvasRef}
-                    width={800}
-                    height={600}
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUpOrCancel}
-                    onPointerCancel={handlePointerUpOrCancel}
-                />
-            </div>
+            {stageContainer}
         </div>
     );
 }
