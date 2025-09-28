@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import {
     halfPlanesFromControlPoints,
     updateControlPoint,
@@ -91,7 +92,9 @@ describe("regular polygon scene config", () => {
     it("only updates adjacent half-planes when dragging a pentagon vertex", () => {
         const sides = 5;
         const config = createRegularPolygonSceneConfig({ sides, radius: 0.7 });
-        const controls = config.initialControlPoints.map(([a, b]) => [{ ...a }, { ...b }]);
+        const controls: HalfPlaneControlPoints[] = config.initialControlPoints.map(
+            ([a, b]) => [{ ...a }, { ...b }] as HalfPlaneControlPoints,
+        );
         const originalPlanes = halfPlanesFromControlPoints(controls);
 
         const targetAssignment = config.controlAssignments.find(
