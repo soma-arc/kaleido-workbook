@@ -140,4 +140,79 @@ describe("regular polygon scene config", () => {
             }
         });
     });
+
+    it("preserves adjacency while sequentially dragging hexagon vertices", () => {
+        const sides = 6;
+        const config = createRegularPolygonSceneConfig({ sides, radius: 0.7 });
+        let controls: HalfPlaneControlPoints[] = config.initialControlPoints.map(
+            ([a, b]) => [{ ...a }, { ...b }] as HalfPlaneControlPoints,
+        );
+        let baselinePlanes = halfPlanesFromControlPoints(controls);
+
+        for (let vertexIndex = 0; vertexIndex < sides; vertexIndex++) {
+            const vertexId = `vertex-${vertexIndex}`;
+            const assignments = config.controlAssignments.filter(
+                (assignment) => assignment.id === vertexId,
+            );
+            expect(assignments).toHaveLength(2);
+
+            const primary = assignments.find(
+                (assignment) =>
+                    assignment.planeIndex === vertexIndex && assignment.pointIndex === 0,
+            );
+            const companion = assignments.find((assignment) => assignment !== primary);
+            expect(primary).toBeTruthy();
+            expect(companion).toBeTruthy();
+            if (!primary || !companion) {
+                continue;
+            }
+
+            const originalPoint = controls[primary.planeIndex][primary.pointIndex];
+            const movedPoint = {
+                x: originalPoint.x + 0.08 * Math.cos(vertexIndex),
+                y: originalPoint.y + 0.06 * Math.sin(vertexIndex),
+            };
+
+            const movedControls = updateControlPoint(
+                controls,
+                primary.planeIndex,
+                primary.pointIndex,
+                movedPoint,
+            );
+            const movedPlanes = halfPlanesFromControlPoints(movedControls);
+            const affected = new Set([primary.planeIndex, companion.planeIndex]);
+            movedPlanes.forEach((plane, idx) => {
+                const reference = baselinePlanes[idx];
+                if (affected.has(idx)) {
+                    const delta = Math.max(
+                        Math.abs(plane.normal.x - reference.normal.x),
+                        Math.abs(plane.normal.y - reference.normal.y),
+                        Math.abs(plane.offset - reference.offset),
+                    );
+                    expect(delta).toBeGreaterThan(1e-6);
+                } else {
+                    expect(plane.normal.x).toBeCloseTo(reference.normal.x, 12);
+                    expect(plane.normal.y).toBeCloseTo(reference.normal.y, 12);
+                    expect(plane.offset).toBeCloseTo(reference.offset, 12);
+                }
+            });
+
+            const revertedControls = updateControlPoint(
+                movedControls,
+                primary.planeIndex,
+                primary.pointIndex,
+                { x: originalPoint.x, y: originalPoint.y },
+            );
+            const revertedPlanes = halfPlanesFromControlPoints(revertedControls);
+            revertedPlanes.forEach((plane, idx) => {
+                const reference = baselinePlanes[idx];
+                expect(plane.normal.x).toBeCloseTo(reference.normal.x, 12);
+                expect(plane.normal.y).toBeCloseTo(reference.normal.y, 12);
+                expect(plane.offset).toBeCloseTo(reference.offset, 12);
+            });
+
+            controls = revertedControls;
+            baselinePlanes = revertedPlanes;
+        }
+    });
 });
