@@ -33,10 +33,10 @@ pnpm ci             # biome ci + typecheck + test
 
 | Parameter | 値の例 | 説明 |
 |-----------|--------|------|
-| `scene`   | `triangle:hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`triangle:hyperbolic`, `triangle:euclidean`, `triangle:hinge`, `triangle:regular-square`, `triangle:regular-pentagon`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
 | `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
 
-- URL 例: `https://<host>/?scene=triangle:hinge&embed=1`
+- URL 例: `https://<host>/?scene=euclidean-hinge&embed=1`
 - `scene` / `embed` は UI 操作と同期し、履歴操作（戻る/進む）でも状態が復元されます。
 - Storybook の `Scenes/Embedded Preview` ストーリーで iframe 埋め込み時の見た目を検証できます。
 - iframe で埋め込む場合は `<iframe src="https://<host>/?scene=<SceneId>&embed=1" />` のようにクエリを付与してください。

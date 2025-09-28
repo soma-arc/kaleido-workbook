@@ -8,12 +8,12 @@ import type {
 export type SceneCategory = "triangle";
 
 export type SceneId =
-    | "triangle:hyperbolic"
-    | "triangle:euclidean"
-    | "triangle:hinge"
-    | "triangle:regular-square"
-    | "triangle:regular-pentagon"
-    | "triangle:regular-hexagon";
+    | "hyperbolic-tiling"
+    | "euclidean-half-planes"
+    | "euclidean-hinge"
+    | "euclidean-regular-square"
+    | "euclidean-regular-pentagon"
+    | "euclidean-regular-hexagon";
 
 export interface SceneDefinition {
     id: SceneId;

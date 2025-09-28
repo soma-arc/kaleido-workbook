@@ -3,12 +3,12 @@ import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import type { SceneDefinition, SceneId } from "./types";
 
 export const TRIANGLE_SCENE_IDS = {
-    hyperbolic: "triangle:hyperbolic" as const,
-    euclidean: "triangle:euclidean" as const,
-    hinge: "triangle:hinge" as const,
-    regularSquare: "triangle:regular-square" as const,
-    regularPentagon: "triangle:regular-pentagon" as const,
-    regularHexagon: "triangle:regular-hexagon" as const,
+    hyperbolic: "hyperbolic-tiling" as const,
+    euclidean: "euclidean-half-planes" as const,
+    hinge: "euclidean-hinge" as const,
+    regularSquare: "euclidean-regular-square" as const,
+    regularPentagon: "euclidean-regular-pentagon" as const,
+    regularHexagon: "euclidean-regular-hexagon" as const,
 };
 
 const HINGE_HALF_PLANES = [
