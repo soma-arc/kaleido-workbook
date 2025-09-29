@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import { detectRenderMode, type RenderMode } from "@/render/engine";
 import { useTriangleParams } from "./hooks/useTriangleParams";
 import { DEFAULT_SCENE_ID, getSceneDefinition, type SceneId } from "./scenes";
 import { EuclideanSceneHost } from "./scenes/EuclideanSceneHost";
+import { SphericalSceneHost } from "./scenes/SphericalSceneHost";
 import { useSceneRegistry } from "./scenes/useSceneRegistry";
 import { applyEmbedClass, parseSceneEmbedQuery, syncSceneEmbedQuery } from "./utils/queryParams";
 
@@ -60,6 +62,18 @@ export function App(): JSX.Element {
         depthRange: DEPTH_RANGE,
         initialGeometryMode: scene.geometry,
     });
+
+    if (scene.geometry === GEOMETRY_KIND.spherical) {
+        return (
+            <SphericalSceneHost
+                scene={scene}
+                scenes={scenes}
+                activeSceneId={selectedSceneId}
+                onSceneChange={setSelectedSceneId}
+                embed={embed}
+            />
+        );
+    }
 
     return (
         <EuclideanSceneHost

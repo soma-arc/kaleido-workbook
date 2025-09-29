@@ -38,6 +38,7 @@ export type IntersectResult = {
 export const GEOMETRY_KIND = {
     hyperbolic: "hyperbolic",
     euclidean: "euclidean",
+    spherical: "spherical",
 } as const;
 
 export type GeometryKind = (typeof GEOMETRY_KIND)[keyof typeof GEOMETRY_KIND];

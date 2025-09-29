@@ -1,4 +1,6 @@
 import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
+import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import type { SphericalSceneState } from "@/geom/spherical/types";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import { createSceneId, type SceneDefinition, type SceneId } from "./types";
 
@@ -9,6 +11,7 @@ type SceneIdMap = {
     euclideanRegularSquare: SceneId;
     euclideanRegularPentagon: SceneId;
     euclideanRegularHexagon: SceneId;
+    sphericalTetrahedron: SceneId;
 };
 
 export const SCENE_IDS: SceneIdMap = {
@@ -29,6 +32,10 @@ export const SCENE_IDS: SceneIdMap = {
     euclideanRegularHexagon: createSceneId({
         geometry: GEOMETRY_KIND.euclidean,
         variant: "regular-hexagon",
+    }),
+    sphericalTetrahedron: createSceneId({
+        geometry: GEOMETRY_KIND.spherical,
+        variant: "tetrahedron",
     }),
 };
 
@@ -161,13 +168,34 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
     },
 ];
 
+const SPHERICAL_SCENES: SceneDefinition[] = [
+    {
+        id: SCENE_IDS.sphericalTetrahedron,
+        label: "Spherical Triangle",
+        geometry: GEOMETRY_KIND.spherical,
+        variant: "tetrahedron",
+        description:
+            "Displays a regular tetrahedron face on the unit sphere with editable vertices.",
+        supportsHandles: true,
+        editable: true,
+        initialSphericalState: {
+            triangle: createRegularTetrahedronTriangle(0),
+            handles: {},
+        } satisfies SphericalSceneState,
+    },
+];
+
 export const SCENES_BY_GEOMETRY: Record<GeometryKind, SceneDefinition[]> = {
     [GEOMETRY_KIND.hyperbolic]: HYPERBOLIC_SCENES,
     [GEOMETRY_KIND.euclidean]: EUCLIDEAN_SCENES,
+    [GEOMETRY_KIND.spherical]: SPHERICAL_SCENES,
 };
 
 export const SCENES_BY_ID: Record<SceneId, SceneDefinition> = Object.fromEntries(
-    [...HYPERBOLIC_SCENES, ...EUCLIDEAN_SCENES].map((scene) => [scene.id, scene]),
+    [...HYPERBOLIC_SCENES, ...EUCLIDEAN_SCENES, ...SPHERICAL_SCENES].map((scene) => [
+        scene.id,
+        scene,
+    ]),
 ) as Record<SceneId, SceneDefinition>;
 
 export const SCENE_ORDER: SceneId[] = [
@@ -177,6 +205,7 @@ export const SCENE_ORDER: SceneId[] = [
     SCENE_IDS.euclideanRegularSquare,
     SCENE_IDS.euclideanRegularPentagon,
     SCENE_IDS.euclideanRegularHexagon,
+    SCENE_IDS.sphericalTetrahedron,
 ];
 
 export const DEFAULT_SCENE_ID: SceneId = SCENE_IDS.hyperbolicTiling;
