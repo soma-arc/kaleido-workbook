@@ -9,7 +9,9 @@ import {
 } from "@/geom/spherical/types";
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import { createSphericalRenderer, type SphericalRenderer } from "@/render/spherical/renderer";
+import { StageCanvas } from "@/ui/components/StageCanvas";
 import { ModeControls } from "../components/ModeControls";
+import { STANDARD_CANVAS_HEIGHT, STANDARD_CANVAS_WIDTH } from "./canvasLayout";
 import type { SceneDefinition, SceneId } from "./types";
 
 export type SphericalSceneHostProps = {
@@ -88,10 +90,12 @@ function syncCanvasSize(canvas: HTMLCanvasElement): ViewportSize {
     const height = Math.max(1, Math.round(cssHeight * dpr));
     const cssWidthPx = `${Math.max(1, Math.round(cssWidth))}px`;
     const cssHeightPx = `${Math.max(1, Math.round(cssHeight))}px`;
-    if (canvas.style.width !== cssWidthPx) {
+    const shouldLockWidth = !canvas.style.width || canvas.style.width.endsWith("px");
+    const shouldLockHeight = !canvas.style.height || canvas.style.height.endsWith("px");
+    if (shouldLockWidth && canvas.style.width !== cssWidthPx) {
         canvas.style.width = cssWidthPx;
     }
-    if (canvas.style.height !== cssHeightPx) {
+    if (shouldLockHeight && canvas.style.height !== cssHeightPx) {
         canvas.style.height = cssHeightPx;
     }
     if (canvas.width !== width || canvas.height !== height) {
@@ -367,18 +371,33 @@ export function SphericalSceneHost({
                     </div>
                 </section>
                 <div
-                    style={{
-                        position: "relative",
-                        minHeight: embed ? "240px" : "400px",
-                        border: "1px solid #ccd0dc",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)",
-                    }}
+                    style={
+                        embed
+                            ? {
+                                  position: "relative",
+                                  width: "100%",
+                                  maxWidth: `${STANDARD_CANVAS_WIDTH}px`,
+                                  aspectRatio: "16 / 9",
+                                  borderRadius: "8px",
+                                  border: "1px solid #ccd0dc",
+                                  overflow: "hidden",
+                                  background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)",
+                              }
+                            : {
+                                  position: "relative",
+                                  width: `${STANDARD_CANVAS_WIDTH}px`,
+                                  height: `${STANDARD_CANVAS_HEIGHT}px`,
+                                  borderRadius: "8px",
+                                  border: "1px solid #ccd0dc",
+                                  overflow: "hidden",
+                                  background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)",
+                              }
+                    }
                 >
-                    <canvas
+                    <StageCanvas
                         ref={canvasRef}
                         style={{
+                            border: "none",
                             width: "100%",
                             height: "100%",
                             cursor: dragging ? "grabbing" : "grab",

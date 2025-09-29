@@ -23,6 +23,7 @@ import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclidea
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
 import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
+import { STANDARD_CANVAS_HEIGHT, STANDARD_CANVAS_WIDTH } from "./canvasLayout";
 import type { SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
@@ -532,23 +533,29 @@ export function EuclideanSceneHost({
         renderHyperbolicScene,
     ]);
 
+    const frameStyle = embed
+        ? {
+              position: "relative" as const,
+              width: "100%",
+              maxWidth: `${STANDARD_CANVAS_WIDTH}px`,
+              aspectRatio: "16 / 9",
+              background: "#111",
+              borderRadius: 8,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+              overflow: "hidden",
+          }
+        : {
+              position: "relative" as const,
+              width: `${STANDARD_CANVAS_WIDTH}px`,
+              height: `${STANDARD_CANVAS_HEIGHT}px`,
+              background: "#111",
+              borderRadius: 8,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+              overflow: "hidden",
+          };
+
     const stageContainer = (
-        <div
-            style={
-                embed
-                    ? {
-                          position: "relative",
-                          width: "100%",
-                          maxWidth: "1280px",
-                          aspectRatio: "16 / 9",
-                          background: "#111",
-                          borderRadius: 8,
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-                          overflow: "hidden",
-                      }
-                    : { display: "grid", placeItems: "center", position: "relative" }
-            }
-        >
+        <div style={frameStyle}>
             {handleControls && scene.supportsHandles ? (
                 <span data-testid="handle-coordinates" style={{ display: "none" }}>
                     {JSON.stringify(handleControls.points)}
@@ -556,21 +563,11 @@ export function EuclideanSceneHost({
             ) : null}
             <StageCanvas
                 ref={canvasRef}
-                width={embed ? 1280 : 800}
-                height={embed ? 720 : 600}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUpOrCancel}
                 onPointerCancel={handlePointerUpOrCancel}
-                style={
-                    embed
-                        ? {
-                              border: "none",
-                              width: "100%",
-                              height: "100%",
-                          }
-                        : undefined
-                }
+                style={{ border: "none", width: "100%", height: "100%" }}
             />
         </div>
     );
