@@ -51,11 +51,13 @@ type Story = StoryObj<typeof SphericalSceneDemo>;
 
 export const Default: Story = {
     play: async ({ canvasElement }) => {
-        const summary = await waitFor(() => {
+        const summary = await waitFor<HTMLElement>(() => {
             const element = canvasElement.querySelector(
                 '[data-testid="vertex-0-summary"]',
             ) as HTMLElement | null;
-            expect(element).not.toBeNull();
+            if (!element) {
+                throw new Error("vertex summary not found");
+            }
             return element;
         });
         expect(summary.textContent ?? "").toContain("Azimuth");

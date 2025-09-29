@@ -82,8 +82,18 @@ function anglesToVertex(angles: VertexAngles): SphericalVertex {
 function syncCanvasSize(canvas: HTMLCanvasElement): ViewportSize {
     const rect = canvas.getBoundingClientRect();
     const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    const width = Math.max(1, Math.round(rect.width * dpr));
-    const height = Math.max(1, Math.round(rect.height * dpr));
+    const cssWidth = rect.width || canvas.clientWidth || canvas.width || 1;
+    const cssHeight = rect.height || canvas.clientHeight || canvas.height || 1;
+    const width = Math.max(1, Math.round(cssWidth * dpr));
+    const height = Math.max(1, Math.round(cssHeight * dpr));
+    const cssWidthPx = `${Math.max(1, Math.round(cssWidth))}px`;
+    const cssHeightPx = `${Math.max(1, Math.round(cssHeight))}px`;
+    if (canvas.style.width !== cssWidthPx) {
+        canvas.style.width = cssWidthPx;
+    }
+    if (canvas.style.height !== cssHeightPx) {
+        canvas.style.height = cssHeightPx;
+    }
     if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
