@@ -11,7 +11,7 @@ import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import { createSphericalRenderer, type SphericalRenderer } from "@/render/spherical/renderer";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { ModeControls } from "../components/ModeControls";
-import { STANDARD_CANVAS_HEIGHT, STANDARD_CANVAS_WIDTH } from "./canvasLayout";
+import { SceneLayout } from "./layouts";
 import type { SceneDefinition, SceneId } from "./types";
 
 export type SphericalSceneHostProps = {
@@ -257,155 +257,120 @@ export function SphericalSceneHost({
         setSamples(Number(event.target.value));
     }, []);
 
-    return (
-        <div style={{ display: "grid", gap: "16px", padding: controlsVisible ? "16px" : "0" }}>
-            {controlsVisible ? (
-                <ModeControls
-                    scenes={scenes}
-                    activeSceneId={activeSceneId}
-                    onSceneChange={onSceneChange}
-                    renderBackend={renderBackend}
-                />
-            ) : null}
-            <div
-                style={{
-                    display: "grid",
-                    gap: "16px",
-                    gridTemplateColumns: embed ? "1fr" : "minmax(220px, 280px) 1fr",
-                    alignItems: "stretch",
-                }}
-            >
-                <section style={{ display: "grid", gap: "12px" }}>
-                    <header>
-                        <h2 style={{ margin: 0, fontSize: "1rem" }}>{scene.label}</h2>
-                        <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "#555" }}>
-                            Drag to orbit, scroll to zoom, edit vertex angles below.
+    const controls = controlsVisible ? (
+        <>
+            <ModeControls
+                scenes={scenes}
+                activeSceneId={activeSceneId}
+                onSceneChange={onSceneChange}
+                renderBackend={renderBackend}
+            />
+            <section style={{ display: "grid", gap: "12px" }}>
+                <header>
+                    <h2 style={{ margin: 0, fontSize: "1rem" }}>{scene.label}</h2>
+                    <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "#555" }}>
+                        Drag to orbit, scroll to zoom, edit vertex angles below.
+                    </p>
+                    {dragging ? (
+                        <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#4a90e2" }}>
+                            Rotating…
                         </p>
-                        {dragging ? (
-                            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#4a90e2" }}>
-                                Rotating…
-                            </p>
-                        ) : null}
-                    </header>
-                    <div style={{ display: "grid", gap: "12px" }}>
-                        {anglesState.map((angles, index) => {
-                            const label = String.fromCharCode(65 + index);
-                            return (
-                                <div
-                                    key={`vertex-${label}`}
-                                    style={{
-                                        border: "1px solid #d0d4dd",
-                                        borderRadius: "8px",
-                                        padding: "8px",
-                                        display: "grid",
-                                        gap: "6px",
-                                    }}
-                                >
-                                    <strong>Vertex {label}</strong>
-                                    <label
-                                        style={{ display: "grid", gap: "4px", fontSize: "0.85rem" }}
-                                    >
-                                        Azimuth (°)
-                                        <input
-                                            data-testid={`vertex-${index}-azimuth`}
-                                            type="number"
-                                            min={-180}
-                                            max={180}
-                                            step={1}
-                                            value={Math.round(angles.azimuthDeg * 100) / 100}
-                                            onChange={(event) => {
-                                                const value = Number(event.target.value);
-                                                updateVertex(index, {
-                                                    azimuthDeg: value,
-                                                    elevationDeg: angles.elevationDeg,
-                                                });
-                                            }}
-                                        />
-                                    </label>
-                                    <label
-                                        style={{ display: "grid", gap: "4px", fontSize: "0.85rem" }}
-                                    >
-                                        Elevation (°)
-                                        <input
-                                            data-testid={`vertex-${index}-elevation`}
-                                            type="number"
-                                            min={-89}
-                                            max={89}
-                                            step={1}
-                                            value={Math.round(angles.elevationDeg * 100) / 100}
-                                            onChange={(event) => {
-                                                const value = Number(event.target.value);
-                                                updateVertex(index, {
-                                                    azimuthDeg: angles.azimuthDeg,
-                                                    elevationDeg: value,
-                                                });
-                                            }}
-                                        />
-                                    </label>
-                                    <span
-                                        data-testid={`vertex-${index}-summary`}
-                                        style={{ fontSize: "0.8rem", color: "#666" }}
-                                    >
-                                        Azimuth {Math.round(angles.azimuthDeg)}° / Elevation{" "}
-                                        {Math.round(angles.elevationDeg)}°
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div style={{ display: "grid", gap: "4px" }}>
-                        <label style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-                            Anti-aliasing samples
-                            <select
-                                data-testid="aa-samples"
-                                value={samples}
-                                onChange={handleSampleChange}
-                                style={{ marginTop: "4px" }}
+                    ) : null}
+                </header>
+                <div style={{ display: "grid", gap: "12px" }}>
+                    {anglesState.map((angles, index) => {
+                        const label = String.fromCharCode(65 + index);
+                        return (
+                            <div
+                                key={`vertex-${label}`}
+                                style={{
+                                    border: "1px solid #d0d4dd",
+                                    borderRadius: "8px",
+                                    padding: "8px",
+                                    display: "grid",
+                                    gap: "6px",
+                                }}
                             >
-                                <option value={1}>1x (off)</option>
-                                <option value={2}>2x</option>
-                                <option value={4}>4x</option>
-                                <option value={8}>8x</option>
-                            </select>
-                        </label>
-                    </div>
-                </section>
-                <div
-                    style={
-                        embed
-                            ? {
-                                  position: "relative",
-                                  width: "100%",
-                                  maxWidth: `${STANDARD_CANVAS_WIDTH}px`,
-                                  aspectRatio: "16 / 9",
-                                  borderRadius: "8px",
-                                  border: "1px solid #ccd0dc",
-                                  overflow: "hidden",
-                                  background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)",
-                              }
-                            : {
-                                  position: "relative",
-                                  width: `${STANDARD_CANVAS_WIDTH}px`,
-                                  height: `${STANDARD_CANVAS_HEIGHT}px`,
-                                  borderRadius: "8px",
-                                  border: "1px solid #ccd0dc",
-                                  overflow: "hidden",
-                                  background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)",
-                              }
-                    }
-                >
-                    <StageCanvas
-                        ref={canvasRef}
-                        style={{
-                            border: "none",
-                            width: "100%",
-                            height: "100%",
-                            cursor: dragging ? "grabbing" : "grab",
-                        }}
-                        data-geometry={GEOMETRY_KIND.spherical}
-                    />
+                                <strong>Vertex {label}</strong>
+                                <label style={{ display: "grid", gap: "4px", fontSize: "0.85rem" }}>
+                                    Azimuth (°)
+                                    <input
+                                        data-testid={`vertex-${index}-azimuth`}
+                                        type="number"
+                                        min={-180}
+                                        max={180}
+                                        step={1}
+                                        value={Math.round(angles.azimuthDeg * 100) / 100}
+                                        onChange={(event) => {
+                                            const value = Number(event.target.value);
+                                            updateVertex(index, {
+                                                azimuthDeg: value,
+                                                elevationDeg: angles.elevationDeg,
+                                            });
+                                        }}
+                                    />
+                                </label>
+                                <label style={{ display: "grid", gap: "4px", fontSize: "0.85rem" }}>
+                                    Elevation (°)
+                                    <input
+                                        data-testid={`vertex-${index}-elevation`}
+                                        type="number"
+                                        min={-89}
+                                        max={89}
+                                        step={1}
+                                        value={Math.round(angles.elevationDeg * 100) / 100}
+                                        onChange={(event) => {
+                                            const value = Number(event.target.value);
+                                            updateVertex(index, {
+                                                azimuthDeg: angles.azimuthDeg,
+                                                elevationDeg: value,
+                                            });
+                                        }}
+                                    />
+                                </label>
+                                <span
+                                    data-testid={`vertex-${index}-summary`}
+                                    style={{ fontSize: "0.8rem", color: "#666" }}
+                                >
+                                    Azimuth {Math.round(angles.azimuthDeg)}° / Elevation{" "}
+                                    {Math.round(angles.elevationDeg)}°
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
-            </div>
-        </div>
+                <div style={{ display: "grid", gap: "4px" }}>
+                    <label style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                        Anti-aliasing samples
+                        <select
+                            data-testid="aa-samples"
+                            value={samples}
+                            onChange={handleSampleChange}
+                            style={{ marginTop: "4px" }}
+                        >
+                            <option value={1}>1x (off)</option>
+                            <option value={2}>2x</option>
+                            <option value={4}>4x</option>
+                            <option value={8}>8x</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
+        </>
+    ) : null;
+
+    const canvas = (
+        <StageCanvas
+            ref={canvasRef}
+            style={{
+                border: "none",
+                width: "100%",
+                height: "100%",
+                cursor: dragging ? "grabbing" : "grab",
+            }}
+            data-geometry={GEOMETRY_KIND.spherical}
+        />
     );
+
+    return <SceneLayout controls={controls} canvas={canvas} embed={embed} />;
 }

@@ -23,7 +23,7 @@ import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclidea
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
 import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
-import { STANDARD_CANVAS_HEIGHT, STANDARD_CANVAS_WIDTH } from "./canvasLayout";
+import { SceneLayout } from "./layouts";
 import type { SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
@@ -533,29 +533,53 @@ export function EuclideanSceneHost({
         renderHyperbolicScene,
     ]);
 
-    const frameStyle = embed
-        ? {
-              position: "relative" as const,
-              width: "100%",
-              maxWidth: `${STANDARD_CANVAS_WIDTH}px`,
-              aspectRatio: "16 / 9",
-              background: "#111",
-              borderRadius: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-              overflow: "hidden",
-          }
-        : {
-              position: "relative" as const,
-              width: `${STANDARD_CANVAS_WIDTH}px`,
-              height: `${STANDARD_CANVAS_HEIGHT}px`,
-              background: "#111",
-              borderRadius: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-              overflow: "hidden",
-          };
+    const controls = (
+        <>
+            <ModeControls
+                scenes={scenes}
+                activeSceneId={activeSceneId}
+                onSceneChange={onSceneChange}
+                renderBackend={renderMode}
+            />
+            <PresetSelector
+                presets={presets as TrianglePreset[]}
+                anchor={anchor}
+                onSelect={setFromPreset}
+                onClear={clearAnchor}
+            />
+            <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+            {scene.supportsHandles && (
+                <HalfPlaneHandleControls
+                    showHandles={showHandles}
+                    onToggle={setShowHandles}
+                    spacing={handleSpacing}
+                    onSpacingChange={setHandleSpacing}
+                    disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
+                />
+            )}
+            <TriangleParamForm
+                formInputs={formInputs}
+                params={params}
+                anchor={anchor}
+                paramError={paramError}
+                paramWarning={paramWarning}
+                geometryMode={scene.geometry}
+                rRange={rRange}
+                rStep={rStep}
+                rSliderValue={rSliderValue}
+                onParamChange={setParamInput}
+                onRSliderChange={setRFromSlider}
+            />
+            <DepthControls
+                depth={params.depth}
+                depthRange={depthRange}
+                onDepthChange={updateDepth}
+            />
+        </>
+    );
 
-    const stageContainer = (
-        <div style={frameStyle}>
+    const canvas = (
+        <>
             {handleControls && scene.supportsHandles ? (
                 <span data-testid="handle-coordinates" style={{ display: "none" }}>
                     {JSON.stringify(handleControls.points)}
@@ -569,82 +593,8 @@ export function EuclideanSceneHost({
                 onPointerCancel={handlePointerUpOrCancel}
                 style={{ border: "none", width: "100%", height: "100%" }}
             />
-        </div>
+        </>
     );
 
-    if (embed) {
-        return (
-            <div
-                style={{
-                    boxSizing: "border-box",
-                    display: "grid",
-                    placeItems: "center",
-                    width: "100%",
-                    minHeight: "100vh",
-                    padding: "24px",
-                    background: "#0b0b0b",
-                }}
-            >
-                {stageContainer}
-            </div>
-        );
-    }
-
-    return (
-        <div
-            style={{
-                boxSizing: "border-box",
-                display: "grid",
-                gap: "16px",
-                gridTemplateColumns: "minmax(220px, 320px) 1fr",
-                height: "100%",
-                padding: "16px",
-                width: "100%",
-            }}
-        >
-            <div style={{ display: "grid", gap: "12px", alignContent: "start" }}>
-                <ModeControls
-                    scenes={scenes}
-                    activeSceneId={activeSceneId}
-                    onSceneChange={onSceneChange}
-                    renderBackend={renderMode}
-                />
-                <PresetSelector
-                    presets={presets as TrianglePreset[]}
-                    anchor={anchor}
-                    onSelect={setFromPreset}
-                    onClear={clearAnchor}
-                />
-                <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
-                {scene.supportsHandles && (
-                    <HalfPlaneHandleControls
-                        showHandles={showHandles}
-                        onToggle={setShowHandles}
-                        spacing={handleSpacing}
-                        onSpacingChange={setHandleSpacing}
-                        disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
-                    />
-                )}
-                <TriangleParamForm
-                    formInputs={formInputs}
-                    params={params}
-                    anchor={anchor}
-                    paramError={paramError}
-                    paramWarning={paramWarning}
-                    geometryMode={scene.geometry}
-                    rRange={rRange}
-                    rStep={rStep}
-                    rSliderValue={rSliderValue}
-                    onParamChange={setParamInput}
-                    onRSliderChange={setRFromSlider}
-                />
-                <DepthControls
-                    depth={params.depth}
-                    depthRange={depthRange}
-                    onDepthChange={updateDepth}
-                />
-            </div>
-            {stageContainer}
-        </div>
-    );
+    return <SceneLayout controls={controls} canvas={canvas} embed={embed} />;
 }
