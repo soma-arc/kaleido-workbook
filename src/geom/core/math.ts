@@ -29,6 +29,13 @@ export function perp90(v: Vec2): Vec2 {
 const TAU = 2 * Math.PI;
 
 /**
+ * Clamp a value between the provided bounds.
+ */
+export function clamp(value: number, lo: number, hi: number): number {
+    return Math.max(lo, Math.min(hi, value));
+}
+
+/**
  * Normalize an angle into the half-open interval [0, 2π).
  */
 export function normalizeAngle0ToTau(theta: number): number {

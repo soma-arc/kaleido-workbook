@@ -1,8 +1,7 @@
+import { clamp } from "@/geom/core/math";
 import type { Vec2 } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
-
-const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
 
 function unit(v: Vec2): Vec2 {
     const n = Math.hypot(v.x, v.y) || 1;
