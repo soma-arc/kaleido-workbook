@@ -1,16 +1,9 @@
+import { normalizeAngleMinusPiToPi } from "@/geom/core/math";
 import type { Tolerance, Vec2 } from "@/geom/core/types";
 import { defaultTol, tolValue } from "@/geom/core/types";
 
-function normalizeAngle(theta: number): number {
-    // Map to (-pi, pi]
-    let t = theta % (2 * Math.PI);
-    if (t <= -Math.PI) t += 2 * Math.PI;
-    if (t > Math.PI) t -= 2 * Math.PI;
-    return t;
-}
-
 export function angleToBoundaryPoint(theta: number): Vec2 {
-    const t = normalizeAngle(theta);
+    const t = normalizeAngleMinusPiToPi(theta);
     return { x: Math.cos(t), y: Math.sin(t) };
 }
 
@@ -22,7 +15,7 @@ export function boundaryPointToAngle(p: Vec2): number {
     if (!(m > 0)) return 0;
     const xn = x / m;
     const yn = y / m;
-    return normalizeAngle(Math.atan2(yn, xn));
+    return normalizeAngleMinusPiToPi(Math.atan2(yn, xn));
 }
 
 export function isOnUnitCircle(p: Vec2, tol: Tolerance = defaultTol): boolean {

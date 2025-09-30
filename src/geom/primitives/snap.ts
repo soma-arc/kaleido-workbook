@@ -1,20 +1,8 @@
+import { normalizeAngle0ToTau, normalizeAngleMinusPiToPi } from "@/geom/core/math";
 import type { Vec2 } from "@/geom/core/types";
 import { angleToBoundaryPoint, boundaryPointToAngle } from "@/geom/primitives/unitDisk";
 
 const TAU = 2 * Math.PI;
-
-function normalize0ToTau(theta: number): number {
-    let t = theta % TAU;
-    if (t < 0) t += TAU;
-    return t;
-}
-
-function normalizeMinusPiToPi(theta: number): number {
-    let t = ((theta + Math.PI) % TAU) - Math.PI;
-    if (t <= -Math.PI) t += TAU;
-    if (t > Math.PI) t -= TAU;
-    return t;
-}
 
 /**
  * Round angle to the nearest N-division on [0, 2π), ties go to the upper (+) side.
@@ -24,11 +12,11 @@ export function snapAngle(theta: number, N: number): number {
     if (!Number.isFinite(theta)) return 0;
     const n = Math.max(1, Math.floor(Math.abs(N)) || 1);
     const step = TAU / n;
-    const t0 = normalize0ToTau(theta);
+    const t0 = normalizeAngle0ToTau(theta);
     // half-up: add step/2 then floor
     const k = Math.floor((t0 + step / 2) / step);
     const snapped = k * step;
-    return normalizeMinusPiToPi(snapped);
+    return normalizeAngleMinusPiToPi(snapped);
 }
 
 /**
