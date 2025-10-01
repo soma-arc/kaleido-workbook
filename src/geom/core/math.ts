@@ -25,3 +25,31 @@ export function safeSqrt(x: number, eps = 1e-15): number {
 export function perp90(v: Vec2): Vec2 {
     return { x: -v.y, y: v.x };
 }
+
+const TAU = 2 * Math.PI;
+
+/**
+ * Clamp a value between the provided bounds.
+ */
+export function clamp(value: number, lo: number, hi: number): number {
+    return Math.max(lo, Math.min(hi, value));
+}
+
+/**
+ * Normalize an angle into the half-open interval [0, 2π).
+ */
+export function normalizeAngle0ToTau(theta: number): number {
+    let t = theta % TAU;
+    if (t < 0) t += TAU;
+    return t;
+}
+
+/**
+ * Normalize an angle into the interval (-π, π].
+ */
+export function normalizeAngleMinusPiToPi(theta: number): number {
+    let t = ((theta + Math.PI) % TAU) - Math.PI;
+    if (t <= -Math.PI) t += TAU;
+    if (t > Math.PI) t -= TAU;
+    return t;
+}
