@@ -7,13 +7,20 @@ import {
 } from "./webgl/geodesicUniforms";
 import fragmentShaderSourceTemplate from "./webgl/shaders/geodesic.frag?raw";
 import vertexShaderSource from "./webgl/shaders/geodesic.vert?raw";
+import { createTextureManager } from "./webgl/textureManager";
+import { MAX_TEXTURE_SLOTS, type TextureLayer } from "./webgl/textures";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 
+type RenderOptions = {
+    clipToDisk?: boolean;
+    textures?: TextureLayer[];
+};
+
 export interface WebGLRenderer {
-    render(scene: RenderScene, viewport: Viewport, options?: { clipToDisk?: boolean }): void;
+    render(scene: RenderScene, viewport: Viewport, options?: RenderOptions): void;
     dispose(): void;
 }
 
@@ -53,7 +60,7 @@ function createStubRenderer(canvas: HTMLCanvasElement | null): WebGLInitResult {
         canvas,
         ready: false,
         renderer: {
-            render: (_scene: RenderScene, _viewport: Viewport) => {
+            render: (_scene: RenderScene, _viewport: Viewport, _options?: RenderOptions) => {
                 /* no-op */
             },
             dispose: () => {
@@ -92,30 +99,29 @@ function createRealRenderer(
     gl.bindVertexArray(null);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
-    gl.useProgram(program);
-    gl.uniform3f(gl.getUniformLocation(program, "uLineColor"), ...LINE_COLOR);
-    gl.uniform1f(gl.getUniformLocation(program, "uLineWidth"), LINE_WIDTH);
-    gl.uniform1f(gl.getUniformLocation(program, "uFeather"), LINE_FEATHER);
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
-    gl.useProgram(null);
-
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     const geodesicBuffers = createGeodesicUniformBuffers(MAX_UNIFORM_GEODESICS);
     const uniforms = resolveUniformLocations(gl, program);
+    const textureManager = createTextureManager(gl);
+
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
+    gl.useProgram(program);
+    gl.uniform3f(gl.getUniformLocation(program, "uLineColor"), ...LINE_COLOR);
+    gl.uniform1f(gl.getUniformLocation(program, "uLineWidth"), LINE_WIDTH);
+    gl.uniform1f(gl.getUniformLocation(program, "uFeather"), LINE_FEATHER);
+    gl.uniform1iv(uniforms.textureSamplers, textureManager.getUnits());
+    gl.uniform1i(uniforms.textureCount, MAX_TEXTURE_SLOTS);
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
+    gl.useProgram(null);
 
     return {
         canvas,
         ready: true,
         renderer: {
-            render: (
-                scene: RenderScene,
-                viewport: Viewport,
-                options?: { clipToDisk?: boolean },
-            ) => {
+            render: (scene: RenderScene, viewport: Viewport, options?: RenderOptions) => {
                 const clipToDisk = options?.clipToDisk !== false;
                 const width = canvas.width || gl.drawingBufferWidth || 1;
                 const height = canvas.height || gl.drawingBufferHeight || 1;
@@ -128,6 +134,13 @@ function createRealRenderer(
                 gl.uniform1i(uniforms.geodesicCount, count);
                 gl.uniform4fv(uniforms.geodesics, geodesicBuffers.data);
 
+                const textureUniforms = textureManager.sync(options?.textures ?? []);
+                gl.uniform1iv(uniforms.textureEnabled, textureUniforms.enabled);
+                gl.uniform2fv(uniforms.textureOffset, textureUniforms.offset);
+                gl.uniform2fv(uniforms.textureScale, textureUniforms.scale);
+                gl.uniform1fv(uniforms.textureRotation, textureUniforms.rotation);
+                gl.uniform1fv(uniforms.textureOpacity, textureUniforms.opacity);
+
                 gl.clearColor(0, 0, 0, 0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.bindVertexArray(vao);
@@ -139,6 +152,7 @@ function createRealRenderer(
                 gl.deleteBuffer(vertexBuffer);
                 gl.deleteVertexArray(vao);
                 gl.deleteProgram(program);
+                textureManager.dispose();
                 canvas.width = 0;
                 canvas.height = 0;
             },
@@ -147,10 +161,9 @@ function createRealRenderer(
 }
 
 function buildFragmentShaderSource(): string {
-    return fragmentShaderSourceTemplate.replace(
-        "__MAX_GEODESICS__",
-        MAX_UNIFORM_GEODESICS.toString(),
-    );
+    return fragmentShaderSourceTemplate
+        .replace("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
+        .replace("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString());
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -190,6 +203,13 @@ type UniformLocations = {
     geodesicCount: WebGLUniformLocation;
     geodesics: WebGLUniformLocation;
     clipToDisk: WebGLUniformLocation;
+    textureEnabled: WebGLUniformLocation;
+    textureOffset: WebGLUniformLocation;
+    textureScale: WebGLUniformLocation;
+    textureRotation: WebGLUniformLocation;
+    textureOpacity: WebGLUniformLocation;
+    textureCount: WebGLUniformLocation;
+    textureSamplers: WebGLUniformLocation;
 };
 
 function resolveUniformLocations(
@@ -201,7 +221,27 @@ function resolveUniformLocations(
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
     const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
     const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
-    return { resolution, viewport, geodesicCount, geodesics, clipToDisk };
+    const textureEnabled = getUniformLocation(gl, program, "uTextureEnabled[0]");
+    const textureOffset = getUniformLocation(gl, program, "uTextureOffset[0]");
+    const textureScale = getUniformLocation(gl, program, "uTextureScale[0]");
+    const textureRotation = getUniformLocation(gl, program, "uTextureRotation[0]");
+    const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
+    const textureCount = getUniformLocation(gl, program, "uTextureCount");
+    const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
+    return {
+        resolution,
+        viewport,
+        geodesicCount,
+        geodesics,
+        clipToDisk,
+        textureEnabled,
+        textureOffset,
+        textureScale,
+        textureRotation,
+        textureOpacity,
+        textureCount,
+        textureSamplers,
+    };
 }
 
 function getUniformLocation(

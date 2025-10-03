@@ -11,6 +11,7 @@ import {
 } from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
+import type { SceneTextureLayer, TextureLayer } from "./webgl/textures";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
@@ -22,13 +23,17 @@ export type HalfPlaneHandleRequest = {
     radius?: number;
 };
 
+type RenderRequestBase = {
+    textures?: TextureLayer[];
+};
+
 export type GeometryRenderRequest =
-    | { geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams }
-    | {
+    | ({ geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams } & RenderRequestBase)
+    | ({
           geometry: typeof GEOMETRY_KIND.euclidean;
           halfPlanes: HalfPlane[];
           handles?: HalfPlaneHandleRequest;
-      };
+      } & RenderRequestBase);
 
 export interface RenderEngine {
     render(request: GeometryRenderRequest): void;
@@ -41,6 +46,19 @@ export type RenderEngineOptions = {
 };
 
 const DEFAULT_MODE: RenderMode = "hybrid";
+
+function extractSceneTextures(layers?: TextureLayer[]): SceneTextureLayer[] {
+    if (!layers?.length) {
+        return [];
+    }
+    return layers.map((layer) => ({
+        slot: layer.slot,
+        kind: layer.kind,
+        enabled: layer.enabled,
+        transform: layer.transform,
+        opacity: layer.opacity,
+    }));
+}
 
 export function detectRenderMode(): RenderMode {
     const envMode = safeString(readEnvRenderMode());
@@ -75,12 +93,16 @@ export function createRenderEngine(
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
+        const textures = request.textures ?? [];
+        const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
         try {
             scene =
                 request.geometry === GEOMETRY_KIND.hyperbolic
-                    ? buildHyperbolicScene(request.params, viewport)
-                    : buildEuclideanScene(request.halfPlanes, viewport);
+                    ? buildHyperbolicScene(request.params, viewport, { textures: sceneTextures })
+                    : buildEuclideanScene(request.halfPlanes, viewport, {
+                          textures: sceneTextures,
+                      });
         } catch (error) {
             console.error("[RenderEngine] Failed to build scene", error);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -111,14 +133,15 @@ export function createRenderEngine(
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
+            const renderOptions = { clipToDisk, textures } as const;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
-                webgl.renderer.render(scene, viewport, { clipToDisk });
+                webgl.renderer.render(scene, viewport, renderOptions);
                 if (webgl.canvas) {
                     ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
                 }
             } else {
-                webgl.renderer.render(scene, viewport, { clipToDisk });
+                webgl.renderer.render(scene, viewport, renderOptions);
             }
         }
         if (handleOverlay?.visible) {

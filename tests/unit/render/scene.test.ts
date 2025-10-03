@@ -16,6 +16,7 @@ describe("buildHyperbolicScene", () => {
         expect(scene.disk.r).toBeGreaterThan(0);
         expect(scene.geodesics.length).toBeGreaterThan(0);
         expect(scene.geodesics[0]).toHaveProperty("kind");
+        expect(scene.textures).toEqual([]);
     });
 });
 
@@ -25,5 +26,6 @@ describe("buildEuclideanScene", () => {
         expect(scene.geometry).toBe("euclidean");
         expect(scene.halfPlanes.length).toBe(PLANES.length);
         expect((scene as unknown as { disk?: unknown }).disk).toBeUndefined();
+        expect(scene.textures).toEqual([]);
     });
 });
