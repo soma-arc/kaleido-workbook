@@ -12,6 +12,7 @@ import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { createRenderEngine, type RenderEngine, type RenderMode } from "@/render/engine";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
+import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import { ModeControls } from "@/ui/components/ModeControls";
@@ -19,8 +20,12 @@ import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TriangleParamForm } from "@/ui/components/TriangleParamForm";
+import { CameraInput } from "@/ui/components/texture/CameraInput";
+import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
+import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
 import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import type { SceneDefinition, SceneId } from "./types";
@@ -85,6 +90,7 @@ export function EuclideanSceneHost({
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
+    const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
 
     const {
         params,
@@ -298,14 +304,25 @@ export function EuclideanSceneHost({
                 geometry: GEOMETRY_KIND.euclidean,
                 halfPlanes: planes,
                 handles,
+                textures: textureInput.textures,
             });
         },
-        [activeHandle, currentControlPoints, scene.supportsHandles, showHandles],
+        [
+            activeHandle,
+            currentControlPoints,
+            scene.supportsHandles,
+            showHandles,
+            textureInput.textures,
+        ],
     );
 
     const renderHyperbolicScene = useCallback(() => {
-        renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.hyperbolic, params });
-    }, [params]);
+        renderEngineRef.current?.render({
+            geometry: GEOMETRY_KIND.hyperbolic,
+            params,
+            textures: textureInput.textures,
+        });
+    }, [params, textureInput.textures]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
@@ -619,6 +636,20 @@ export function EuclideanSceneHost({
                     onClear={clearAnchor}
                 />
                 <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+                <TexturePicker
+                    slot={TEXTURE_SLOTS.base}
+                    state={textureInput.slots[TEXTURE_SLOTS.base]}
+                    presets={textureInput.presets}
+                    onSelectFile={(file) => textureInput.loadFile(TEXTURE_SLOTS.base, file)}
+                    onSelectPreset={(id) => textureInput.loadPreset(TEXTURE_SLOTS.base, id)}
+                    onClear={() => textureInput.disable(TEXTURE_SLOTS.base)}
+                />
+                <CameraInput
+                    slot={TEXTURE_SLOTS.camera}
+                    state={textureInput.slots[TEXTURE_SLOTS.camera]}
+                    onEnable={() => textureInput.enableCamera(TEXTURE_SLOTS.camera)}
+                    onDisable={() => textureInput.disable(TEXTURE_SLOTS.camera)}
+                />
                 {scene.supportsHandles && (
                     <HalfPlaneHandleControls
                         showHandles={showHandles}

@@ -29,6 +29,15 @@ pnpm ci             # biome ci + typecheck + test
 - `R` スライダは分母の範囲 `[2, 100]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
 
+### Texture Input
+- 「Texture」セクションで Poincaré 円板の背面テクスチャを切り替えられます。
+  - `Choose image` からローカルファイル（PNG/JPEG/SVG 等）を選ぶと、WebGL テクスチャに即時反映されます。
+  - `Preset` のプルダウンでは `src/assets/textures` に用意したサンプルを選択できます（Storybook: `Controls/Texture Input`）。
+- 「カメラを有効化」ボタンは `navigator.mediaDevices.getUserMedia` で取得したフレームを毎フレーム `texImage2D` へ転送します。
+  - ブラウザのセキュリティ要件により HTTPS（または `localhost`）が必須です。開発環境で試す場合は `pnpm dev -- --host --https` を利用するか、自己署名証明書を設定してください。
+  - 許可ダイアログで拒否した場合はステータスにエラーメッセージが表示され、再度ボタンを押すと再リクエストします。
+- テクスチャ入力の状態はステータス表示と JSON プレビューで確認できます（Storybook の Docs/Controls を参照）。
+
 ### Embed Mode
 
 | Parameter | 値の例 | 説明 |
