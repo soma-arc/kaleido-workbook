@@ -11,6 +11,7 @@ globalActFlag.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("SphericalSceneHost", () => {
     const scene: SceneDefinition = {
+        key: "sphericalTetrahedron",
         id: "spherical-tetrahedron" as const,
         label: "Spherical Tetrahedron",
         geometry: GEOMETRY_KIND.spherical,

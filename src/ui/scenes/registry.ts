@@ -1,20 +1,14 @@
-import {
-    DEFAULT_SCENE_ID,
-    SCENE_IDS,
-    SCENE_ORDER,
-    SCENES_BY_GEOMETRY,
-    SCENES_BY_ID,
-} from "./sceneDefinitions";
-import type { SceneDefinition, SceneId, SceneRegistry } from "./types";
-
-export const SCENE_REGISTRY: SceneRegistry = {
-    byId: SCENES_BY_ID,
-    order: SCENE_ORDER,
-    byGeometry: SCENES_BY_GEOMETRY,
-};
+import { DEFAULT_SCENE_ID, SCENE_IDS, SCENE_REGISTRY } from "./sceneDefinitions";
+import type { SceneDefinition, SceneId } from "./types";
 
 export function listScenes(): SceneDefinition[] {
-    return SCENE_ORDER.map((id) => SCENES_BY_ID[id]);
+    return SCENE_REGISTRY.order.map((id) => {
+        const entry = SCENE_REGISTRY.byId[id];
+        if (!entry) {
+            throw new Error(`Unknown scene id: ${id}`);
+        }
+        return entry;
+    });
 }
 
 export function listScenesByGeometry(geometry: SceneDefinition["geometry"]): SceneDefinition[] {
@@ -22,7 +16,7 @@ export function listScenesByGeometry(geometry: SceneDefinition["geometry"]): Sce
 }
 
 export function getSceneDefinition(id: SceneId): SceneDefinition {
-    const entry = SCENES_BY_ID[id];
+    const entry = SCENE_REGISTRY.byId[id];
     if (!entry) {
         throw new Error(`Unknown scene id: ${id}`);
     }

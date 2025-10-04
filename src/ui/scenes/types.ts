@@ -6,40 +6,18 @@ import type {
 } from "@/geom/primitives/halfPlaneControls";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 
-export const SCENE_VARIANT_GROUPS = {
-    [GEOMETRY_KIND.hyperbolic]: ["tiling"] as const,
-    [GEOMETRY_KIND.euclidean]: [
-        "half-planes",
-        "hinge",
-        "regular-square",
-        "regular-pentagon",
-        "regular-hexagon",
-    ] as const,
-    [GEOMETRY_KIND.spherical]: ["tetrahedron"] as const,
-} as const;
+export type SceneVariant = string;
 
-export type HyperbolicSceneVariant =
-    (typeof SCENE_VARIANT_GROUPS)[typeof GEOMETRY_KIND.hyperbolic][number];
-export type EuclideanSceneVariant =
-    (typeof SCENE_VARIANT_GROUPS)[typeof GEOMETRY_KIND.euclidean][number];
+export type SceneKey = {
+    geometry: GeometryKind;
+    variant: SceneVariant;
+};
 
-export type SphericalSceneVariant =
-    (typeof SCENE_VARIANT_GROUPS)[typeof GEOMETRY_KIND.spherical][number];
-
-export type SceneVariant = HyperbolicSceneVariant | EuclideanSceneVariant | SphericalSceneVariant;
-
-export type SceneId =
-    | `${typeof GEOMETRY_KIND.hyperbolic}-${HyperbolicSceneVariant}`
-    | `${typeof GEOMETRY_KIND.euclidean}-${EuclideanSceneVariant}`
-    | `${typeof GEOMETRY_KIND.spherical}-${SphericalSceneVariant}`;
-
-export type SceneKey =
-    | { geometry: typeof GEOMETRY_KIND.hyperbolic; variant: HyperbolicSceneVariant }
-    | { geometry: typeof GEOMETRY_KIND.euclidean; variant: EuclideanSceneVariant }
-    | { geometry: typeof GEOMETRY_KIND.spherical; variant: SphericalSceneVariant };
+export type SceneId = `${GeometryKind}-${SceneVariant}`;
 
 export interface SceneDefinition {
     id: SceneId;
+    key: string;
     label: string;
     geometry: GeometryKind;
     variant: SceneVariant;
@@ -54,7 +32,10 @@ export interface SceneDefinition {
     initialSphericalState?: SphericalSceneState;
 }
 
+export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
+
 export type SceneRegistry = {
+    definitions: SceneDefinition[];
     byId: Record<SceneId, SceneDefinition>;
     order: SceneId[];
     byGeometry: Record<GeometryKind, SceneDefinition[]>;
@@ -64,35 +45,26 @@ export function createSceneId(key: SceneKey): SceneId {
     return `${key.geometry}-${key.variant}` as SceneId;
 }
 
-export function parseSceneId(id: SceneId): SceneKey {
+export function parseSceneId(id: string): SceneKey {
     const separatorIndex = id.indexOf("-");
     if (separatorIndex === -1) {
         throw new Error(`Invalid scene id: ${id}`);
     }
-    const geometry = id.slice(0, separatorIndex) as GeometryKind;
-    const variant = id.slice(separatorIndex + 1) as SceneVariant;
-
-    switch (geometry) {
-        case GEOMETRY_KIND.hyperbolic: {
-            if (!SCENE_VARIANT_GROUPS[geometry].includes(variant as HyperbolicSceneVariant)) {
-                throw new Error(`Invalid hyperbolic scene variant: ${variant}`);
-            }
-            return { geometry, variant: variant as HyperbolicSceneVariant };
-        }
-        case GEOMETRY_KIND.euclidean: {
-            if (!SCENE_VARIANT_GROUPS[geometry].includes(variant as EuclideanSceneVariant)) {
-                throw new Error(`Invalid euclidean scene variant: ${variant}`);
-            }
-            return { geometry, variant: variant as EuclideanSceneVariant };
-        }
-        case GEOMETRY_KIND.spherical: {
-            if (!SCENE_VARIANT_GROUPS[geometry].includes(variant as SphericalSceneVariant)) {
-                throw new Error(`Invalid spherical scene variant: ${variant}`);
-            }
-            return { geometry, variant: variant as SphericalSceneVariant };
-        }
-        default: {
-            throw new Error(`Unsupported geometry in scene id: ${geometry}`);
-        }
+    const geometryValue = id.slice(0, separatorIndex);
+    if (!isGeometryKind(geometryValue)) {
+        throw new Error(`Unsupported geometry in scene id: ${geometryValue}`);
     }
+    const variant = id.slice(separatorIndex + 1);
+    if (!variant) {
+        throw new Error(`Missing variant in scene id: ${id}`);
+    }
+    return { geometry: geometryValue, variant };
+}
+
+function isGeometryKind(value: string): value is GeometryKind {
+    return (
+        value === GEOMETRY_KIND.hyperbolic ||
+        value === GEOMETRY_KIND.euclidean ||
+        value === GEOMETRY_KIND.spherical
+    );
 }
