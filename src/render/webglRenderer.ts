@@ -8,6 +8,7 @@ import {
 } from "./webgl/pipelineRegistry";
 import type { TextureLayer } from "./webgl/textures";
 import "./webgl/pipelines/geodesicPipeline";
+import "./webgl/pipelines/sphericalPipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;

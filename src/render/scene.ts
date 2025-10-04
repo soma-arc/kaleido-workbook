@@ -2,10 +2,13 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TriangleFace } from "@/geom/triangle/group";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import { buildTiling } from "@/geom/triangle/tiling";
 import { type CircleSpec, geodesicSpec, type LineSpec, unitDiskSpec } from "./primitives";
+import type { SphericalOrbitCamera } from "./spherical/camera";
+import type { SphericalRenderSettings } from "./spherical/renderer";
 import { facesToEdgeGeodesics } from "./tilingAdapter";
 import type { Viewport } from "./viewport";
 import type { SceneTextureLayer } from "./webgl/textures";
@@ -37,7 +40,14 @@ export type EuclideanScene = SceneBase & {
     halfPlanes: HalfPlane[];
 };
 
-export type RenderScene = HyperbolicScene | EuclideanScene;
+export type SphericalScene = SceneBase & {
+    geometry: typeof GEOMETRY_KIND.spherical;
+    state: SphericalSceneState;
+    camera: SphericalOrbitCamera;
+    settings: SphericalRenderSettings;
+};
+
+export type RenderScene = HyperbolicScene | EuclideanScene | SphericalScene;
 
 function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicPrimitive[] {
     const edges = facesToEdgeGeodesics(faces);

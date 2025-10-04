@@ -39,12 +39,14 @@ export function packSceneGeodesics(
             }
             count += 1;
         }
-    } else {
+    } else if (scene.geometry === GEOMETRY_KIND.euclidean) {
         for (const plane of scene.halfPlanes) {
             if (count >= maxCount) break;
             packSceneHalfPlane(plane, buffers, count);
             count += 1;
         }
+    } else {
+        count = 0;
     }
     clearRemainder(buffers, count);
     return count;

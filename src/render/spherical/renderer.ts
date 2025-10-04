@@ -65,6 +65,18 @@ export function createSphericalRenderer(canvas: HTMLCanvasElement): SphericalRen
     }
 }
 
+export function createSphericalRendererWithContext(
+    gl: WebGL2RenderingContext,
+    canvas: HTMLCanvasElement,
+): SphericalRenderer {
+    try {
+        return createRealRenderer(gl, canvas);
+    } catch (error) {
+        console.error("[spherical] Failed to initialise renderer", error);
+        return createStubRenderer(canvas);
+    }
+}
+
 function createStubRenderer(canvas: HTMLCanvasElement): SphericalRenderer {
     return {
         ready: false,

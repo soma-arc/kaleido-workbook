@@ -52,6 +52,10 @@ export function renderTileLayer(
         return;
     }
 
+    if (scene.geometry !== GEOMETRY_KIND.euclidean) {
+        return;
+    }
+
     for (const plane of scene.halfPlanes) {
         drawHalfPlaneBoundary(ctx, plane, viewport, { strokeStyle: tileStroke, lineWidth });
     }
