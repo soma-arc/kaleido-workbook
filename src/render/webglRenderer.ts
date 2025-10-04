@@ -1,22 +1,18 @@
+import type { SceneDefinition } from "@/ui/scenes/types";
 import type { RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import {
-    createGeodesicUniformBuffers,
-    MAX_UNIFORM_GEODESICS,
-    packSceneGeodesics,
-} from "./webgl/geodesicUniforms";
-import fragmentShaderSourceTemplate from "./webgl/shaders/geodesic.frag?raw";
-import vertexShaderSource from "./webgl/shaders/geodesic.vert?raw";
-import { createTextureManager } from "./webgl/textureManager";
-import { MAX_TEXTURE_SLOTS, type TextureLayer } from "./webgl/textures";
-
-const LINE_WIDTH = 1.5;
-const LINE_FEATHER = 0.9;
-const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
+    resolveWebGLPipeline,
+    type WebGLPipelineInstance,
+    type WebGLPipelineRenderContext,
+} from "./webgl/pipelineRegistry";
+import type { TextureLayer } from "./webgl/textures";
+import "./webgl/pipelines/geodesicPipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;
     textures?: TextureLayer[];
+    scene?: SceneDefinition;
 };
 
 export interface WebGLRenderer {
@@ -77,181 +73,44 @@ function createRealRenderer(
     canvas: HTMLCanvasElement,
     gl: WebGL2RenderingContext,
 ): WebGLInitResult {
-    const fragmentShaderSource = buildFragmentShaderSource();
-    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    const program = linkProgram(gl, vertexShader, fragmentShader);
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
+    let active: { id: string; instance: WebGLPipelineInstance } | null = null;
 
-    const vao = gl.createVertexArray();
-    if (!vao) throw new Error("Failed to create VAO");
-    const vertexBuffer = gl.createBuffer();
-    if (!vertexBuffer) throw new Error("Failed to create vertex buffer");
+    const ensurePipeline = (scene: SceneDefinition | undefined): WebGLPipelineInstance => {
+        const registration = resolveWebGLPipeline(scene);
+        if (!active || active.id !== registration.id) {
+            active?.instance.dispose();
+            active = {
+                id: registration.id,
+                instance: registration.factory(gl, canvas),
+            };
+        }
+        return active.instance;
+    };
 
-    const fullscreenTriangle = new Float32Array([-1, -1, 3, -1, -1, 3]);
-
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, fullscreenTriangle, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    gl.bindVertexArray(null);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    gl.disable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-    const geodesicBuffers = createGeodesicUniformBuffers(MAX_UNIFORM_GEODESICS);
-    const uniforms = resolveUniformLocations(gl, program);
-    const textureManager = createTextureManager(gl);
-
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
-    gl.useProgram(program);
-    gl.uniform3f(gl.getUniformLocation(program, "uLineColor"), ...LINE_COLOR);
-    gl.uniform1f(gl.getUniformLocation(program, "uLineWidth"), LINE_WIDTH);
-    gl.uniform1f(gl.getUniformLocation(program, "uFeather"), LINE_FEATHER);
-    gl.uniform1iv(uniforms.textureSamplers, textureManager.getUnits());
-    gl.uniform1i(uniforms.textureCount, MAX_TEXTURE_SLOTS);
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation not related to React hooks.
-    gl.useProgram(null);
+    const renderer: WebGLRenderer = {
+        render: (scene: RenderScene, viewport: Viewport, options?: RenderOptions) => {
+            const pipeline = ensurePipeline(options?.scene);
+            const context: WebGLPipelineRenderContext = {
+                sceneDefinition: options?.scene,
+                renderScene: scene,
+                viewport,
+                clipToDisk: options?.clipToDisk !== false,
+                textures: options?.textures ?? [],
+                canvas,
+            };
+            pipeline.render(context);
+        },
+        dispose: () => {
+            active?.instance.dispose();
+            active = null;
+            canvas.width = 0;
+            canvas.height = 0;
+        },
+    };
 
     return {
         canvas,
         ready: true,
-        renderer: {
-            render: (scene: RenderScene, viewport: Viewport, options?: RenderOptions) => {
-                const clipToDisk = options?.clipToDisk !== false;
-                const width = canvas.width || gl.drawingBufferWidth || 1;
-                const height = canvas.height || gl.drawingBufferHeight || 1;
-                gl.viewport(0, 0, width, height);
-                gl.useProgram(program);
-                gl.uniform2f(uniforms.resolution, width, height);
-                gl.uniform3f(uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
-                gl.uniform1i(uniforms.clipToDisk, clipToDisk ? 1 : 0);
-                const count = packSceneGeodesics(scene, geodesicBuffers, MAX_UNIFORM_GEODESICS);
-                gl.uniform1i(uniforms.geodesicCount, count);
-                gl.uniform4fv(uniforms.geodesics, geodesicBuffers.data);
-
-                const textureUniforms = textureManager.sync(options?.textures ?? []);
-                gl.uniform1iv(uniforms.textureEnabled, textureUniforms.enabled);
-                gl.uniform2fv(uniforms.textureOffset, textureUniforms.offset);
-                gl.uniform2fv(uniforms.textureScale, textureUniforms.scale);
-                gl.uniform1fv(uniforms.textureRotation, textureUniforms.rotation);
-                gl.uniform1fv(uniforms.textureOpacity, textureUniforms.opacity);
-
-                gl.clearColor(0, 0, 0, 0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.bindVertexArray(vao);
-                gl.drawArrays(gl.TRIANGLES, 0, 3);
-                gl.bindVertexArray(null);
-                gl.useProgram(null);
-            },
-            dispose: () => {
-                gl.deleteBuffer(vertexBuffer);
-                gl.deleteVertexArray(vao);
-                gl.deleteProgram(program);
-                textureManager.dispose();
-                canvas.width = 0;
-                canvas.height = 0;
-            },
-        },
+        renderer,
     };
-}
-
-function buildFragmentShaderSource(): string {
-    return fragmentShaderSourceTemplate
-        .replace("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
-        .replace("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString());
-}
-
-function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-    const shader = gl.createShader(type);
-    if (!shader) throw new Error("Failed to create shader");
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        const info = gl.getShaderInfoLog(shader) ?? "Unknown error";
-        gl.deleteShader(shader);
-        throw new Error(`Shader compilation failed: ${info}`);
-    }
-    return shader;
-}
-
-function linkProgram(
-    gl: WebGL2RenderingContext,
-    vertex: WebGLShader,
-    fragment: WebGLShader,
-): WebGLProgram {
-    const program = gl.createProgram();
-    if (!program) throw new Error("Failed to create program");
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        const info = gl.getProgramInfoLog(program) ?? "Unknown error";
-        gl.deleteProgram(program);
-        throw new Error(`Program link failed: ${info}`);
-    }
-    return program;
-}
-
-type UniformLocations = {
-    resolution: WebGLUniformLocation;
-    viewport: WebGLUniformLocation;
-    geodesicCount: WebGLUniformLocation;
-    geodesics: WebGLUniformLocation;
-    clipToDisk: WebGLUniformLocation;
-    textureEnabled: WebGLUniformLocation;
-    textureOffset: WebGLUniformLocation;
-    textureScale: WebGLUniformLocation;
-    textureRotation: WebGLUniformLocation;
-    textureOpacity: WebGLUniformLocation;
-    textureCount: WebGLUniformLocation;
-    textureSamplers: WebGLUniformLocation;
-};
-
-function resolveUniformLocations(
-    gl: WebGL2RenderingContext,
-    program: WebGLProgram,
-): UniformLocations {
-    const resolution = getUniformLocation(gl, program, "uResolution");
-    const viewport = getUniformLocation(gl, program, "uViewport");
-    const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
-    const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
-    const textureEnabled = getUniformLocation(gl, program, "uTextureEnabled[0]");
-    const textureOffset = getUniformLocation(gl, program, "uTextureOffset[0]");
-    const textureScale = getUniformLocation(gl, program, "uTextureScale[0]");
-    const textureRotation = getUniformLocation(gl, program, "uTextureRotation[0]");
-    const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
-    const textureCount = getUniformLocation(gl, program, "uTextureCount");
-    const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
-    return {
-        resolution,
-        viewport,
-        geodesicCount,
-        geodesics,
-        clipToDisk,
-        textureEnabled,
-        textureOffset,
-        textureScale,
-        textureRotation,
-        textureOpacity,
-        textureCount,
-        textureSamplers,
-    };
-}
-
-function getUniformLocation(
-    gl: WebGL2RenderingContext,
-    program: WebGLProgram,
-    name: string,
-): WebGLUniformLocation {
-    const location = gl.getUniformLocation(program, name);
-    if (!location) {
-        throw new Error(`Uniform ${name} not found`);
-    }
-    return location;
 }

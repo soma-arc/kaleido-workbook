@@ -2,6 +2,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
+import type { SceneDefinition } from "@/ui/scenes/types";
 import { attachResize, setCanvasDPR } from "./canvas";
 import {
     type CanvasTileRenderOptions,
@@ -24,6 +25,7 @@ export type HalfPlaneHandleRequest = {
 };
 
 type RenderRequestBase = {
+    scene?: SceneDefinition;
     textures?: TextureLayer[];
 };
 
@@ -133,7 +135,7 @@ export function createRenderEngine(
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
-            const renderOptions = { clipToDisk, textures } as const;
+            const renderOptions = { clipToDisk, textures, scene: request.scene } as const;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
                 webgl.renderer.render(scene, viewport, renderOptions);

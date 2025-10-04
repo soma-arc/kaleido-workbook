@@ -302,6 +302,7 @@ export function EuclideanSceneHost({
                     : undefined;
             latestEuclideanPlanesRef.current = planes;
             renderEngineRef.current?.render({
+                scene,
                 geometry: GEOMETRY_KIND.euclidean,
                 halfPlanes: planes,
                 handles,
@@ -311,6 +312,7 @@ export function EuclideanSceneHost({
         [
             activeHandle,
             currentControlPoints,
+            scene,
             scene.supportsHandles,
             showHandles,
             textureInput.textures,
@@ -319,11 +321,12 @@ export function EuclideanSceneHost({
 
     const renderHyperbolicScene = useCallback(() => {
         renderEngineRef.current?.render({
+            scene,
             geometry: GEOMETRY_KIND.hyperbolic,
             params,
             textures: textureInput.textures,
         });
-    }, [params, textureInput.textures]);
+    }, [params, scene, textureInput.textures]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
