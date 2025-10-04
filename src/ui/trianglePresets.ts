@@ -25,6 +25,7 @@ const EUCLIDEAN_PRESETS: TrianglePreset[] = [
 const PRESETS_BY_MODE: Record<GeometryMode, TrianglePreset[]> = {
     [GEOMETRY_KIND.hyperbolic]: HYPERBOLIC_PRESETS,
     [GEOMETRY_KIND.euclidean]: EUCLIDEAN_PRESETS,
+    [GEOMETRY_KIND.spherical]: [],
 };
 
 export const DEFAULT_HYPERBOLIC_PRESET = HYPERBOLIC_PRESETS[0];

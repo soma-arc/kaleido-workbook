@@ -7,9 +7,11 @@ export function useSceneRegistry(): {
     scenes: SceneDefinition[];
     euclideanScenes: SceneDefinition[];
     hyperbolicScenes: SceneDefinition[];
+    sphericalScenes: SceneDefinition[];
 } {
     const scenes = useMemo(() => listScenes(), []);
     const euclideanScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.euclidean), []);
     const hyperbolicScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.hyperbolic), []);
-    return { scenes, euclideanScenes, hyperbolicScenes };
+    const sphericalScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.spherical), []);
+    return { scenes, euclideanScenes, hyperbolicScenes, sphericalScenes };
 }

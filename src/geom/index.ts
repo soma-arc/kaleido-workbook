@@ -7,10 +7,10 @@ export * from "@/geom/primitives/halfPlane";
 export * from "@/geom/primitives/halfPlaneControls";
 export * from "@/geom/primitives/snap";
 export * from "@/geom/primitives/unitDisk";
-
+export * from "@/geom/spherical/regularTetrahedron";
+export * from "@/geom/spherical/types";
 export * from "@/geom/transforms/inversion";
 export * from "@/geom/transforms/reflect";
-
 export * from "@/geom/triangle/euclideanTriangle";
 export * from "@/geom/triangle/geodesicAngles";
 export * from "@/geom/triangle/group";

@@ -4,6 +4,7 @@ import type {
     ControlPointAssignment,
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import type { SphericalSceneState } from "@/geom/spherical/types";
 
 export const SCENE_VARIANT_GROUPS = {
     [GEOMETRY_KIND.hyperbolic]: ["tiling"] as const,
@@ -14,6 +15,7 @@ export const SCENE_VARIANT_GROUPS = {
         "regular-pentagon",
         "regular-hexagon",
     ] as const,
+    [GEOMETRY_KIND.spherical]: ["tetrahedron"] as const,
 } as const;
 
 export type HyperbolicSceneVariant =
@@ -21,15 +23,20 @@ export type HyperbolicSceneVariant =
 export type EuclideanSceneVariant =
     (typeof SCENE_VARIANT_GROUPS)[typeof GEOMETRY_KIND.euclidean][number];
 
-export type SceneVariant = HyperbolicSceneVariant | EuclideanSceneVariant;
+export type SphericalSceneVariant =
+    (typeof SCENE_VARIANT_GROUPS)[typeof GEOMETRY_KIND.spherical][number];
+
+export type SceneVariant = HyperbolicSceneVariant | EuclideanSceneVariant | SphericalSceneVariant;
 
 export type SceneId =
     | `${typeof GEOMETRY_KIND.hyperbolic}-${HyperbolicSceneVariant}`
-    | `${typeof GEOMETRY_KIND.euclidean}-${EuclideanSceneVariant}`;
+    | `${typeof GEOMETRY_KIND.euclidean}-${EuclideanSceneVariant}`
+    | `${typeof GEOMETRY_KIND.spherical}-${SphericalSceneVariant}`;
 
 export type SceneKey =
     | { geometry: typeof GEOMETRY_KIND.hyperbolic; variant: HyperbolicSceneVariant }
-    | { geometry: typeof GEOMETRY_KIND.euclidean; variant: EuclideanSceneVariant };
+    | { geometry: typeof GEOMETRY_KIND.euclidean; variant: EuclideanSceneVariant }
+    | { geometry: typeof GEOMETRY_KIND.spherical; variant: SphericalSceneVariant };
 
 export interface SceneDefinition {
     id: SceneId;
@@ -44,6 +51,7 @@ export interface SceneDefinition {
     controlAssignments?: ControlPointAssignment[];
     initialControlPoints?: HalfPlaneControlPoints[];
     defaultHandleSpacing?: number;
+    initialSphericalState?: SphericalSceneState;
 }
 
 export type SceneRegistry = {
@@ -76,6 +84,12 @@ export function parseSceneId(id: SceneId): SceneKey {
                 throw new Error(`Invalid euclidean scene variant: ${variant}`);
             }
             return { geometry, variant: variant as EuclideanSceneVariant };
+        }
+        case GEOMETRY_KIND.spherical: {
+            if (!SCENE_VARIANT_GROUPS[geometry].includes(variant as SphericalSceneVariant)) {
+                throw new Error(`Invalid spherical scene variant: ${variant}`);
+            }
+            return { geometry, variant: variant as SphericalSceneVariant };
         }
         default: {
             throw new Error(`Unsupported geometry in scene id: ${geometry}`);
