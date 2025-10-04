@@ -1,5 +1,9 @@
 import { DEFAULT_SCENE_ID, SCENE_IDS, SCENE_REGISTRY } from "./sceneDefinitions";
-import type { SceneDefinition, SceneId } from "./types";
+import type { SceneDefinition, SceneId, SceneRegistry } from "./types";
+
+export function getSceneRegistry(): SceneRegistry {
+    return SCENE_REGISTRY;
+}
 
 export function listScenes(): SceneDefinition[] {
     return SCENE_REGISTRY.order.map((id) => {

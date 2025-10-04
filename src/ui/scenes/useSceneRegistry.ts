@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { listScenes, listScenesByGeometry } from "./registry";
+import { getSceneRegistry } from "./registry";
 import type { SceneDefinition } from "./types";
 
 export function useSceneRegistry(): {
@@ -9,9 +9,19 @@ export function useSceneRegistry(): {
     hyperbolicScenes: SceneDefinition[];
     sphericalScenes: SceneDefinition[];
 } {
-    const scenes = useMemo(() => listScenes(), []);
-    const euclideanScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.euclidean), []);
-    const hyperbolicScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.hyperbolic), []);
-    const sphericalScenes = useMemo(() => listScenesByGeometry(GEOMETRY_KIND.spherical), []);
+    const registry = useMemo(() => getSceneRegistry(), []);
+    const scenes = useMemo(() => [...registry.definitions], [registry]);
+    const euclideanScenes = useMemo(
+        () => [...registry.byGeometry[GEOMETRY_KIND.euclidean]],
+        [registry],
+    );
+    const hyperbolicScenes = useMemo(
+        () => [...registry.byGeometry[GEOMETRY_KIND.hyperbolic]],
+        [registry],
+    );
+    const sphericalScenes = useMemo(
+        () => [...registry.byGeometry[GEOMETRY_KIND.spherical]],
+        [registry],
+    );
     return { scenes, euclideanScenes, hyperbolicScenes, sphericalScenes };
 }
