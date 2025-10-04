@@ -59,6 +59,7 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 type SceneAlias =
     | "hyperbolicTiling"
+    | "debugTexture"
     | "euclideanHalfPlanes"
     | "euclideanHinge"
     | "euclideanRegularSquare"
@@ -73,6 +74,15 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         geometry: GEOMETRY_KIND.hyperbolic,
         variant: "tiling",
         description: "Generates a {p,q,r} hyperbolic tiling rendered inside the Poincaré disk.",
+        supportsHandles: false,
+        editable: false,
+    },
+    {
+        key: "debugTexture",
+        label: "Debug Texture",
+        geometry: GEOMETRY_KIND.hyperbolic,
+        variant: "debug-texture",
+        description: "Renders the base texture in the viewport center for shader debugging.",
         supportsHandles: false,
         editable: false,
     },
