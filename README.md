@@ -1,6 +1,6 @@
 # Hyperbolic Plane PoC
 
-Poincaré 円板で三鏡 (p,q,r)・ジオデシック・角度スナップ・群展開・共役操作を最小構成で検証する PoC（Web/Canvas 2D）。
+Poincaré 円板で三鏡 (p,q,r)・ジオデシック・角度スナップ・群展開・共役操作を最小構成で検証する PoC（Web/Canvas 2D）。2025-09 時点では球面モード（正四面体ベースの球面三角形を WebGL2.0 フラグメントシェーダで描画）も搭載しています。
 
 ## クイックスタート
 前提: Node.js 22, pnpm
@@ -33,7 +33,7 @@ pnpm ci             # biome ci + typecheck + test
 
 | Parameter | 値の例 | 説明 |
 |-----------|--------|------|
-| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`, `spherical-tetrahedron`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
 | `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
 
 - URL 例: `https://<host>/?scene=euclidean-hinge&embed=1`
@@ -112,6 +112,7 @@ Marp `theme: default` + `class: invert` などダーク系スライドに調和�
 - 左ペインの「Geometry Mode」で Hyperbolic / Euclidean を切替えられます。
 - Euclidean モードでは (3,3,3) / (2,4,4) / (2,3,6) など `1/p + 1/q + 1/r = 1` を満たす三角群を対象に、三本の半平面鏡（オフセット＋単位法線）を SDF に渡して描画します。
 - 条件から外れた値を入力した場合は警告を表示し、必要に応じて自動的に `(3,3,3)` プリセットへ戻ります。
+- Spherical モードでは「Spherical Triangle」シーンを選択すると、単位球上の正四面体面を初期値とした球面三角形を WebGL2 のレイトレーシングで描画します。左側パネルの方位角・仰角スライダで 3 頂点を編集すると即時にユニフォームへ反映され、`Anti-aliasing samples` セレクタで 1x/2x/4x/8x のマルチサンプリングを切替えられます。キャンバス上は Orbit カメラ操作（ドラッグで回転、ホイールでズーム、注視点は原点固定）に対応しています。
 
 ### Rendering Modes
 - 既定では Canvas モードで描画します。
