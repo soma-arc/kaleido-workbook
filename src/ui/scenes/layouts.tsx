@@ -25,26 +25,31 @@ const CANVAS_FRAME_STYLE: CSSProperties = {
     boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
 };
 
+const EMBED_FRAME_WIDTH = "var(--embed-frame-width, 100vw)";
+
 const CANVAS_FRAME_EMBED_STYLE: CSSProperties = {
     ...CANVAS_FRAME_STYLE,
-    width: "100%",
+    boxSizing: "border-box",
+    width: EMBED_FRAME_WIDTH,
     height: "auto",
-    maxWidth: `${STANDARD_CANVAS_WIDTH}px`,
+    maxWidth: EMBED_FRAME_WIDTH,
     aspectRatio: "16 / 9",
+    border: "1px solid rgba(148, 163, 184, 0.35)",
     boxShadow: "0 12px 32px rgba(15,23,42,0.45)",
+};
+
+const EMBED_CONTAINER_STYLE: CSSProperties = {
+    boxSizing: "border-box",
+    width: EMBED_FRAME_WIDTH,
+    margin: "0 auto",
+    padding: 0,
+    display: "block",
 };
 
 export function SceneLayout({ controls, canvas, embed }: SceneLayoutProps): JSX.Element {
     if (embed) {
         return (
-            <div
-                style={{
-                    ...BASE_CONTAINER_STYLE,
-                    justifyItems: "center",
-                    alignItems: "center",
-                    padding: "24px",
-                }}
-            >
+            <div style={EMBED_CONTAINER_STYLE}>
                 <div style={CANVAS_FRAME_EMBED_STYLE}>{canvas}</div>
             </div>
         );

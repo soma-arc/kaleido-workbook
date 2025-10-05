@@ -24,6 +24,12 @@ type EmbeddedSceneProps = {
     sceneId: SceneId;
 };
 
+const STORY_EMBED_WRAPPER_STYLE = {
+    "--embed-frame-width": "min(100%, 960px)",
+    width: "100%",
+    margin: "0 auto",
+} as CSSProperties;
+
 function EmbeddedPlanarScene({
     scene,
     scenes,
@@ -79,10 +85,18 @@ function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
     const scene = useMemo(() => getSceneDefinition(sceneId), [sceneId]);
 
     if (scene.geometry === GEOMETRY_KIND.spherical) {
-        return <EmbeddedSphericalScene scene={scene} scenes={scenes} />;
+        return (
+            <div style={STORY_EMBED_WRAPPER_STYLE}>
+                <EmbeddedSphericalScene scene={scene} scenes={scenes} />
+            </div>
+        );
     }
 
-    return <EmbeddedPlanarScene scene={scene} scenes={scenes} />;
+    return (
+        <div style={STORY_EMBED_WRAPPER_STYLE}>
+            <EmbeddedPlanarScene scene={scene} scenes={scenes} />
+        </div>
+    );
 }
 
 function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
@@ -95,7 +109,7 @@ function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {
         if (!doc) return;
         doc.open();
         doc.write(
-            `<!doctype html><html><head><style>html,body{margin:0;background:#111827;height:100%;overflow:hidden;}#root{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111827;border:1px solid rgba(148,163,184,0.35);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,0.45);}</style></head><body><div id="root"></div></body></html>`,
+            `<!doctype html><html><head><style>:root{--embed-frame-width:100vw;}html,body{margin:0;background:#111827;height:100%;min-height:100vh;overflow:hidden;}#root{width:100%;min-height:100vh;}</style></head><body><div id="root"></div></body></html>`,
         );
         doc.close();
         const mountNode = doc.getElementById("root");
