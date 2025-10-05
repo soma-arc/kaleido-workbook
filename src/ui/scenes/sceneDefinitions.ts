@@ -60,6 +60,7 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 type SceneAlias =
     | "hyperbolicTiling"
     | "debugTexture"
+    | "euclideanCameraDebug"
     | "euclideanHalfPlanes"
     | "euclideanHinge"
     | "euclideanRegularSquare"
@@ -83,6 +84,16 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         geometry: GEOMETRY_KIND.hyperbolic,
         variant: "debug-texture",
         description: "Renders the base texture in the viewport center for shader debugging.",
+        supportsHandles: false,
+        editable: false,
+    },
+    {
+        key: "euclideanCameraDebug",
+        label: "Camera Texture Debug",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "debug-camera",
+        description:
+            "Displays the live camera texture (enable from the Camera input panel) for pipeline debugging.",
         supportsHandles: false,
         editable: false,
     },

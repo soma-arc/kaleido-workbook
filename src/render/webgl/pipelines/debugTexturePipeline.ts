@@ -5,22 +5,30 @@ import {
 } from "../pipelineRegistry";
 import fragmentShaderSource from "../shaders/debugTexture.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
-import { TEXTURE_SLOTS } from "../textures";
+import { TEXTURE_SLOTS, type TextureSlot } from "../textures";
 
-const PIPELINE_ID = "webgl-debug-texture";
-const DEBUG_SCENE_ID = "hyperbolic-debug-texture";
+const BASE_PIPELINE_ID = "webgl-debug-texture";
+const CAMERA_PIPELINE_ID = "webgl-debug-camera";
+const HYPERBOLIC_DEBUG_SCENE_ID = "hyperbolic-debug-texture";
+const EUCLIDEAN_CAMERA_SCENE_ID = "euclidean-debug-camera";
 
 class DebugTexturePipeline implements WebGLPipelineInstance {
     private readonly program: WebGLProgram;
     private readonly vao: WebGLVertexArrayObject;
     private readonly vertexBuffer: WebGLBuffer;
     private readonly texture: WebGLTexture;
+    private readonly targetSlot: TextureSlot;
+    private readonly fallbackPixel: Uint8Array;
     private readonly uniforms: UniformLocations;
     private currentSourceId: string | null = null;
     private currentWidth = 0;
     private currentHeight = 0;
 
-    constructor(private readonly gl: WebGL2RenderingContext) {
+    constructor(
+        private readonly gl: WebGL2RenderingContext,
+        targetSlot: TextureSlot,
+    ) {
+        this.targetSlot = targetSlot;
         const vertex = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
         const fragment = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
         this.program = linkProgram(gl, vertex, fragment);
@@ -46,6 +54,10 @@ class DebugTexturePipeline implements WebGLPipelineInstance {
         const texture = gl.createTexture();
         if (!texture) throw new Error("Failed to create debug texture");
         this.texture = texture;
+        this.fallbackPixel =
+            targetSlot === TEXTURE_SLOTS.camera
+                ? new Uint8Array([24, 48, 96, 255])
+                : new Uint8Array([30, 30, 40, 255]);
 
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -83,11 +95,11 @@ class DebugTexturePipeline implements WebGLPipelineInstance {
         );
 
         let hasTexture = 0;
-        const baseLayer = textures.find(
-            (layer) => layer.slot === TEXTURE_SLOTS.base && layer.enabled && layer.source,
+        const targetLayer = textures.find(
+            (layer) => layer.slot === this.targetSlot && layer.enabled && layer.source,
         );
-        if (baseLayer?.source && (baseLayer.source.ready ?? baseLayer.source.width > 0)) {
-            const source = baseLayer.source;
+        if (targetLayer?.source && (targetLayer.source.ready ?? targetLayer.source.width > 0)) {
+            const source = targetLayer.source;
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
             if (
@@ -120,7 +132,7 @@ class DebugTexturePipeline implements WebGLPipelineInstance {
                 0,
                 gl.RGBA,
                 gl.UNSIGNED_BYTE,
-                new Uint8Array([30, 30, 40, 255]),
+                this.fallbackPixel,
             );
             hasTexture = 0;
         }
@@ -202,11 +214,19 @@ function getUniformLocation(
     return location;
 }
 
-function createDebugTexturePipeline(
-    gl: WebGL2RenderingContext,
-    _canvas: HTMLCanvasElement,
-): WebGLPipelineInstance {
-    return new DebugTexturePipeline(gl);
+function createDebugTexturePipeline(slot: TextureSlot) {
+    return (gl: WebGL2RenderingContext, _canvas: HTMLCanvasElement): WebGLPipelineInstance =>
+        new DebugTexturePipeline(gl, slot);
 }
 
-registerSceneWebGLPipeline(DEBUG_SCENE_ID, PIPELINE_ID, createDebugTexturePipeline);
+registerSceneWebGLPipeline(
+    HYPERBOLIC_DEBUG_SCENE_ID,
+    BASE_PIPELINE_ID,
+    createDebugTexturePipeline(TEXTURE_SLOTS.base),
+);
+
+registerSceneWebGLPipeline(
+    EUCLIDEAN_CAMERA_SCENE_ID,
+    CAMERA_PIPELINE_ID,
+    createDebugTexturePipeline(TEXTURE_SLOTS.camera),
+);
