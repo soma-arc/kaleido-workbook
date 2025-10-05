@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -29,6 +30,7 @@ import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
 import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import { SceneLayout } from "./layouts";
+import { SCENE_IDS } from "./sceneDefinitions";
 import type { SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
@@ -92,6 +94,56 @@ export function EuclideanSceneHost({
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
     const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
+    const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
+    const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
+    const maxFrameRateRef = useRef<number>(60);
+    const frameRequestRef = useRef<number | null>(null);
+    const lastFrameTimeRef = useRef<number>(0);
+    const maxFrameRateInputId = useId();
+
+    const isCameraDebugScene = scene.id === SCENE_IDS.euclideanCameraDebug;
+
+    const hasDynamicTexture = useMemo(
+        () => textureInput.textures.some((layer) => layer.source?.dynamic === true),
+        [textureInput.textures],
+    );
+
+    const clampFrameRate = useCallback((value: number) => {
+        if (!Number.isFinite(value)) return 60;
+        const rounded = Math.round(value);
+        const minimum = 1;
+        const maximum = 240;
+        return Math.min(Math.max(rounded, minimum), maximum);
+    }, []);
+
+    const handleMaxFrameRateChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const nextValue = event.target.value;
+            setMaxFrameRateInput(nextValue);
+            const numeric = Number(nextValue);
+            if (Number.isFinite(numeric) && numeric > 0) {
+                setMaxFrameRate(clampFrameRate(numeric));
+            }
+        },
+        [clampFrameRate],
+    );
+
+    const handleMaxFrameRateBlur = useCallback(() => {
+        const numeric = Number(maxFrameRateInput);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+            const fallback = clampFrameRate(maxFrameRateRef.current);
+            setMaxFrameRate(fallback);
+            setMaxFrameRateInput(fallback.toString());
+            return;
+        }
+        const clamped = clampFrameRate(numeric);
+        setMaxFrameRate(clamped);
+        setMaxFrameRateInput(clamped.toString());
+    }, [clampFrameRate, maxFrameRateInput]);
+
+    useEffect(() => {
+        maxFrameRateRef.current = clampFrameRate(maxFrameRate);
+    }, [clampFrameRate, maxFrameRate]);
 
     const {
         params,
@@ -553,6 +605,54 @@ export function EuclideanSceneHost({
         renderHyperbolicScene,
     ]);
 
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+        if (!isCameraDebugScene || !hasDynamicTexture) {
+            if (frameRequestRef.current !== null) {
+                cancelAnimationFrame(frameRequestRef.current);
+                frameRequestRef.current = null;
+            }
+            lastFrameTimeRef.current = 0;
+            return;
+        }
+
+        let cancelled = false;
+        const renderFrame = () => {
+            const fallbackPlanes =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(fallbackPlanes);
+        };
+
+        const tick = (timestamp: number) => {
+            if (cancelled) {
+                return;
+            }
+            const minIntervalMs = 1000 / maxFrameRateRef.current;
+            if (
+                lastFrameTimeRef.current === 0 ||
+                timestamp - lastFrameTimeRef.current >= minIntervalMs
+            ) {
+                lastFrameTimeRef.current = timestamp;
+                renderFrame();
+            }
+            frameRequestRef.current = window.requestAnimationFrame(tick);
+        };
+
+        frameRequestRef.current = window.requestAnimationFrame(tick);
+
+        return () => {
+            cancelled = true;
+            if (frameRequestRef.current !== null) {
+                cancelAnimationFrame(frameRequestRef.current);
+                frameRequestRef.current = null;
+            }
+        };
+    }, [hasDynamicTexture, isCameraDebugScene, normalizedHalfPlanes, renderEuclideanScene]);
+
     const controls = (
         <>
             <ModeControls
@@ -582,6 +682,24 @@ export function EuclideanSceneHost({
                 onEnable={() => textureInput.enableCamera(TEXTURE_SLOTS.camera)}
                 onDisable={() => textureInput.disable(TEXTURE_SLOTS.camera)}
             />
+            {isCameraDebugScene && (
+                <label
+                    htmlFor={maxFrameRateInputId}
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                    <span>カメラ最大FPS</span>
+                    <input
+                        id={maxFrameRateInputId}
+                        type="number"
+                        min={1}
+                        max={240}
+                        step={1}
+                        value={maxFrameRateInput}
+                        onChange={handleMaxFrameRateChange}
+                        onBlur={handleMaxFrameRateBlur}
+                    />
+                </label>
+            )}
             {scene.supportsHandles && (
                 <HalfPlaneHandleControls
                     showHandles={showHandles}
