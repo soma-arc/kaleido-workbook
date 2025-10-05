@@ -131,9 +131,14 @@ type UniformLocations = {
 };
 
 function buildFragmentShaderSource(): string {
+    const sampleCases = Array.from({ length: MAX_TEXTURE_SLOTS }, (_, index) => {
+        return `    if (slot == ${index}) {\n        return texture(uTextures[${index}], uv);\n    }\n`;
+    }).join("");
+
     return fragmentShaderSourceTemplate
         .replace("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
-        .replace("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString());
+        .replace("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString())
+        .replace("__SAMPLE_TEXTURE_CASES__", sampleCases);
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {

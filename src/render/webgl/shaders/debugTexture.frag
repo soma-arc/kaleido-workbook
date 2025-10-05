@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+in vec2 vFragCoord;
+
 uniform vec2 uResolution;
 uniform sampler2D uDebugTexture;
 uniform int uHasTexture;
@@ -8,7 +10,7 @@ uniform int uHasTexture;
 out vec4 fragColor;
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / uResolution;
+    vec2 uv = vFragCoord / uResolution;
     vec2 center = vec2(0.5);
     vec2 local = (uv - center) / 0.25;
     float extent = max(abs(local.x), abs(local.y));

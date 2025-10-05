@@ -55,6 +55,11 @@ vec2 transformedUV(int slot, vec2 worldPoint) {
     return rotated + uTextureOffset[slot];
 }
 
+vec4 sampleTextureSlot(int slot, vec2 uv) {
+__SAMPLE_TEXTURE_CASES__
+    return vec4(0.0);
+}
+
 vec4 sampleTextures(vec2 worldPoint, float diskMask) {
     vec4 accum = vec4(0.0);
     for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) {
@@ -65,7 +70,7 @@ vec4 sampleTextures(vec2 worldPoint, float diskMask) {
             continue;
         }
         vec2 uv = transformedUV(i, worldPoint);
-        vec4 texColor = texture(uTextures[i], uv);
+        vec4 texColor = sampleTextureSlot(i, uv);
         float opacity = clamp(uTextureOpacity[i], 0.0, 1.0);
         texColor.a *= opacity * diskMask;
         accum.rgb = mix(accum.rgb, texColor.rgb, texColor.a);
