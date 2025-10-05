@@ -2,42 +2,13 @@ import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
-import { createSceneId, type SceneDefinition, type SceneId } from "./types";
-
-type SceneIdMap = {
-    hyperbolicTiling: SceneId;
-    euclideanHalfPlanes: SceneId;
-    euclideanHinge: SceneId;
-    euclideanRegularSquare: SceneId;
-    euclideanRegularPentagon: SceneId;
-    euclideanRegularHexagon: SceneId;
-    sphericalTetrahedron: SceneId;
-};
-
-export const SCENE_IDS: SceneIdMap = {
-    hyperbolicTiling: createSceneId({ geometry: GEOMETRY_KIND.hyperbolic, variant: "tiling" }),
-    euclideanHalfPlanes: createSceneId({
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "half-planes",
-    }),
-    euclideanHinge: createSceneId({ geometry: GEOMETRY_KIND.euclidean, variant: "hinge" }),
-    euclideanRegularSquare: createSceneId({
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "regular-square",
-    }),
-    euclideanRegularPentagon: createSceneId({
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "regular-pentagon",
-    }),
-    euclideanRegularHexagon: createSceneId({
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "regular-hexagon",
-    }),
-    sphericalTetrahedron: createSceneId({
-        geometry: GEOMETRY_KIND.spherical,
-        variant: "tetrahedron",
-    }),
-};
+import {
+    createSceneId,
+    type SceneDefinition,
+    type SceneDefinitionInput,
+    type SceneId,
+    type SceneRegistry,
+} from "./types";
 
 const HINGE_HALF_PLANES = [
     { normal: { x: 1, y: 0 }, offset: 0 },
@@ -84,9 +55,22 @@ function cloneControlPointsList(
     ]);
 }
 
-const HYPERBOLIC_SCENES: SceneDefinition[] = [
+type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
+
+type SceneAlias =
+    | "hyperbolicTiling"
+    | "debugTexture"
+    | "euclideanCameraDebug"
+    | "euclideanHalfPlanes"
+    | "euclideanHinge"
+    | "euclideanRegularSquare"
+    | "euclideanRegularPentagon"
+    | "euclideanRegularHexagon"
+    | "sphericalTetrahedron";
+
+const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
     {
-        id: SCENE_IDS.hyperbolicTiling,
+        key: "hyperbolicTiling",
         label: "Hyperbolic Triangle",
         geometry: GEOMETRY_KIND.hyperbolic,
         variant: "tiling",
@@ -94,11 +78,27 @@ const HYPERBOLIC_SCENES: SceneDefinition[] = [
         supportsHandles: false,
         editable: false,
     },
-];
-
-const EUCLIDEAN_SCENES: SceneDefinition[] = [
     {
-        id: SCENE_IDS.euclideanHalfPlanes,
+        key: "debugTexture",
+        label: "Debug Texture",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "debug-texture",
+        description: "Renders the base texture in the viewport center for shader debugging.",
+        supportsHandles: false,
+        editable: false,
+    },
+    {
+        key: "euclideanCameraDebug",
+        label: "Camera Texture Debug",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "debug-camera",
+        description:
+            "Displays the live camera texture (enable from the Camera input panel) for pipeline debugging.",
+        supportsHandles: false,
+        editable: false,
+    },
+    {
+        key: "euclideanHalfPlanes",
         label: "Euclidean Half-Planes",
         geometry: GEOMETRY_KIND.euclidean,
         variant: "half-planes",
@@ -107,7 +107,7 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
         editable: true,
     },
     {
-        id: SCENE_IDS.euclideanHinge,
+        key: "euclideanHinge",
         label: "Hinge Mirrors",
         geometry: GEOMETRY_KIND.euclidean,
         variant: "hinge",
@@ -125,7 +125,7 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
         ],
     },
     {
-        id: SCENE_IDS.euclideanRegularSquare,
+        key: "euclideanRegularSquare",
         label: "Regular Square",
         geometry: GEOMETRY_KIND.euclidean,
         variant: "regular-square",
@@ -139,7 +139,7 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
         initialControlPoints: cloneControlPointsList(REGULAR_SQUARE_CONFIG.initialControlPoints),
     },
     {
-        id: SCENE_IDS.euclideanRegularPentagon,
+        key: "euclideanRegularPentagon",
         label: "Regular Pentagon",
         geometry: GEOMETRY_KIND.euclidean,
         variant: "regular-pentagon",
@@ -153,7 +153,7 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
         initialControlPoints: cloneControlPointsList(REGULAR_PENTAGON_CONFIG.initialControlPoints),
     },
     {
-        id: SCENE_IDS.euclideanRegularHexagon,
+        key: "euclideanRegularHexagon",
         label: "Regular Hexagon",
         geometry: GEOMETRY_KIND.euclidean,
         variant: "regular-hexagon",
@@ -166,11 +166,8 @@ const EUCLIDEAN_SCENES: SceneDefinition[] = [
         controlAssignments: [...REGULAR_HEXAGON_CONFIG.controlAssignments],
         initialControlPoints: cloneControlPointsList(REGULAR_HEXAGON_CONFIG.initialControlPoints),
     },
-];
-
-const SPHERICAL_SCENES: SceneDefinition[] = [
     {
-        id: SCENE_IDS.sphericalTetrahedron,
+        key: "sphericalTetrahedron",
         label: "Spherical Triangle",
         geometry: GEOMETRY_KIND.spherical,
         variant: "tetrahedron",
@@ -185,27 +182,45 @@ const SPHERICAL_SCENES: SceneDefinition[] = [
     },
 ];
 
-export const SCENES_BY_GEOMETRY: Record<GeometryKind, SceneDefinition[]> = {
-    [GEOMETRY_KIND.hyperbolic]: HYPERBOLIC_SCENES,
-    [GEOMETRY_KIND.euclidean]: EUCLIDEAN_SCENES,
-    [GEOMETRY_KIND.spherical]: SPHERICAL_SCENES,
+const SCENE_DEFINITIONS: SceneDefinition[] = BASE_SCENE_INPUTS.map((entry) => ({
+    ...entry,
+    id: createSceneId({ geometry: entry.geometry, variant: entry.variant }),
+}));
+
+type SceneIdMap = Record<SceneAlias, SceneId>;
+
+export const SCENE_IDS: SceneIdMap = SCENE_DEFINITIONS.reduce((acc, scene) => {
+    acc[scene.key as SceneAlias] = scene.id;
+    return acc;
+}, {} as SceneIdMap);
+
+export const SCENES_BY_ID: Record<SceneId, SceneDefinition> = SCENE_DEFINITIONS.reduce(
+    (acc, scene) => {
+        acc[scene.id] = scene;
+        return acc;
+    },
+    {} as Record<SceneId, SceneDefinition>,
+);
+
+export const SCENES_BY_GEOMETRY: Record<GeometryKind, SceneDefinition[]> = SCENE_DEFINITIONS.reduce(
+    (acc, scene) => {
+        acc[scene.geometry].push(scene);
+        return acc;
+    },
+    {
+        [GEOMETRY_KIND.hyperbolic]: [] as SceneDefinition[],
+        [GEOMETRY_KIND.euclidean]: [] as SceneDefinition[],
+        [GEOMETRY_KIND.spherical]: [] as SceneDefinition[],
+    },
+);
+
+export const SCENE_ORDER: SceneId[] = SCENE_DEFINITIONS.map((scene) => scene.id);
+
+export const DEFAULT_SCENE_ID: SceneId = SCENE_ORDER[0];
+
+export const SCENE_REGISTRY: SceneRegistry = {
+    definitions: SCENE_DEFINITIONS,
+    byId: SCENES_BY_ID,
+    order: SCENE_ORDER,
+    byGeometry: SCENES_BY_GEOMETRY,
 };
-
-export const SCENES_BY_ID: Record<SceneId, SceneDefinition> = Object.fromEntries(
-    [...HYPERBOLIC_SCENES, ...EUCLIDEAN_SCENES, ...SPHERICAL_SCENES].map((scene) => [
-        scene.id,
-        scene,
-    ]),
-) as Record<SceneId, SceneDefinition>;
-
-export const SCENE_ORDER: SceneId[] = [
-    SCENE_IDS.hyperbolicTiling,
-    SCENE_IDS.euclideanHalfPlanes,
-    SCENE_IDS.euclideanHinge,
-    SCENE_IDS.euclideanRegularSquare,
-    SCENE_IDS.euclideanRegularPentagon,
-    SCENE_IDS.euclideanRegularHexagon,
-    SCENE_IDS.sphericalTetrahedron,
-];
-
-export const DEFAULT_SCENE_ID: SceneId = SCENE_IDS.hyperbolicTiling;

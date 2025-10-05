@@ -8,7 +8,8 @@ import {
     type SphericalVertex,
 } from "@/geom/spherical/types";
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
-import { createSphericalRenderer, type SphericalRenderer } from "@/render/spherical/renderer";
+import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
+import "@/render/webgl/pipelines/sphericalPipeline";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { ModeControls } from "../components/ModeControls";
 import { SceneLayout } from "./layouts";
@@ -117,7 +118,7 @@ export function SphericalSceneHost({
     }
     const memoInitialState = useMemo(() => initialStateFromScene(scene), [scene]);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const rendererRef = useRef<SphericalRenderer | null>(null);
+    const pipelineRef = useRef<WebGLPipelineInstance | null>(null);
     const renderSceneRef = useRef<() => void>(() => {});
     const cameraRef = useRef<SphericalOrbitCamera>(new SphericalOrbitCamera());
     const [state, setState] = useState<SphericalSceneState>(memoInitialState);
@@ -140,16 +141,28 @@ export function SphericalSceneHost({
 
     const renderScene = useCallback(() => {
         const canvas = canvasRef.current;
-        const renderer = rendererRef.current;
-        if (!canvas || !renderer) return;
-        const viewport = syncCanvasSize(canvas);
-        renderer.render({
-            triangle: state.triangle,
+        const pipeline = pipelineRef.current;
+        if (!canvas || !pipeline) return;
+        const viewportSize = syncCanvasSize(canvas);
+        const sphericalScene = {
+            geometry: GEOMETRY_KIND.spherical,
+            state,
             camera: cameraRef.current,
-            viewport,
             settings: { samples },
+        } as const;
+        pipeline.render({
+            sceneDefinition: scene,
+            renderScene: sphericalScene,
+            viewport: {
+                scale: Math.max(viewportSize.width, viewportSize.height) / 2,
+                tx: viewportSize.width / 2,
+                ty: viewportSize.height / 2,
+            },
+            clipToDisk: false,
+            textures: [],
+            canvas,
         });
-    }, [samples, state]);
+    }, [samples, scene, state]);
 
     useEffect(() => {
         renderScene();
@@ -162,9 +175,26 @@ export function SphericalSceneHost({
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const renderer = createSphericalRenderer(canvas);
-        rendererRef.current = renderer;
-        setRenderBackend(renderer.ready ? "webgl2" : "fallback");
+        pipelineRef.current?.dispose();
+        pipelineRef.current = null;
+        const gl = canvas.getContext("webgl2", {
+            antialias: false,
+            alpha: true,
+            premultipliedAlpha: true,
+        }) as WebGL2RenderingContext | null;
+        if (!gl) {
+            setRenderBackend("fallback");
+            return;
+        }
+        try {
+            const registration = resolveWebGLPipeline(scene);
+            pipelineRef.current = registration.factory(gl, canvas);
+            setRenderBackend("webgl2");
+            renderSceneRef.current();
+        } catch (error) {
+            console.error("[spherical] Failed to initialise pipeline", error);
+            setRenderBackend("fallback");
+        }
         let resize: ResizeObserver | null = null;
         if (typeof ResizeObserver !== "undefined") {
             resize = new ResizeObserver(() => {
@@ -176,10 +206,10 @@ export function SphericalSceneHost({
             if (resize) {
                 resize.disconnect();
             }
-            renderer.dispose();
-            rendererRef.current = null;
+            pipelineRef.current?.dispose();
+            pipelineRef.current = null;
         };
-    }, []);
+    }, [scene]);
 
     const handlePointerMove = useCallback(
         (event: PointerEvent) => {

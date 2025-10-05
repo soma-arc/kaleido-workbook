@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { GEOMETRY_KIND } from "@/geom/core/types";
 import { detectRenderMode } from "@/render/engine";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import {
@@ -12,6 +13,7 @@ import {
     type SceneId,
 } from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
+import { SphericalSceneHost } from "@/ui/scenes/SphericalSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
 
 const TRIANGLE_N_MAX = 100;
@@ -22,10 +24,14 @@ type EmbeddedSceneProps = {
     sceneId: SceneId;
 };
 
-function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
-    const { scenes } = useSceneRegistry();
+function EmbeddedPlanarScene({
+    scene,
+    scenes,
+}: {
+    scene: SceneDefinition;
+    scenes: SceneDefinition[];
+}): JSX.Element {
     const [renderMode] = useState(() => detectRenderMode());
-    const scene = useMemo(() => getSceneDefinition(sceneId), [sceneId]);
     const triangleParams = useTriangleParams({
         initialParams: INITIAL_PARAMS,
         triangleNMax: TRIANGLE_N_MAX,
@@ -37,7 +43,7 @@ function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
         <EuclideanSceneHost
             scene={scene}
             scenes={scenes}
-            activeSceneId={sceneId}
+            activeSceneId={scene.id}
             onSceneChange={() => {
                 /* no-op in embed preview */
             }}
@@ -46,6 +52,37 @@ function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
             embed
         />
     );
+}
+
+function EmbeddedSphericalScene({
+    scene,
+    scenes,
+}: {
+    scene: SceneDefinition;
+    scenes: SceneDefinition[];
+}): JSX.Element {
+    return (
+        <SphericalSceneHost
+            scene={scene}
+            scenes={scenes}
+            activeSceneId={scene.id}
+            onSceneChange={() => {
+                /* no-op in embed preview */
+            }}
+            embed
+        />
+    );
+}
+
+function EmbeddedScene({ sceneId }: EmbeddedSceneProps): JSX.Element {
+    const { scenes } = useSceneRegistry();
+    const scene = useMemo(() => getSceneDefinition(sceneId), [sceneId]);
+
+    if (scene.geometry === GEOMETRY_KIND.spherical) {
+        return <EmbeddedSphericalScene scene={scene} scenes={scenes} />;
+    }
+
+    return <EmbeddedPlanarScene scene={scene} scenes={scenes} />;
 }
 
 function EmbeddedSceneIframe({ sceneId }: EmbeddedSceneProps): JSX.Element {

@@ -2,12 +2,16 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TriangleFace } from "@/geom/triangle/group";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import { buildTiling } from "@/geom/triangle/tiling";
 import { type CircleSpec, geodesicSpec, type LineSpec, unitDiskSpec } from "./primitives";
+import type { SphericalOrbitCamera } from "./spherical/camera";
+import type { SphericalRenderSettings } from "./spherical/renderer";
 import { facesToEdgeGeodesics } from "./tilingAdapter";
 import type { Viewport } from "./viewport";
+import type { SceneTextureLayer } from "./webgl/textures";
 
 export type GeodesicPrimitiveBase = {
     id: string;
@@ -21,18 +25,29 @@ export type GeodesicPrimitive =
     | (GeodesicPrimitiveBase & { kind: "circle"; circle: CircleSpec })
     | (GeodesicPrimitiveBase & { kind: "line"; line: LineSpec });
 
-export type HyperbolicScene = {
+type SceneBase = {
+    textures?: SceneTextureLayer[];
+};
+
+export type HyperbolicScene = SceneBase & {
     geometry: typeof GEOMETRY_KIND.hyperbolic;
     disk: CircleSpec;
     geodesics: GeodesicPrimitive[];
 };
 
-export type EuclideanScene = {
+export type EuclideanScene = SceneBase & {
     geometry: typeof GEOMETRY_KIND.euclidean;
     halfPlanes: HalfPlane[];
 };
 
-export type RenderScene = HyperbolicScene | EuclideanScene;
+export type SphericalScene = SceneBase & {
+    geometry: typeof GEOMETRY_KIND.spherical;
+    state: SphericalSceneState;
+    camera: SphericalOrbitCamera;
+    settings: SphericalRenderSettings;
+};
+
+export type RenderScene = HyperbolicScene | EuclideanScene | SphericalScene;
 
 function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicPrimitive[] {
     const edges = facesToEdgeGeodesics(faces);
@@ -52,18 +67,28 @@ function buildGeodesicPrimitives(faces: TriangleFace[], vp: Viewport): GeodesicP
     });
 }
 
-export function buildHyperbolicScene(params: TilingParams, vp: Viewport): HyperbolicScene {
+export function buildHyperbolicScene(
+    params: TilingParams,
+    vp: Viewport,
+    options: { textures?: SceneTextureLayer[] } = {},
+): HyperbolicScene {
     const { faces } = buildTiling(params);
     return {
         geometry: GEOMETRY_KIND.hyperbolic,
         disk: unitDiskSpec(vp),
         geodesics: buildGeodesicPrimitives(faces, vp),
+        textures: options.textures ?? [],
     };
 }
 
-export function buildEuclideanScene(planes: HalfPlane[], _vp: Viewport): EuclideanScene {
+export function buildEuclideanScene(
+    planes: HalfPlane[],
+    _vp: Viewport,
+    options: { textures?: SceneTextureLayer[] } = {},
+): EuclideanScene {
     return {
         geometry: GEOMETRY_KIND.euclidean,
         halfPlanes: planes.map((plane) => normalizeHalfPlane(plane)),
+        textures: options.textures ?? [],
     };
 }

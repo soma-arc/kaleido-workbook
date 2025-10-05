@@ -75,6 +75,7 @@ describe("UI components", () => {
         const onChange = vi.fn();
         const scenes: SceneDefinition[] = [
             {
+                key: "test-hyperbolic",
                 id: "hyperbolic-tiling",
                 label: "Hyperbolic",
                 geometry: GEOMETRY_KIND.hyperbolic,
@@ -83,6 +84,7 @@ describe("UI components", () => {
                 editable: false,
             },
             {
+                key: "test-euclidean",
                 id: "euclidean-half-planes",
                 label: "Euclidean",
                 geometry: GEOMETRY_KIND.euclidean,

@@ -2,6 +2,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
+import type { SceneDefinition } from "@/ui/scenes/types";
 import { attachResize, setCanvasDPR } from "./canvas";
 import {
     type CanvasTileRenderOptions,
@@ -11,6 +12,7 @@ import {
 } from "./canvasLayers";
 import { buildEuclideanScene, buildHyperbolicScene, type RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
+import type { SceneTextureLayer, TextureLayer } from "./webgl/textures";
 import { createWebGLRenderer, type WebGLInitResult } from "./webglRenderer";
 
 export type RenderMode = "canvas" | "hybrid";
@@ -22,13 +24,18 @@ export type HalfPlaneHandleRequest = {
     radius?: number;
 };
 
+type RenderRequestBase = {
+    scene?: SceneDefinition;
+    textures?: TextureLayer[];
+};
+
 export type GeometryRenderRequest =
-    | { geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams }
-    | {
+    | ({ geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams } & RenderRequestBase)
+    | ({
           geometry: typeof GEOMETRY_KIND.euclidean;
           halfPlanes: HalfPlane[];
           handles?: HalfPlaneHandleRequest;
-      };
+      } & RenderRequestBase);
 
 export interface RenderEngine {
     render(request: GeometryRenderRequest): void;
@@ -42,6 +49,22 @@ export type RenderEngineOptions = {
 
 const DEFAULT_MODE: RenderMode = "hybrid";
 
+function extractSceneTextures(layers?: TextureLayer[]): SceneTextureLayer[] {
+    if (!layers?.length) {
+        return [];
+    }
+    return layers.map((layer) => ({
+        slot: layer.slot,
+        kind: layer.kind,
+        enabled: layer.enabled,
+        transform: layer.transform,
+        opacity: layer.opacity,
+    }));
+}
+
+/**
+ * Detects the preferred render mode from environment variables, falling back to the default hybrid mode.
+ */
 export function detectRenderMode(): RenderMode {
     const envMode = safeString(readEnvRenderMode());
     if (isRenderMode(envMode)) return envMode;
@@ -54,6 +77,9 @@ export function detectRenderMode(): RenderMode {
     return DEFAULT_MODE;
 }
 
+/**
+ * Creates the rendering engine that orchestrates canvas overlays and WebGL pipelines.
+ */
 export function createRenderEngine(
     canvas: HTMLCanvasElement,
     options: RenderEngineOptions = {},
@@ -75,12 +101,16 @@ export function createRenderEngine(
         setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
         const viewport = computeViewport(rect, canvas);
+        const textures = request.textures ?? [];
+        const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
         try {
             scene =
                 request.geometry === GEOMETRY_KIND.hyperbolic
-                    ? buildHyperbolicScene(request.params, viewport)
-                    : buildEuclideanScene(request.halfPlanes, viewport);
+                    ? buildHyperbolicScene(request.params, viewport, { textures: sceneTextures })
+                    : buildEuclideanScene(request.halfPlanes, viewport, {
+                          textures: sceneTextures,
+                      });
         } catch (error) {
             console.error("[RenderEngine] Failed to build scene", error);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -111,14 +141,15 @@ export function createRenderEngine(
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
+            const renderOptions = { clipToDisk, textures, scene: request.scene } as const;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
-                webgl.renderer.render(scene, viewport, { clipToDisk });
+                webgl.renderer.render(scene, viewport, renderOptions);
                 if (webgl.canvas) {
                     ctx.drawImage(webgl.canvas, 0, 0, canvas.width, canvas.height);
                 }
             } else {
-                webgl.renderer.render(scene, viewport, { clipToDisk });
+                webgl.renderer.render(scene, viewport, renderOptions);
             }
         }
         if (handleOverlay?.visible) {

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -12,6 +13,7 @@ import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { createRenderEngine, type RenderEngine, type RenderMode } from "@/render/engine";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
+import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import { ModeControls } from "@/ui/components/ModeControls";
@@ -19,11 +21,16 @@ import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TriangleParamForm } from "@/ui/components/TriangleParamForm";
+import { CameraInput } from "@/ui/components/texture/CameraInput";
+import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
+import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
 import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import { SceneLayout } from "./layouts";
+import { SCENE_IDS } from "./sceneDefinitions";
 import type { SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
@@ -69,6 +76,12 @@ type HandleControlsState = {
     points: HalfPlaneControlPoints[];
 };
 
+/**
+ * Renders the Euclidean scene workspace including interactive controls and WebGL-backed previews.
+ *
+ * カメラデバッグシーンでは requestAnimationFrame による再描画ループを起動し、
+ * 入力欄から設定できる最大FPSに従ってカメラテクスチャを更新します。
+ */
 export function EuclideanSceneHost({
     scene,
     scenes,
@@ -86,6 +99,59 @@ export function EuclideanSceneHost({
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
+    const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
+    const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
+    const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
+    const maxFrameRateRef = useRef<number>(60);
+    const frameRequestRef = useRef<number | null>(null);
+    const lastFrameTimeRef = useRef<number>(0);
+    const maxFrameRateInputId = useId();
+
+    const isCameraDebugScene = scene.id === SCENE_IDS.euclideanCameraDebug;
+
+    const hasDynamicTexture = useMemo(
+        () => textureInput.textures.some((layer) => layer.source?.dynamic === true),
+        [textureInput.textures],
+    );
+
+    // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
+    const clampFrameRate = useCallback((value: number) => {
+        if (!Number.isFinite(value)) return 60;
+        const rounded = Math.round(value);
+        const minimum = 1;
+        const maximum = 240;
+        return Math.min(Math.max(rounded, minimum), maximum);
+    }, []);
+
+    const handleMaxFrameRateChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const nextValue = event.target.value;
+            setMaxFrameRateInput(nextValue);
+            const numeric = Number(nextValue);
+            if (Number.isFinite(numeric) && numeric > 0) {
+                setMaxFrameRate(clampFrameRate(numeric));
+            }
+        },
+        [clampFrameRate],
+    );
+
+    const handleMaxFrameRateBlur = useCallback(() => {
+        const numeric = Number(maxFrameRateInput);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+            const fallback = clampFrameRate(maxFrameRateRef.current);
+            setMaxFrameRate(fallback);
+            setMaxFrameRateInput(fallback.toString());
+            return;
+        }
+        const clamped = clampFrameRate(numeric);
+        setMaxFrameRate(clamped);
+        setMaxFrameRateInput(clamped.toString());
+    }, [clampFrameRate, maxFrameRateInput]);
+
+    // requestAnimationFrame ループが常に最新の上限FPS値を参照できるよう同期する。
+    useEffect(() => {
+        maxFrameRateRef.current = clampFrameRate(maxFrameRate);
+    }, [clampFrameRate, maxFrameRate]);
 
     const {
         params,
@@ -296,17 +362,31 @@ export function EuclideanSceneHost({
                     : undefined;
             latestEuclideanPlanesRef.current = planes;
             renderEngineRef.current?.render({
+                scene,
                 geometry: GEOMETRY_KIND.euclidean,
                 halfPlanes: planes,
                 handles,
+                textures: textureInput.textures,
             });
         },
-        [activeHandle, currentControlPoints, scene.supportsHandles, showHandles],
+        [
+            activeHandle,
+            currentControlPoints,
+            scene,
+            scene.supportsHandles,
+            showHandles,
+            textureInput.textures,
+        ],
     );
 
     const renderHyperbolicScene = useCallback(() => {
-        renderEngineRef.current?.render({ geometry: GEOMETRY_KIND.hyperbolic, params });
-    }, [params]);
+        renderEngineRef.current?.render({
+            scene,
+            geometry: GEOMETRY_KIND.hyperbolic,
+            params,
+            textures: textureInput.textures,
+        });
+    }, [params, scene, textureInput.textures]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
@@ -533,6 +613,56 @@ export function EuclideanSceneHost({
         renderHyperbolicScene,
     ]);
 
+    // カメラデバッグシーンでは dynamic テクスチャがある間だけ rAF ループで再描画する。
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+        if (!isCameraDebugScene || !hasDynamicTexture) {
+            if (frameRequestRef.current !== null) {
+                cancelAnimationFrame(frameRequestRef.current);
+                frameRequestRef.current = null;
+            }
+            lastFrameTimeRef.current = 0;
+            return;
+        }
+
+        let cancelled = false;
+        const renderFrame = () => {
+            // 平面データが無いケースでもデフォルトを利用して描画継続。
+            const fallbackPlanes =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(fallbackPlanes);
+        };
+
+        const tick = (timestamp: number) => {
+            if (cancelled) {
+                return;
+            }
+            const minIntervalMs = 1000 / maxFrameRateRef.current;
+            if (
+                lastFrameTimeRef.current === 0 ||
+                timestamp - lastFrameTimeRef.current >= minIntervalMs
+            ) {
+                lastFrameTimeRef.current = timestamp;
+                renderFrame();
+            }
+            frameRequestRef.current = window.requestAnimationFrame(tick);
+        };
+
+        frameRequestRef.current = window.requestAnimationFrame(tick);
+
+        return () => {
+            cancelled = true;
+            if (frameRequestRef.current !== null) {
+                cancelAnimationFrame(frameRequestRef.current);
+                frameRequestRef.current = null;
+            }
+        };
+    }, [hasDynamicTexture, isCameraDebugScene, normalizedHalfPlanes, renderEuclideanScene]);
+
     const controls = (
         <>
             <ModeControls
@@ -548,6 +678,38 @@ export function EuclideanSceneHost({
                 onClear={clearAnchor}
             />
             <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+            <TexturePicker
+                slot={TEXTURE_SLOTS.base}
+                state={textureInput.slots[TEXTURE_SLOTS.base]}
+                presets={textureInput.presets}
+                onSelectFile={(file) => textureInput.loadFile(TEXTURE_SLOTS.base, file)}
+                onSelectPreset={(id) => textureInput.loadPreset(TEXTURE_SLOTS.base, id)}
+                onClear={() => textureInput.disable(TEXTURE_SLOTS.base)}
+            />
+            <CameraInput
+                slot={TEXTURE_SLOTS.camera}
+                state={textureInput.slots[TEXTURE_SLOTS.camera]}
+                onEnable={() => textureInput.enableCamera(TEXTURE_SLOTS.camera)}
+                onDisable={() => textureInput.disable(TEXTURE_SLOTS.camera)}
+            />
+            {isCameraDebugScene && (
+                <label
+                    htmlFor={maxFrameRateInputId}
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                    <span>カメラ最大FPS</span>
+                    <input
+                        id={maxFrameRateInputId}
+                        type="number"
+                        min={1}
+                        max={240}
+                        step={1}
+                        value={maxFrameRateInput}
+                        onChange={handleMaxFrameRateChange}
+                        onBlur={handleMaxFrameRateBlur}
+                    />
+                </label>
+            )}
             {scene.supportsHandles && (
                 <HalfPlaneHandleControls
                     showHandles={showHandles}
