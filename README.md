@@ -64,11 +64,12 @@ Marp `theme: default` + `class: invert` などダーク系スライドに調和�
     overflow:hidden;
     max-width:960px;
     margin:0 auto;
+    --embed-frame-width:min(100%, 960px);
   "
 >
   <iframe
     src="https://example.com/?scene=euclidean-hinge&embed=1"
-    style="width:100%;aspect-ratio:16/9;border:none;"
+    style="width:100%;aspect-ratio:16/9;border:none;display:block;"
     title="Euclidean hinge scene"
     allow="fullscreen"
   ></iframe>
