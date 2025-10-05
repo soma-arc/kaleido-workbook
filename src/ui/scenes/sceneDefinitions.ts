@@ -81,7 +81,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
     {
         key: "debugTexture",
         label: "Debug Texture",
-        geometry: GEOMETRY_KIND.hyperbolic,
+        geometry: GEOMETRY_KIND.euclidean,
         variant: "debug-texture",
         description: "Renders the base texture in the viewport center for shader debugging.",
         supportsHandles: false,
