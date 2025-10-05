@@ -114,6 +114,7 @@ export function EuclideanSceneHost({
         [textureInput.textures],
     );
 
+    // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
     const clampFrameRate = useCallback((value: number) => {
         if (!Number.isFinite(value)) return 60;
         const rounded = Math.round(value);
@@ -147,6 +148,7 @@ export function EuclideanSceneHost({
         setMaxFrameRateInput(clamped.toString());
     }, [clampFrameRate, maxFrameRateInput]);
 
+    // requestAnimationFrame ループが常に最新の上限FPS値を参照できるよう同期する。
     useEffect(() => {
         maxFrameRateRef.current = clampFrameRate(maxFrameRate);
     }, [clampFrameRate, maxFrameRate]);
@@ -611,6 +613,7 @@ export function EuclideanSceneHost({
         renderHyperbolicScene,
     ]);
 
+    // カメラデバッグシーンでは dynamic テクスチャがある間だけ rAF ループで再描画する。
     useEffect(() => {
         if (typeof window === "undefined") {
             return;
@@ -626,6 +629,7 @@ export function EuclideanSceneHost({
 
         let cancelled = false;
         const renderFrame = () => {
+            // 平面データが無いケースでもデフォルトを利用して描画継続。
             const fallbackPlanes =
                 latestEuclideanPlanesRef.current ??
                 normalizedHalfPlanes ??
