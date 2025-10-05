@@ -1,5 +1,7 @@
+/** Maximum number of texture layers supported by the renderer. */
 export const MAX_TEXTURE_SLOTS = 2 as const;
 
+/** Enumerates well-known texture slot indices. */
 export const TEXTURE_SLOTS = {
     base: 0,
     camera: 1,

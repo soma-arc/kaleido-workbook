@@ -12,6 +12,9 @@ const CAMERA_PIPELINE_ID = "webgl-debug-camera";
 const HYPERBOLIC_DEBUG_SCENE_ID = "hyperbolic-debug-texture";
 const EUCLIDEAN_CAMERA_SCENE_ID = "euclidean-debug-camera";
 
+/**
+ * Minimal pipeline that blits a single texture slot to screen, used for texture and camera debugging.
+ */
 class DebugTexturePipeline implements WebGLPipelineInstance {
     private readonly program: WebGLProgram;
     private readonly vao: WebGLVertexArrayObject;
@@ -214,6 +217,9 @@ function getUniformLocation(
     return location;
 }
 
+/**
+ * Creates a pipeline factory that previews the given texture slot.
+ */
 function createDebugTexturePipeline(slot: TextureSlot) {
     return (gl: WebGL2RenderingContext, _canvas: HTMLCanvasElement): WebGLPipelineInstance =>
         new DebugTexturePipeline(gl, slot);

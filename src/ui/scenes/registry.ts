@@ -1,6 +1,7 @@
 import { DEFAULT_SCENE_ID, SCENE_IDS, SCENE_REGISTRY } from "./sceneDefinitions";
 import type { SceneDefinition, SceneId, SceneRegistry } from "./types";
 
+/** Returns the canonical scene registry built from definitions. */
 export function getSceneRegistry(): SceneRegistry {
     return SCENE_REGISTRY;
 }

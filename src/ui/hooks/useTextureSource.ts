@@ -45,6 +45,9 @@ const DEFAULT_SLOT_STATE: TextureSlotState = {
 
 const ALL_SLOTS: TextureSlot[] = Object.values(TEXTURE_SLOTS);
 
+/**
+ * Manages texture slot lifecycle, covering image uploads, presets, and camera streams for WebGL pipelines.
+ */
 export function useTextureInput(options: UseTextureInputOptions = {}): UseTextureInputResult {
     const { presets = [] } = options;
     const [slots, setSlots] = useState<SlotStateMap>(() => {

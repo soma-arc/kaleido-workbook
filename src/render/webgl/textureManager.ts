@@ -31,6 +31,9 @@ type TextureResource = {
 
 const COMPONENTS_PER_VEC2 = 2;
 
+/**
+ * Constructs a texture manager responsible for syncing CPU-side texture layers into WebGL texture units.
+ */
 export function createTextureManager(gl: WebGL2RenderingContext): TextureManager {
     const resources: Array<TextureResource | null> = Array(MAX_TEXTURE_SLOTS).fill(null);
     const enabled = new Int32Array(MAX_TEXTURE_SLOTS);

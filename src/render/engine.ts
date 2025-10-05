@@ -62,6 +62,9 @@ function extractSceneTextures(layers?: TextureLayer[]): SceneTextureLayer[] {
     }));
 }
 
+/**
+ * Detects the preferred render mode from environment variables, falling back to the default hybrid mode.
+ */
 export function detectRenderMode(): RenderMode {
     const envMode = safeString(readEnvRenderMode());
     if (isRenderMode(envMode)) return envMode;
@@ -74,6 +77,9 @@ export function detectRenderMode(): RenderMode {
     return DEFAULT_MODE;
 }
 
+/**
+ * Creates the rendering engine that orchestrates canvas overlays and WebGL pipelines.
+ */
 export function createRenderEngine(
     canvas: HTMLCanvasElement,
     options: RenderEngineOptions = {},

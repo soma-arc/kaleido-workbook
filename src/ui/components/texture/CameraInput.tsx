@@ -14,6 +14,9 @@ export type CameraInputProps = {
     onDisable: () => void;
 };
 
+/**
+ * CameraInput toggles MediaStream-backed textures for the specified texture slot.
+ */
 export function CameraInput({
     slot = TEXTURE_SLOTS.camera,
     state,

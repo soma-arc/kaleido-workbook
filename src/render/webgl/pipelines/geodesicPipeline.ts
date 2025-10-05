@@ -20,6 +20,9 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 const PIPELINE_ID = "webgl-geodesic";
 
+/**
+ * Default pipeline for rendering hyperbolic / euclidean geodesic layers with optional texture compositing.
+ */
 class GeodesicPipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;
     private readonly program: WebGLProgram;
@@ -216,6 +219,9 @@ function getUniformLocation(
     return location;
 }
 
+/**
+ * Provides a factory suitable for registry helpers to instantiate {@link GeodesicPipeline}.
+ */
 function createGeodesicPipeline(
     gl: WebGL2RenderingContext,
     _canvas: HTMLCanvasElement,

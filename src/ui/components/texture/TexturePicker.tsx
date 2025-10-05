@@ -17,6 +17,9 @@ export type TexturePickerProps = {
     onClear: () => void;
 };
 
+/**
+ * TexturePicker lets users attach static images or presets to a texture slot.
+ */
 export function TexturePicker({
     slot = TEXTURE_SLOTS.base,
     state,

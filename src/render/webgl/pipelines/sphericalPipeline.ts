@@ -13,6 +13,9 @@ import {
 
 const PIPELINE_ID = "webgl-spherical";
 
+/**
+ * WebGL pipeline that defers spherical rendering to the dedicated renderer while adhering to the generic pipeline contract.
+ */
 class SphericalPipeline implements WebGLPipelineInstance {
     constructor(private readonly renderer: SphericalRenderer) {}
 
@@ -38,6 +41,9 @@ class SphericalPipeline implements WebGLPipelineInstance {
     }
 }
 
+/**
+ * Factory helper exported via the registry to create {@link SphericalPipeline} instances.
+ */
 function createPipeline(
     gl: WebGL2RenderingContext,
     canvas: HTMLCanvasElement,

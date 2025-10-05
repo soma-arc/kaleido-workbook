@@ -28,6 +28,9 @@ export type WebGLInitResult = {
     ready: boolean;
 };
 
+/**
+ * Builds a WebGL renderer that dispatches rendering to registered pipelines with automatic context fallback handling.
+ */
 export function createWebGLRenderer(): WebGLInitResult {
     const glCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
     if (!glCanvas) {
