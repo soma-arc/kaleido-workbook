@@ -5,7 +5,7 @@ import {
     type UseTriangleParamsOptions,
     useTriangleParams,
 } from "../../../src/ui/hooks/useTriangleParams";
-import type { TrianglePreset } from "../../../src/ui/trianglePresets";
+import { findTrianglePresetById } from "../../../src/ui/trianglePresets";
 
 const globalActFlag = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
 globalActFlag.IS_REACT_ACT_ENVIRONMENT = true;
@@ -81,7 +81,10 @@ describe("useTriangleParams", () => {
 
     it("locks p and q when anchor is set", () => {
         const harness = renderHook();
-        const preset: TrianglePreset = { label: "(2,3,7)", p: 2, q: 3, r: 7 };
+        const preset = findTrianglePresetById("hyp-237");
+        if (!preset) {
+            throw new Error("Expected hyperbolic preset hyp-237 to be defined");
+        }
         harness.update((state) => {
             state.setFromPreset(preset);
             state.setParamInput("p", "5");
