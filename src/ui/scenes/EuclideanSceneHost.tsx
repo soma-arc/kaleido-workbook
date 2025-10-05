@@ -27,7 +27,7 @@ import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
 import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
-import { getPresetsForGeometry, type TrianglePreset } from "@/ui/trianglePresets";
+import { getPresetGroupsForGeometry, getPresetsForGeometry } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import { SceneLayout } from "./layouts";
 import { SCENE_IDS } from "./sceneDefinitions";
@@ -201,10 +201,17 @@ export function EuclideanSceneHost({
 
     const controlAssignments = scene.controlAssignments;
 
-    const presets = useMemo<readonly TrianglePreset[]>(
-        () => getPresetsForGeometry(scene.geometry),
+    const presetGroups = useMemo(
+        () => getPresetGroupsForGeometry(scene.geometry),
         [scene.geometry],
     );
+    const flatPresets = useMemo(() => getPresetsForGeometry(scene.geometry), [scene.geometry]);
+    const activePresetId = useMemo(() => {
+        const match = flatPresets.find(
+            (preset) => preset.p === params.p && preset.q === params.q && preset.r === params.r,
+        );
+        return match?.id;
+    }, [flatPresets, params]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -672,10 +679,11 @@ export function EuclideanSceneHost({
                 renderBackend={renderMode}
             />
             <PresetSelector
-                presets={presets as TrianglePreset[]}
-                anchor={anchor}
+                groups={presetGroups}
+                activePresetId={activePresetId}
                 onSelect={setFromPreset}
                 onClear={clearAnchor}
+                summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
             />
             <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
             <TexturePicker

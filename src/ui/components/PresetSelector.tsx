@@ -1,40 +1,51 @@
-import type { TrianglePreset } from "../trianglePresets";
+import type { TrianglePreset, TrianglePresetGroup } from "../trianglePresets";
 
 export type PresetSelectorProps = {
-    presets: readonly TrianglePreset[];
-    anchor: { p: number; q: number } | null;
+    groups: readonly TrianglePresetGroup[];
+    activePresetId?: string;
     onSelect: (preset: TrianglePreset) => void;
-    onClear: () => void;
+    onClear?: () => void;
+    summary?: string;
 };
 
 export function PresetSelector({
-    presets,
-    anchor,
+    groups,
+    activePresetId,
     onSelect,
     onClear,
+    summary,
 }: PresetSelectorProps): JSX.Element {
     return (
-        <div style={{ display: "grid", gap: "4px" }}>
+        <div style={{ display: "grid", gap: "8px" }}>
             <span style={{ fontWeight: 600 }}>Presets</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {presets.map((preset) => {
-                    const active = !!anchor && anchor.p === preset.p && anchor.q === preset.q;
-                    return (
-                        <button
-                            key={preset.label}
-                            type="button"
-                            onClick={() => onSelect(preset)}
-                            style={{
-                                padding: "4px 8px",
-                                border: active ? "1px solid #4a90e2" : "1px solid #bbb",
-                                backgroundColor: active ? "#e6f1fc" : "#fff",
-                                cursor: "pointer",
-                            }}
-                        >
-                            {preset.label}
-                        </button>
-                    );
-                })}
+            <div style={{ display: "grid", gap: "12px" }}>
+                {groups.map((group) => (
+                    <section key={group.label} style={{ display: "grid", gap: "6px" }}>
+                        <strong style={{ fontSize: "0.9rem" }}>{group.label}</strong>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                            {group.presets.map((preset) => {
+                                const active = preset.id === activePresetId;
+                                return (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        onClick={() => onSelect(preset)}
+                                        style={{
+                                            padding: "4px 8px",
+                                            border: active ? "1px solid #4a90e2" : "1px solid #bbb",
+                                            backgroundColor: active ? "#e6f1fc" : "#fff",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        {preset.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </section>
+                ))}
+            </div>
+            {onClear ? (
                 <button
                     type="button"
                     onClick={onClear}
@@ -42,14 +53,13 @@ export function PresetSelector({
                         padding: "4px 8px",
                         border: "1px solid #bbb",
                         cursor: "pointer",
+                        justifySelf: "start",
                     }}
                 >
                     Custom
                 </button>
-            </div>
-            <span style={{ fontSize: "0.8rem", color: "#555" }}>
-                Anchor: {anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}
-            </span>
+            ) : null}
+            {summary ? <span style={{ fontSize: "0.8rem", color: "#555" }}>{summary}</span> : null}
         </div>
     );
 }

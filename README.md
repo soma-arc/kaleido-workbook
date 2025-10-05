@@ -28,6 +28,7 @@ pnpm ci             # biome ci + typecheck + test
 - `Snap π/n` が有効な場合、双曲条件 `1/p + 1/q + 1/r < 1` を満たすよう未固定の分母を自動調整します。
 - `R` スライダは分母の範囲 `[2, 100]` で安全に操作可能（p,q 固定）。
 - 既存の数値入力はアンカー状態に応じて自動的に無効化/有効化されます。
+- Spherical シーンには Polyhedron プリセット（Tetrahedron `(2,3,3)`, Octahedron `(2,3,4)`, Icosahedron `(2,3,5)`, `(2,2,n)` シリーズ n≤12）を追加。ワンクリックで対応する球面三角形に切り替えられます。
 
 ### Texture Input
 - 「Texture」セクションで Poincaré 円板の背面テクスチャを切り替えられます。

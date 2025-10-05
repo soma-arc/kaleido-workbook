@@ -18,8 +18,24 @@ globalActFlag.IS_REACT_ACT_ENVIRONMENT = true;
 describe("UI components", () => {
     it("calls handlers when preset buttons are clicked", () => {
         const presets: TrianglePreset[] = [
-            { label: "(3,3,3)", p: 3, q: 3, r: 3 },
-            { label: "(2,3,7)", p: 2, q: 3, r: 7 },
+            {
+                id: "test-333",
+                label: "(3,3,3)",
+                p: 3,
+                q: 3,
+                r: 3,
+                geometry: GEOMETRY_KIND.hyperbolic,
+                category: "classic",
+            },
+            {
+                id: "test-237",
+                label: "(2,3,7)",
+                p: 2,
+                q: 3,
+                r: 7,
+                geometry: GEOMETRY_KIND.hyperbolic,
+                category: "classic",
+            },
         ];
         const onSelect = vi.fn();
         const onClear = vi.fn();
@@ -29,10 +45,11 @@ describe("UI components", () => {
         act(() => {
             root.render(
                 <PresetSelector
-                    presets={presets}
-                    anchor={{ p: 3, q: 3 }}
+                    groups={[{ category: "classic", label: "Classics", presets }]}
+                    activePresetId={presets[0].id}
                     onSelect={onSelect}
                     onClear={onClear}
+                    summary="Anchor: p=3, q=3"
                 />,
             );
         });

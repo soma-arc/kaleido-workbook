@@ -23,4 +23,13 @@ describe("getPresetsForGeometry", () => {
             expect(sum).toBeCloseTo(1, 12);
         }
     });
+
+    it("returns spherical presets that exceed the euclidean boundary", () => {
+        const presets = getPresetsForGeometry("spherical");
+        expect(presets.length).toBeGreaterThan(0);
+        for (const preset of presets) {
+            const sum = reciprocalSum(preset.p, preset.q, preset.r);
+            expect(sum).toBeGreaterThan(1);
+        }
+    });
 });
