@@ -9,7 +9,7 @@ import { TEXTURE_SLOTS, type TextureSlot } from "../textures";
 
 const BASE_PIPELINE_ID = "webgl-debug-texture";
 const CAMERA_PIPELINE_ID = "webgl-debug-camera";
-const HYPERBOLIC_DEBUG_SCENE_ID = "hyperbolic-debug-texture";
+const EUCLIDEAN_DEBUG_TEXTURE_SCENE_ID = "euclidean-debug-texture";
 const EUCLIDEAN_CAMERA_SCENE_ID = "euclidean-debug-camera";
 
 /**
@@ -226,7 +226,7 @@ function createDebugTexturePipeline(slot: TextureSlot) {
 }
 
 registerSceneWebGLPipeline(
-    HYPERBOLIC_DEBUG_SCENE_ID,
+    EUCLIDEAN_DEBUG_TEXTURE_SCENE_ID,
     BASE_PIPELINE_ID,
     createDebugTexturePipeline(TEXTURE_SLOTS.base),
 );
