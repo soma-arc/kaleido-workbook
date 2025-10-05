@@ -76,6 +76,12 @@ type HandleControlsState = {
     points: HalfPlaneControlPoints[];
 };
 
+/**
+ * Renders the Euclidean scene workspace including interactive controls and WebGL-backed previews.
+ *
+ * カメラデバッグシーンでは requestAnimationFrame による再描画ループを起動し、
+ * 入力欄から設定できる最大FPSに従ってカメラテクスチャを更新します。
+ */
 export function EuclideanSceneHost({
     scene,
     scenes,
