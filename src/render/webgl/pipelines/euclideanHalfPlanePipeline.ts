@@ -81,7 +81,6 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         const width = canvas.width || gl.drawingBufferWidth || 1;
         const height = canvas.height || gl.drawingBufferHeight || 1;
         gl.viewport(0, 0, width, height);
-        // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
         gl.uniform2f(this.uniforms.resolution, width, height);
         gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
@@ -101,7 +100,6 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.bindVertexArray(this.vao);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
         gl.bindVertexArray(null);
-        // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
 

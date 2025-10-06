@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { HyperbolicScene } from "../../../../src/render/scene";
-import {
-    createGeodesicUniformBuffers,
-    packSceneGeodesics,
-} from "../../../../src/render/webgl/geodesicUniforms";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import type { EuclideanScene, HyperbolicScene } from "@/render/scene";
+import { createGeodesicUniformBuffers, packSceneGeodesics } from "@/render/webgl/geodesicUniforms";
 
 const SCENE: HyperbolicScene = {
     geometry: "hyperbolic",
@@ -30,12 +29,13 @@ const SCENE: HyperbolicScene = {
     ],
 };
 
-const EUCLIDEAN_SCENE = {
-    geometry: "euclidean" as const,
+const EUCLIDEAN_SCENE: EuclideanScene = {
+    geometry: GEOMETRY_KIND.euclidean,
     halfPlanes: [
         { normal: { x: 1, y: 0 }, offset: 0 },
         { normal: { x: 0, y: 1 }, offset: 0 },
     ],
+    textures: [],
 };
 
 describe("packSceneGeodesics", () => {
@@ -79,5 +79,22 @@ describe("packSceneGeodesics", () => {
         const data = Array.from(buffers.data.slice(0, 4));
         expect(Math.hypot(data[0], data[1])).toBeCloseTo(1, 12);
         expect(data[3]).toBe(1);
+    });
+
+    it("preserves euclidean half-plane orientation for signed distance evaluation", () => {
+        const plane: HalfPlane = { normal: { x: 1, y: 0 }, offset: -0.5 };
+        const buffers = createGeodesicUniformBuffers(4);
+        const scene: EuclideanScene = {
+            geometry: GEOMETRY_KIND.euclidean,
+            halfPlanes: [plane],
+            textures: [],
+        };
+        const count = packSceneGeodesics(scene, buffers);
+        expect(count).toBe(1);
+        const [nx, ny, offset, kind] = Array.from(buffers.data.slice(0, 4));
+        expect(kind).toBe(1);
+        const evaluate = (point: { x: number; y: number }) => nx * point.x + ny * point.y + offset;
+        expect(evaluate({ x: 0.25, y: 0 })).toBeLessThan(0);
+        expect(evaluate({ x: 0.75, y: 0 })).toBeGreaterThan(0);
     });
 });
