@@ -10,20 +10,20 @@ import {
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "../pipelineRegistry";
-import fragmentShaderSourceTemplate from "../shaders/geodesic.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
+import fragmentShaderSourceTemplate from "../shaders/hyperbolicGeodesic.frag?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
-const PIPELINE_ID = "webgl-geodesic";
+const PIPELINE_ID = "webgl-hyperbolic-geodesic";
 
 /**
- * Default pipeline for rendering hyperbolic / euclidean geodesic layers with optional texture compositing.
+ * Default pipeline for rendering hyperbolic geodesic layers with optional texture compositing.
  */
-class GeodesicPipeline implements WebGLPipelineInstance {
+class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;
     private readonly program: WebGLProgram;
     private readonly vao: WebGLVertexArrayObject;
@@ -220,15 +220,18 @@ function getUniformLocation(
 }
 
 /**
- * Provides a factory suitable for registry helpers to instantiate {@link GeodesicPipeline}.
+ * Provides a factory suitable for registry helpers to instantiate {@link HyperbolicGeodesicPipeline}.
  */
-function createGeodesicPipeline(
+function createHyperbolicGeodesicPipeline(
     gl: WebGL2RenderingContext,
     _canvas: HTMLCanvasElement,
 ): WebGLPipelineInstance {
-    return new GeodesicPipeline(gl);
+    return new HyperbolicGeodesicPipeline(gl);
 }
 
-registerDefaultWebGLPipeline(PIPELINE_ID, createGeodesicPipeline);
-registerGeometryWebGLPipeline(GEOMETRY_KIND.hyperbolic, PIPELINE_ID, createGeodesicPipeline);
-registerGeometryWebGLPipeline(GEOMETRY_KIND.euclidean, PIPELINE_ID, createGeodesicPipeline);
+registerDefaultWebGLPipeline(PIPELINE_ID, createHyperbolicGeodesicPipeline);
+registerGeometryWebGLPipeline(
+    GEOMETRY_KIND.hyperbolic,
+    PIPELINE_ID,
+    createHyperbolicGeodesicPipeline,
+);
