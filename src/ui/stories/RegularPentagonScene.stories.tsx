@@ -7,6 +7,7 @@ import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS, type SceneId } from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
+import { expectCanvasFill } from "./canvasAssertions";
 import { REGULAR_POLYGON_COMPONENT_DOC, REGULAR_POLYGON_PLAY_DOC } from "./regularPolygonDocs";
 
 const TRIANGLE_N_MAX = 100;
@@ -86,6 +87,13 @@ export const Default: Story = {
         if (!stage) {
             throw new Error("Stage canvas not found");
         }
+        await expectCanvasFill(stage, {
+            points: [
+                { x: 0.5, y: 0.5 },
+                { x: 0.48, y: 0.42 },
+                { x: 0.54, y: 0.58 },
+            ],
+        });
         const readout = canvasElement.querySelector('[data-testid="handle-coordinates"]');
         await waitFor(() => {
             expect(readout?.textContent).toBeTruthy();
