@@ -5,25 +5,24 @@ import {
     packSceneGeodesics,
 } from "../geodesicUniforms";
 import {
-    registerDefaultWebGLPipeline,
     registerGeometryWebGLPipeline,
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "../pipelineRegistry";
+import fragmentShaderSourceTemplate from "../shaders/euclideanReflectiveFill.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
-import fragmentShaderSourceTemplate from "../shaders/hyperbolicGeodesic.frag?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
-export const HYPERBOLIC_GEODESIC_PIPELINE_ID = "webgl-hyperbolic-geodesic" as const;
+const FILL_COLOR = [164 / 255, 208 / 255, 255 / 255] as const;
+const FILL_OPACITY = 0.55;
 
-/**
- * Default pipeline for rendering hyperbolic geodesic layers with optional texture compositing.
- */
-class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
+export const EUCLIDEAN_HALF_PLANE_PIPELINE_ID = "webgl-euclidean-halfplane" as const;
+
+class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;
     private readonly program: WebGLProgram;
     private readonly vao: WebGLVertexArrayObject;
@@ -66,30 +65,26 @@ class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
 
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
-        gl.uniform3f(gl.getUniformLocation(this.program, "uLineColor"), ...LINE_COLOR);
         gl.uniform1f(gl.getUniformLocation(this.program, "uLineWidth"), LINE_WIDTH);
         gl.uniform1f(gl.getUniformLocation(this.program, "uFeather"), LINE_FEATHER);
+        gl.uniform3f(gl.getUniformLocation(this.program, "uLineColor"), ...LINE_COLOR);
+        gl.uniform3f(gl.getUniformLocation(this.program, "uFillColor"), ...FILL_COLOR);
+        gl.uniform1f(gl.getUniformLocation(this.program, "uFillOpacity"), FILL_OPACITY);
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
         gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
 
-    render({
-        renderScene,
-        viewport,
-        clipToDisk,
-        textures,
-        canvas,
-    }: WebGLPipelineRenderContext): void {
+    render({ renderScene, viewport, textures, canvas }: WebGLPipelineRenderContext): void {
         const gl = this.gl;
         const width = canvas.width || gl.drawingBufferWidth || 1;
         const height = canvas.height || gl.drawingBufferHeight || 1;
         gl.viewport(0, 0, width, height);
+        // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
         gl.uniform2f(this.uniforms.resolution, width, height);
         gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
-        gl.uniform1i(this.uniforms.clipToDisk, clipToDisk ? 1 : 0);
         const count = packSceneGeodesics(renderScene, this.geodesicBuffers, MAX_UNIFORM_GEODESICS);
         gl.uniform1i(this.uniforms.geodesicCount, count);
         gl.uniform4fv(this.uniforms.geodesics, this.geodesicBuffers.data);
@@ -106,6 +101,7 @@ class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
         gl.bindVertexArray(this.vao);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
         gl.bindVertexArray(null);
+        // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
 
@@ -123,7 +119,6 @@ type UniformLocations = {
     viewport: WebGLUniformLocation;
     geodesicCount: WebGLUniformLocation;
     geodesics: WebGLUniformLocation;
-    clipToDisk: WebGLUniformLocation;
     textureEnabled: WebGLUniformLocation;
     textureOffset: WebGLUniformLocation;
     textureScale: WebGLUniformLocation;
@@ -183,7 +178,6 @@ function resolveUniformLocations(
     const viewport = getUniformLocation(gl, program, "uViewport");
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
     const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
     const textureEnabled = getUniformLocation(gl, program, "uTextureEnabled[0]");
     const textureOffset = getUniformLocation(gl, program, "uTextureOffset[0]");
     const textureScale = getUniformLocation(gl, program, "uTextureScale[0]");
@@ -196,7 +190,6 @@ function resolveUniformLocations(
         viewport,
         geodesicCount,
         geodesics,
-        clipToDisk,
         textureEnabled,
         textureOffset,
         textureScale,
@@ -219,19 +212,15 @@ function getUniformLocation(
     return location;
 }
 
-/**
- * Provides a factory suitable for registry helpers to instantiate {@link HyperbolicGeodesicPipeline}.
- */
-function createHyperbolicGeodesicPipeline(
+function createEuclideanHalfPlanePipeline(
     gl: WebGL2RenderingContext,
     _canvas: HTMLCanvasElement,
 ): WebGLPipelineInstance {
-    return new HyperbolicGeodesicPipeline(gl);
+    return new EuclideanHalfPlanePipeline(gl);
 }
 
-registerDefaultWebGLPipeline(HYPERBOLIC_GEODESIC_PIPELINE_ID, createHyperbolicGeodesicPipeline);
 registerGeometryWebGLPipeline(
-    GEOMETRY_KIND.hyperbolic,
-    HYPERBOLIC_GEODESIC_PIPELINE_ID,
-    createHyperbolicGeodesicPipeline,
+    GEOMETRY_KIND.euclidean,
+    EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
+    createEuclideanHalfPlanePipeline,
 );
