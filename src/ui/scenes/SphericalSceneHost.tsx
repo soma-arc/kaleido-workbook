@@ -10,7 +10,14 @@ import {
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
 import "@/render/webgl/pipelines/sphericalPipeline";
+import { PresetSelector } from "@/ui/components/PresetSelector";
 import { StageCanvas } from "@/ui/components/StageCanvas";
+import {
+    DEFAULT_SPHERICAL_PRESET,
+    getPresetGroupsForGeometry,
+    getPresetsForGeometry,
+    type TrianglePreset,
+} from "@/ui/trianglePresets";
 import { ModeControls } from "../components/ModeControls";
 import { SceneLayout } from "./layouts";
 import type { SceneDefinition, SceneId } from "./types";
@@ -117,6 +124,11 @@ export function SphericalSceneHost({
         throw new Error("SphericalSceneHost requires a spherical scene definition");
     }
     const memoInitialState = useMemo(() => initialStateFromScene(scene), [scene]);
+    const sphericalPresetGroups = useMemo(
+        () => getPresetGroupsForGeometry(GEOMETRY_KIND.spherical),
+        [],
+    );
+    const sphericalPresets = useMemo(() => getPresetsForGeometry(GEOMETRY_KIND.spherical), []);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const pipelineRef = useRef<WebGLPipelineInstance | null>(null);
     const renderSceneRef = useRef<() => void>(() => {});
@@ -126,6 +138,9 @@ export function SphericalSceneHost({
         triangleToAngles(memoInitialState.triangle),
     );
     const [samples, setSamples] = useState<number>(DEFAULT_SAMPLES);
+    const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
+        DEFAULT_SPHERICAL_PRESET.id,
+    );
     const [dragging, setDragging] = useState(false);
     const pointerOrigin = useRef<{ x: number; y: number } | null>(null);
     const [renderBackend, setRenderBackend] = useState<string>("initialising");
@@ -137,6 +152,7 @@ export function SphericalSceneHost({
         setState(nextState);
         setAnglesState(triangleToAngles(nextState.triangle));
         cameraRef.current = new SphericalOrbitCamera();
+        setSelectedPresetId(DEFAULT_SPHERICAL_PRESET.id);
     }, [scene]);
 
     const renderScene = useCallback(() => {
@@ -277,6 +293,24 @@ export function SphericalSceneHost({
             next[index] = nextAngles;
             return next;
         });
+        setSelectedPresetId(null);
+    }, []);
+
+    const presetLabel = useMemo(() => {
+        if (!selectedPresetId) {
+            return "Custom";
+        }
+        return sphericalPresets.find((preset) => preset.id === selectedPresetId)?.label ?? "Custom";
+    }, [selectedPresetId, sphericalPresets]);
+
+    const applyPreset = useCallback((preset: TrianglePreset) => {
+        if (!preset.spherical) {
+            return;
+        }
+        const nextState = preset.spherical.buildState();
+        setState(nextState);
+        setAnglesState(triangleToAngles(nextState.triangle));
+        setSelectedPresetId(preset.id);
     }, []);
 
     useEffect(() => {
@@ -307,6 +341,12 @@ export function SphericalSceneHost({
                         </p>
                     ) : null}
                 </header>
+                <PresetSelector
+                    groups={sphericalPresetGroups}
+                    activePresetId={selectedPresetId ?? undefined}
+                    onSelect={applyPreset}
+                    summary={`Selected: ${presetLabel}`}
+                />
                 <div style={{ display: "grid", gap: "12px" }}>
                     {anglesState.map((angles, index) => {
                         const label = String.fromCharCode(65 + index);
