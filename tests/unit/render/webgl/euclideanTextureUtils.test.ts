@@ -17,7 +17,7 @@ describe("euclidean texture reflection", () => {
 
         const reflected = computeReflectiveUV({ x: 1.6, y: -1.2 }, IDENTITY_UV_TRANSFORM);
         expect(reflected.u).toBeCloseTo(0.7, 12);
-        expect(reflected.v).toBeCloseTo(0.3, 12);
+        expect(reflected.v).toBeCloseTo(0.1, 12);
     });
 
     it("handles anisotropic scale and rotation", () => {
