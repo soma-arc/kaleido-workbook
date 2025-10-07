@@ -9,6 +9,7 @@ import {
     deriveHalfPlaneFromPoints,
     type HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import { getCanvasPixelRatio } from "@/render/canvas";
 import { createRenderEngine, type RenderEngine } from "@/render/engine";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
@@ -30,17 +31,23 @@ const HANDLE_TOLERANCE_PX = 12;
 
 function computeViewport(canvas: HTMLCanvasElement): Viewport {
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width || canvas.width || 1;
-    const height = rect.height || canvas.height || 1;
+    const ratio = getCanvasPixelRatio(canvas);
+    const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
+    const height = canvas.height || Math.max(1, (rect.height || 1) * ratio);
+    const margin = 8 * ratio;
     const size = Math.min(width, height);
-    const margin = 8;
     const scale = Math.max(1, size / 2 - margin);
     return { scale, tx: width / 2, ty: height / 2 };
 }
 
 function getPointer(e: ReactPointerEvent<HTMLCanvasElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = getCanvasPixelRatio(canvas);
+    return {
+        x: (e.clientX - rect.left) * ratio,
+        y: (e.clientY - rect.top) * ratio,
+    };
 }
 
 type HandleDragState = {
@@ -131,7 +138,13 @@ function HalfPlaneStageDemo(): JSX.Element {
         const canvas = e.currentTarget;
         const viewport = computeViewport(canvas);
         const screen = getPointer(e);
-        const hit = hitTestControlPoints(handleState.points, viewport, screen, HANDLE_TOLERANCE_PX);
+        const ratio = getCanvasPixelRatio(canvas);
+        const hit = hitTestControlPoints(
+            handleState.points,
+            viewport,
+            screen,
+            HANDLE_TOLERANCE_PX * ratio,
+        );
         if (!hit) return;
         try {
             canvas.setPointerCapture(e.pointerId);

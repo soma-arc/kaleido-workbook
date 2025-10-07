@@ -44,3 +44,19 @@ export function attachResize(_canvas: HTMLCanvasElement, onResize: () => void): 
     globalThis.addEventListener("resize", handler);
     return () => globalThis.removeEventListener("resize", handler);
 }
+
+/**
+ * Returns the ratio between canvas device pixels and its CSS layout size.
+ * Falls back to 1 when layout metrics are unavailable.
+ */
+export function getCanvasPixelRatio(canvas: HTMLCanvasElement): number {
+    try {
+        const rect = canvas.getBoundingClientRect?.();
+        if (rect && rect.width > 0) {
+            return canvas.width / rect.width;
+        }
+    } catch {
+        // ignore measurement failures
+    }
+    return 1;
+}

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect, userEvent, waitFor } from "@storybook/test";
 import { useMemo, useState } from "react";
+import { getCanvasPixelRatio } from "@/render/canvas";
 import { detectRenderMode } from "@/render/engine";
 import { type Viewport, worldToScreen } from "@/render/viewport";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
@@ -16,10 +17,11 @@ const DEPTH_RANGE = { min: 0, max: 10 } as const;
 
 function computeViewport(canvas: HTMLCanvasElement): Viewport {
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width || canvas.width || 1;
-    const height = rect.height || canvas.height || 1;
+    const ratio = getCanvasPixelRatio(canvas);
+    const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
+    const height = canvas.height || Math.max(1, (rect.height || 1) * ratio);
+    const margin = 8 * ratio;
     const size = Math.min(width, height);
-    const margin = 8;
     const scale = Math.max(1, size / 2 - margin);
     return { scale, tx: width / 2, ty: height / 2 };
 }
@@ -115,6 +117,7 @@ export const Default: Story = {
 
         const rect = stage.getBoundingClientRect();
         const viewport = computeViewport(stage);
+        const ratio = getCanvasPixelRatio(stage);
         const vertexIndices = [0, 2, 4];
 
         for (const vertexIndex of vertexIndices) {
@@ -126,8 +129,8 @@ export const Default: Story = {
 
             const startScreen = worldToScreen(viewport, handle);
             const from = {
-                clientX: rect.left + startScreen.x,
-                clientY: rect.top + startScreen.y,
+                clientX: rect.left + startScreen.x / ratio,
+                clientY: rect.top + startScreen.y / ratio,
             };
             const targetWorld = {
                 x: handle.x + 0.06 * Math.cos(vertexIndex),
@@ -135,8 +138,8 @@ export const Default: Story = {
             };
             const targetScreen = worldToScreen(viewport, targetWorld);
             const to = {
-                clientX: rect.left + targetScreen.x,
-                clientY: rect.top + targetScreen.y,
+                clientX: rect.left + targetScreen.x / ratio,
+                clientY: rect.top + targetScreen.y / ratio,
             };
 
             await userEvent.pointer([
@@ -162,8 +165,8 @@ export const Default: Story = {
             }
             const movedScreen = worldToScreen(viewport, movedHandle);
             const movedCoords = {
-                clientX: rect.left + movedScreen.x,
-                clientY: rect.top + movedScreen.y,
+                clientX: rect.left + movedScreen.x / ratio,
+                clientY: rect.top + movedScreen.y / ratio,
             };
 
             await userEvent.pointer([
