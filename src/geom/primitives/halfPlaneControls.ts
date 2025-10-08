@@ -77,6 +77,28 @@ export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfP
     return normalizeHalfPlane({ normal, offset });
 }
 
+/**
+ * Reorients the half-plane so that the provided reference point lies on its non-negative side.
+ */
+export function orientHalfPlaneTowardPoint(plane: HalfPlane, point: Vec2): HalfPlane {
+    const unit = normalizeHalfPlane(plane);
+    const value = unit.normal.x * point.x + unit.normal.y * point.y + unit.offset;
+    if (value >= 0) {
+        return unit;
+    }
+    return {
+        normal: { x: -unit.normal.x, y: -unit.normal.y },
+        offset: -unit.offset,
+    };
+}
+
+/**
+ * Ensures the half-plane faces the origin (0,0).
+ */
+export function orientHalfPlaneTowardOrigin(plane: HalfPlane): HalfPlane {
+    return orientHalfPlaneTowardPoint(plane, { x: 0, y: 0 });
+}
+
 export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [Vec2, Vec2] {
     if (!(spacing > EPS)) {
         throw new Error("Half-plane control spacing must be positive");

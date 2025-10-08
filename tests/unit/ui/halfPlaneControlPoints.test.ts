@@ -4,6 +4,7 @@ import {
     type ControlPointAssignment,
     controlPointTableFromControls,
     type HalfPlaneControlPoints,
+    orientHalfPlaneTowardOrigin,
     resetControlPointIdCounter,
 } from "@/geom/primitives/halfPlaneControls";
 import { worldToScreen } from "@/render/viewport";
@@ -26,9 +27,11 @@ describe("halfPlaneControlPoints interactions", () => {
         const controls = controlPointsFromHalfPlanes(planes, 0.5);
         const roundtrip = halfPlanesFromControlPoints(controls);
         roundtrip.forEach((plane, idx) => {
-            expect(plane.normal.x).toBeCloseTo(planes[idx].normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(planes[idx].normal.y, 12);
-            expect(plane.offset).toBeCloseTo(planes[idx].offset, 12);
+            const expected = orientHalfPlaneTowardOrigin(planes[idx]);
+            expect(plane.normal.x).toBeCloseTo(expected.normal.x, 12);
+            expect(plane.normal.y).toBeCloseTo(expected.normal.y, 12);
+            expect(plane.offset).toBeCloseTo(expected.offset, 12);
+            expect(plane.offset).toBeGreaterThanOrEqual(0);
         });
     });
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { evaluateHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import {
     halfPlanesFromControlPoints,
@@ -33,6 +34,10 @@ describe("regular polygon scene config", () => {
             expect(plane.offset).toBeCloseTo(config.halfPlanes[idx].offset, 12);
         });
 
+        config.halfPlanes.forEach((plane) => {
+            expect(evaluateHalfPlane(plane, { x: 0, y: 0 })).toBeGreaterThan(0);
+        });
+
         const counts = collectOccurrences(config.initialControlPoints);
         expect([...counts.values()].every((count) => count === 2)).toBe(true);
 
@@ -56,6 +61,10 @@ describe("regular polygon scene config", () => {
             expect(plane.normal.x).toBeCloseTo(original.normal.x, 12);
             expect(plane.normal.y).toBeCloseTo(original.normal.y, 12);
             expect(plane.offset).toBeCloseTo(original.offset, 12);
+        });
+
+        config.halfPlanes.forEach((plane) => {
+            expect(evaluateHalfPlane(plane, { x: 0, y: 0 })).toBeGreaterThan(0);
         });
 
         const counts = collectOccurrences(config.initialControlPoints);
