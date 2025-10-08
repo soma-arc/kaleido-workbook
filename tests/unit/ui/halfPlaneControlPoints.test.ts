@@ -28,10 +28,10 @@ describe("halfPlaneControlPoints interactions", () => {
         const roundtrip = halfPlanesFromControlPoints(controls);
         roundtrip.forEach((plane, idx) => {
             const expected = orientHalfPlaneTowardOrigin(planes[idx]);
-            expect(plane.normal.x).toBeCloseTo(expected.normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(expected.normal.y, 12);
-            expect(plane.offset).toBeCloseTo(expected.offset, 12);
-            expect(plane.offset).toBeGreaterThanOrEqual(0);
+            const oriented = orientHalfPlaneTowardOrigin(plane);
+            expect(oriented.normal.x).toBeCloseTo(expected.normal.x, 12);
+            expect(oriented.normal.y).toBeCloseTo(expected.normal.y, 12);
+            expect(oriented.offset).toBeCloseTo(expected.offset, 12);
         });
     });
 

@@ -7,7 +7,6 @@ import type {
 import {
     controlPointsFromHalfPlanes as buildControlPoints,
     deriveHalfPlaneFromPoints,
-    orientHalfPlaneTowardOrigin,
 } from "@/geom/primitives/halfPlaneControls";
 import type { Viewport } from "@/render/viewport";
 import { worldToScreen } from "@/render/viewport";
@@ -22,12 +21,10 @@ export function controlPointsFromHalfPlanes(
 
 export function halfPlanesFromControlPoints(controls: HalfPlaneControlPoints[]): HalfPlane[] {
     return controls.map((points) =>
-        orientHalfPlaneTowardOrigin(
-            deriveHalfPlaneFromPoints([
-                { x: points[0].x, y: points[0].y },
-                { x: points[1].x, y: points[1].y },
-            ]),
-        ),
+        deriveHalfPlaneFromPoints([
+            { x: points[0].x, y: points[0].y },
+            { x: points[1].x, y: points[1].y },
+        ]),
     );
 }
 

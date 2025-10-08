@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { evaluateHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import { orientHalfPlaneTowardOrigin } from "@/geom/primitives/halfPlaneControls";
 import {
     halfPlanesFromControlPoints,
     updateControlPoint,
@@ -29,9 +30,11 @@ describe("regular polygon scene config", () => {
 
         const reconstructed = halfPlanesFromControlPoints(config.initialControlPoints);
         reconstructed.forEach((plane, idx) => {
-            expect(plane.normal.x).toBeCloseTo(config.halfPlanes[idx].normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(config.halfPlanes[idx].normal.y, 12);
-            expect(plane.offset).toBeCloseTo(config.halfPlanes[idx].offset, 12);
+            const expected = orientHalfPlaneTowardOrigin(config.halfPlanes[idx]);
+            const oriented = orientHalfPlaneTowardOrigin(plane);
+            expect(oriented.normal.x).toBeCloseTo(expected.normal.x, 12);
+            expect(oriented.normal.y).toBeCloseTo(expected.normal.y, 12);
+            expect(oriented.offset).toBeCloseTo(expected.offset, 12);
         });
 
         config.halfPlanes.forEach((plane) => {
@@ -57,10 +60,11 @@ describe("regular polygon scene config", () => {
 
         const reconstructed = halfPlanesFromControlPoints(config.initialControlPoints);
         reconstructed.forEach((plane, idx) => {
-            const original = config.halfPlanes[idx];
-            expect(plane.normal.x).toBeCloseTo(original.normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(original.normal.y, 12);
-            expect(plane.offset).toBeCloseTo(original.offset, 12);
+            const original = orientHalfPlaneTowardOrigin(config.halfPlanes[idx]);
+            const oriented = orientHalfPlaneTowardOrigin(plane);
+            expect(oriented.normal.x).toBeCloseTo(original.normal.x, 12);
+            expect(oriented.normal.y).toBeCloseTo(original.normal.y, 12);
+            expect(oriented.offset).toBeCloseTo(original.offset, 12);
         });
 
         config.halfPlanes.forEach((plane) => {

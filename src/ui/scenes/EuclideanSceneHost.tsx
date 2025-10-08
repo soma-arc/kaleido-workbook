@@ -255,7 +255,6 @@ export function EuclideanSceneHost({
         return base.map((plane) => normalizeHalfPlane(plane));
     }, [scene.geometry, editableHalfPlanes, baseHalfPlanes]);
 
-    const editingKey = `${scene.id}:${params.p}:${params.q}:${params.r}`;
     useEffect(() => {
         setEditableHalfPlanes(null);
         setDrag(null);
