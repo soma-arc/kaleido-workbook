@@ -132,8 +132,8 @@ function buildFragmentShaderSource(): string {
     }).join("");
 
     return fragmentShaderSourceTemplate
-        .replace("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
-        .replace("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString())
+        .replaceAll("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
+        .replaceAll("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString())
         .replace("__SAMPLE_TEXTURE_CASES__", sampleCases);
 }
 
