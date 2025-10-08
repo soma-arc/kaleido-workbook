@@ -10,6 +10,8 @@ import {
     type SceneRegistry,
 } from "./types";
 
+const SINGLE_HALF_PLANE = [{ normal: { x: 1, y: 0 }, offset: 0 }] as const;
+
 const HINGE_HALF_PLANES = [
     { normal: { x: 1, y: 0 }, offset: 0 },
     { normal: { x: 0, y: 1 }, offset: 0 },
@@ -61,6 +63,7 @@ type SceneAlias =
     | "hyperbolicTiling"
     | "debugTexture"
     | "euclideanCameraDebug"
+    | "euclideanSingleHalfPlane"
     | "euclideanHalfPlanes"
     | "euclideanHinge"
     | "euclideanRegularSquare"
@@ -105,6 +108,17 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
         supportsHandles: true,
         editable: true,
+    },
+    {
+        key: "euclideanSingleHalfPlane",
+        label: "Single Half-Plane",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "single-half-plane",
+        description: "One adjustable half-plane represented with draggable handles.",
+        supportsHandles: true,
+        editable: true,
+        defaultHandleSpacing: 0.75,
+        initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
     },
     {
         key: "euclideanHinge",
