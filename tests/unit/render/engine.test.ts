@@ -78,9 +78,12 @@ describe("createRenderEngine", () => {
         engine.render({
             geometry: "euclidean",
             halfPlanes: [
-                { normal: { x: 1, y: 0 }, offset: 0 },
-                { normal: { x: 0, y: 1 }, offset: 0 },
-                { normal: { x: -Math.sqrt(0.5), y: Math.sqrt(0.5) }, offset: 0 },
+                { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
+                { anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } },
+                {
+                    anchor: { x: 0, y: 0 },
+                    normal: { x: -Math.sqrt(0.5), y: Math.sqrt(0.5) },
+                },
             ],
         });
         expect(ctx.clearRect).toHaveBeenCalled();

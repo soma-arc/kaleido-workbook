@@ -7,7 +7,7 @@ const vp: Viewport = { scale: 100, tx: 0, ty: 0 };
 
 describe("euclideanHalfPlaneDrag", () => {
     it("hitTestHalfPlane detects near pixels", () => {
-        const plane: HalfPlane = { normal: { x: 1, y: 0 }, offset: 0 }; // x=0 line
+        const plane: HalfPlane = { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } }; // x=0 line
         // 2px away in +x
         const screen = { x: 2, y: 0 };
         expect(hitTestHalfPlane(plane, vp, screen, 8)).toBe(true);

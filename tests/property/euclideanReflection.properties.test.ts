@@ -1,5 +1,10 @@
 import { fc, test } from "@fast-check/vitest";
-import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
+import {
+    evaluateHalfPlane,
+    halfPlaneFromNormalAndOffset,
+    normalizeHalfPlane,
+    reflectAcrossHalfPlane,
+} from "@/geom/primitives/halfPlane";
 
 const normalArb = fc
     .record({
@@ -15,14 +20,6 @@ const pointArb = fc.record({
     y: fc.double({ min: -5, max: 5, noNaN: true, noDefaultInfinity: true }),
 });
 
-function planeEval(
-    normal: { x: number; y: number },
-    offset: number,
-    point: { x: number; y: number },
-): number {
-    return normal.x * point.x + normal.y * point.y + offset;
-}
-
 function normalize(n: { x: number; y: number }): { x: number; y: number } {
     const len = Math.hypot(n.x, n.y) || 1;
     return { x: n.x / len, y: n.y / len };
@@ -31,7 +28,7 @@ function normalize(n: { x: number; y: number }): { x: number; y: number } {
 test.prop([normalArb, offsetArb, pointArb])(
     "reflection across a half-plane is an involution",
     (n, offset, point) => {
-        const plane = { normal: normalize(n), offset };
+        const plane = halfPlaneFromNormalAndOffset(normalize(n), offset);
         const reflect = reflectAcrossHalfPlane(plane);
         const once = reflect(point);
         const twice = reflect(once);
@@ -43,11 +40,11 @@ test.prop([normalArb, offsetArb, pointArb])(
 test.prop([normalArb, offsetArb, pointArb])(
     "reflection preserves absolute distance to the boundary line",
     (n, offset, point) => {
-        const plane = { normal: normalize(n), offset };
+        const plane = halfPlaneFromNormalAndOffset(normalize(n), offset);
         const reflect = reflectAcrossHalfPlane(plane);
-        const valueBefore = planeEval(plane.normal, plane.offset, point);
+        const valueBefore = evaluateHalfPlane(plane, point);
         const reflected = reflect(point);
-        const valueAfter = planeEval(plane.normal, plane.offset, reflected);
+        const valueAfter = evaluateHalfPlane(plane, reflected);
         expect(Math.abs(valueAfter)).toBeCloseTo(Math.abs(valueBefore), 12);
     },
 );
@@ -55,8 +52,11 @@ test.prop([normalArb, offsetArb, pointArb])(
 test.prop([normalArb, offsetArb, pointArb])(
     "flipping the normal sign does not change the reflection",
     (n, offset, point) => {
-        const plane = { normal: normalize(n), offset };
-        const flipped = { normal: { x: -plane.normal.x, y: -plane.normal.y }, offset: -offset };
+        const plane = halfPlaneFromNormalAndOffset(normalize(n), offset);
+        const flipped = normalizeHalfPlane({
+            anchor: { x: plane.anchor.x, y: plane.anchor.y },
+            normal: { x: -plane.normal.x, y: -plane.normal.y },
+        });
         const reflectA = reflectAcrossHalfPlane(plane);
         const reflectB = reflectAcrossHalfPlane(flipped);
         const ra = reflectA(point);

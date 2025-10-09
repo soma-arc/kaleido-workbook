@@ -1,4 +1,5 @@
 import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
+import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
@@ -11,8 +12,8 @@ import {
 } from "./types";
 
 const HINGE_HALF_PLANES = [
-    { normal: { x: 1, y: 0 }, offset: 0 },
-    { normal: { x: 0, y: 1 }, offset: 0 },
+    halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0),
+    halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
 ] as const;
 
 const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
@@ -33,11 +34,15 @@ const REGULAR_HEXAGON_CONFIG = createRegularPolygonSceneConfig({
     initialAngle: Math.PI / 6,
 });
 
-function cloneHalfPlanes(planes: readonly { normal: { x: number; y: number }; offset: number }[]) {
-    return planes.map((plane) => ({
-        normal: { x: plane.normal.x, y: plane.normal.y },
-        offset: plane.offset,
-    }));
+function cloneHalfPlanes(
+    planes: readonly { anchor: { x: number; y: number }; normal: { x: number; y: number } }[],
+) {
+    return planes.map((plane) =>
+        normalizeHalfPlane({
+            anchor: { x: plane.anchor.x, y: plane.anchor.y },
+            normal: { x: plane.normal.x, y: plane.normal.y },
+        }),
+    );
 }
 
 function cloneControlPointsList(
@@ -115,10 +120,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         supportsHandles: true,
         editable: true,
         allowPlaneDrag: false,
-        initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => ({
-            normal: { ...plane.normal },
-            offset: plane.offset,
-        })),
+        initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
         controlAssignments: [
             { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
             { planeIndex: 1, pointIndex: 0, id: "hinge", fixed: true },

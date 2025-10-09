@@ -1,7 +1,7 @@
 import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { EuclideanTrianglePrimitives } from "@/geom/triangle/types";
 
 export type EuclideanTriangle = EuclideanTrianglePrimitives;
@@ -54,15 +54,15 @@ function createMirror(a: Vec2, b: Vec2, interior: Vec2): HalfPlane {
     const dir = { x: b.x - a.x, y: b.y - a.y };
     const normal = { x: dir.y, y: -dir.x };
     const plane = normalizeHalfPlane({
+        anchor: { x: a.x, y: a.y },
         normal,
-        offset: -(normal.x * a.x + normal.y * a.y),
     });
-    const value = plane.normal.x * interior.x + plane.normal.y * interior.y + plane.offset;
+    const value = evaluateHalfPlane(plane, interior);
     if (value < 0) {
         return plane;
     }
-    return {
+    return normalizeHalfPlane({
+        anchor: { x: plane.anchor.x, y: plane.anchor.y },
         normal: { x: -plane.normal.x, y: -plane.normal.y },
-        offset: -plane.offset,
-    };
+    });
 }

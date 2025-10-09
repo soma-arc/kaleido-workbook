@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { halfPlaneOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import {
     halfPlanesFromControlPoints,
@@ -28,9 +29,11 @@ describe("regular polygon scene config", () => {
 
         const reconstructed = halfPlanesFromControlPoints(config.initialControlPoints);
         reconstructed.forEach((plane, idx) => {
-            expect(plane.normal.x).toBeCloseTo(config.halfPlanes[idx].normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(config.halfPlanes[idx].normal.y, 12);
-            expect(plane.offset).toBeCloseTo(config.halfPlanes[idx].offset, 12);
+            const expected = normalizeHalfPlane(config.halfPlanes[idx]);
+            const unit = normalizeHalfPlane(plane);
+            expect(unit.normal.x).toBeCloseTo(expected.normal.x, 12);
+            expect(unit.normal.y).toBeCloseTo(expected.normal.y, 12);
+            expect(halfPlaneOffset(unit)).toBeCloseTo(halfPlaneOffset(expected), 12);
         });
 
         const counts = collectOccurrences(config.initialControlPoints);
@@ -52,10 +55,11 @@ describe("regular polygon scene config", () => {
 
         const reconstructed = halfPlanesFromControlPoints(config.initialControlPoints);
         reconstructed.forEach((plane, idx) => {
-            const original = config.halfPlanes[idx];
-            expect(plane.normal.x).toBeCloseTo(original.normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(original.normal.y, 12);
-            expect(plane.offset).toBeCloseTo(original.offset, 12);
+            const original = normalizeHalfPlane(config.halfPlanes[idx]);
+            const unit = normalizeHalfPlane(plane);
+            expect(unit.normal.x).toBeCloseTo(original.normal.x, 12);
+            expect(unit.normal.y).toBeCloseTo(original.normal.y, 12);
+            expect(halfPlaneOffset(unit)).toBeCloseTo(halfPlaneOffset(original), 12);
         });
 
         const counts = collectOccurrences(config.initialControlPoints);
@@ -127,16 +131,20 @@ describe("regular polygon scene config", () => {
         updatedPlanes.forEach((plane, idx) => {
             const baseline = originalPlanes[idx];
             if (affected.has(idx)) {
+                const unit = normalizeHalfPlane(plane);
+                const ref = normalizeHalfPlane(baseline);
                 const delta = Math.max(
-                    Math.abs(plane.normal.x - baseline.normal.x),
-                    Math.abs(plane.normal.y - baseline.normal.y),
-                    Math.abs(plane.offset - baseline.offset),
+                    Math.abs(unit.normal.x - ref.normal.x),
+                    Math.abs(unit.normal.y - ref.normal.y),
+                    Math.abs(halfPlaneOffset(unit) - halfPlaneOffset(ref)),
                 );
                 expect(delta).toBeGreaterThan(1e-6);
             } else {
-                expect(plane.normal.x).toBeCloseTo(baseline.normal.x, 12);
-                expect(plane.normal.y).toBeCloseTo(baseline.normal.y, 12);
-                expect(plane.offset).toBeCloseTo(baseline.offset, 12);
+                const unit = normalizeHalfPlane(plane);
+                const ref = normalizeHalfPlane(baseline);
+                expect(unit.normal.x).toBeCloseTo(ref.normal.x, 12);
+                expect(unit.normal.y).toBeCloseTo(ref.normal.y, 12);
+                expect(halfPlaneOffset(unit)).toBeCloseTo(halfPlaneOffset(ref), 12);
             }
         });
     });
@@ -184,16 +192,20 @@ describe("regular polygon scene config", () => {
             movedPlanes.forEach((plane, idx) => {
                 const reference = baselinePlanes[idx];
                 if (affected.has(idx)) {
+                    const unit = normalizeHalfPlane(plane);
+                    const ref = normalizeHalfPlane(reference);
                     const delta = Math.max(
-                        Math.abs(plane.normal.x - reference.normal.x),
-                        Math.abs(plane.normal.y - reference.normal.y),
-                        Math.abs(plane.offset - reference.offset),
+                        Math.abs(unit.normal.x - ref.normal.x),
+                        Math.abs(unit.normal.y - ref.normal.y),
+                        Math.abs(halfPlaneOffset(unit) - halfPlaneOffset(ref)),
                     );
                     expect(delta).toBeGreaterThan(1e-6);
                 } else {
-                    expect(plane.normal.x).toBeCloseTo(reference.normal.x, 12);
-                    expect(plane.normal.y).toBeCloseTo(reference.normal.y, 12);
-                    expect(plane.offset).toBeCloseTo(reference.offset, 12);
+                    const unit = normalizeHalfPlane(plane);
+                    const ref = normalizeHalfPlane(reference);
+                    expect(unit.normal.x).toBeCloseTo(ref.normal.x, 12);
+                    expect(unit.normal.y).toBeCloseTo(ref.normal.y, 12);
+                    expect(halfPlaneOffset(unit)).toBeCloseTo(halfPlaneOffset(ref), 12);
                 }
             });
 
@@ -206,9 +218,11 @@ describe("regular polygon scene config", () => {
             const revertedPlanes = halfPlanesFromControlPoints(revertedControls);
             revertedPlanes.forEach((plane, idx) => {
                 const reference = baselinePlanes[idx];
-                expect(plane.normal.x).toBeCloseTo(reference.normal.x, 12);
-                expect(plane.normal.y).toBeCloseTo(reference.normal.y, 12);
-                expect(plane.offset).toBeCloseTo(reference.offset, 12);
+                const unit = normalizeHalfPlane(plane);
+                const ref = normalizeHalfPlane(reference);
+                expect(unit.normal.x).toBeCloseTo(ref.normal.x, 12);
+                expect(unit.normal.y).toBeCloseTo(ref.normal.y, 12);
+                expect(halfPlaneOffset(unit)).toBeCloseTo(halfPlaneOffset(ref), 12);
             });
 
             controls = revertedControls;
