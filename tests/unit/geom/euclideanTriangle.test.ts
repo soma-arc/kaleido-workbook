@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
-
-function planeEval(
-    normal: { x: number; y: number },
-    offset: number,
-    point: { x: number; y: number },
-): number {
-    return normal.x * point.x + normal.y * point.y + offset;
-}
 
 function length(v: { x: number; y: number }): number {
     return Math.hypot(v.x, v.y);
@@ -32,10 +25,11 @@ describe("buildEuclideanTriangle", () => {
             [vertices[0], vertices[1]],
         ];
         mirrors.forEach((plane, index) => {
-            expect(length(plane.normal)).toBeCloseTo(1, 12);
+            const unit = normalizeHalfPlane(plane);
+            expect(length(unit.normal)).toBeCloseTo(1, 12);
             const [a, b] = edges[index];
-            expect(planeEval(plane.normal, plane.offset, a)).toBeCloseTo(0, 9);
-            expect(planeEval(plane.normal, plane.offset, b)).toBeCloseTo(0, 9);
+            expect(evaluateHalfPlane(unit, a)).toBeCloseTo(0, 9);
+            expect(evaluateHalfPlane(unit, b)).toBeCloseTo(0, 9);
         });
     });
 
@@ -43,7 +37,8 @@ describe("buildEuclideanTriangle", () => {
         const tri = buildEuclideanTriangle(3, 3, 3);
         const center = barycenter(tri.vertices);
         for (const plane of tri.mirrors) {
-            const value = planeEval(plane.normal, plane.offset, center);
+            const unit = normalizeHalfPlane(plane);
+            const value = evaluateHalfPlane(unit, center);
             expect(value).toBeLessThan(0);
         }
     });

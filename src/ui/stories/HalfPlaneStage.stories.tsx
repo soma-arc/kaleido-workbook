@@ -4,7 +4,11 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import {
+    halfPlaneFromNormalAndOffset,
+    halfPlaneOffset,
+    normalizeHalfPlane,
+} from "@/geom/primitives/halfPlane";
 import {
     deriveHalfPlaneFromPoints,
     type HalfPlaneControlPoints,
@@ -21,9 +25,9 @@ import {
 } from "@/ui/interactions/halfPlaneControlPoints";
 
 const DEFAULT_PLANES: HalfPlane[] = [
-    { normal: { x: 1, y: 0 }, offset: 0 },
-    { normal: { x: 0, y: 1 }, offset: 0 },
-    { normal: { x: -Math.SQRT1_2, y: Math.SQRT1_2 }, offset: 0 },
+    halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0),
+    halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
+    halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ].map((plane) => normalizeHalfPlane(plane));
 
 const HANDLE_TOLERANCE_PX = 12;
@@ -194,7 +198,10 @@ function HalfPlaneStageDemo(): JSX.Element {
         renderScene(latestPlanesRef.current, showHandles ? handleState.points : null, null);
     };
 
-    const offsetDisplay = useMemo(() => halfPlanes[0]?.offset ?? 0, [halfPlanes]);
+    const offsetDisplay = useMemo(
+        () => (halfPlanes[0] ? halfPlaneOffset(halfPlanes[0]) : 0),
+        [halfPlanes],
+    );
 
     return (
         <div style={{ display: "grid", gap: "12px", width: "fit-content" }}>

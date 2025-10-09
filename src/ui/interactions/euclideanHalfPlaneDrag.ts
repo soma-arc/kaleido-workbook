@@ -1,6 +1,6 @@
 import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 
@@ -12,7 +12,7 @@ export function hitTestHalfPlane(
 ): boolean {
     const unit = normalizeHalfPlane(plane);
     const p = screenToWorld(viewport, screen);
-    const worldDist = Math.abs(unit.normal.x * p.x + unit.normal.y * p.y + unit.offset);
+    const worldDist = Math.abs(evaluateHalfPlane(unit, p));
     const pxDist = worldDist * Math.max(1, viewport.scale || 1);
     return pxDist <= pxTolerance;
 }
@@ -28,7 +28,7 @@ export function pickHalfPlaneIndex(
     for (let i = 0; i < planes.length; i++) {
         const unit = normalizeHalfPlane(planes[i]);
         const p = screenToWorld(viewport, screen);
-        const worldDist = Math.abs(unit.normal.x * p.x + unit.normal.y * p.y + unit.offset);
+        const worldDist = Math.abs(evaluateHalfPlane(unit, p));
         const pxDist = worldDist * Math.max(1, viewport.scale || 1);
         if (pxDist <= bestPx) {
             bestPx = pxDist;

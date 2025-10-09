@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import {
     type ControlPointAssignment,
     controlPointTableFromControls,
@@ -20,21 +21,24 @@ describe("halfPlaneControlPoints interactions", () => {
     it("round-trips planes via control points", () => {
         resetControlPointIdCounter();
         const planes: HalfPlane[] = [
-            { normal: { x: 1, y: 0 }, offset: 0 },
-            { normal: { x: 0, y: 1 }, offset: -0.5 },
+            { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
+            { anchor: { x: 0, y: 0.5 }, normal: { x: 0, y: 1 } },
         ];
         const controls = controlPointsFromHalfPlanes(planes, 0.5);
         const roundtrip = halfPlanesFromControlPoints(controls);
         roundtrip.forEach((plane, idx) => {
-            expect(plane.normal.x).toBeCloseTo(planes[idx].normal.x, 12);
-            expect(plane.normal.y).toBeCloseTo(planes[idx].normal.y, 12);
-            expect(plane.offset).toBeCloseTo(planes[idx].offset, 12);
+            const expected = normalizeHalfPlane(planes[idx]);
+            const normalized = normalizeHalfPlane(plane);
+            expect(normalized.anchor.x).toBeCloseTo(expected.anchor.x, 12);
+            expect(normalized.anchor.y).toBeCloseTo(expected.anchor.y, 12);
+            expect(normalized.normal.x).toBeCloseTo(expected.normal.x, 12);
+            expect(normalized.normal.y).toBeCloseTo(expected.normal.y, 12);
         });
     });
 
     it("hitTestControlPoints finds nearest control point within tolerance", () => {
         resetControlPointIdCounter();
-        const plane: HalfPlane = { normal: { x: 1, y: 0 }, offset: 0 };
+        const plane: HalfPlane = { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } };
         const [points] = controlPointsFromHalfPlanes([plane], 0.5);
         const screenPoints = points.map((p) => worldToScreen(vp, p));
         const hit = hitTestControlPoints([points], vp, screenPoints[0], 6);
@@ -77,8 +81,8 @@ describe("halfPlaneControlPoints interactions", () => {
     it("controlPointsFromHalfPlanes applies assignments for shared ids", () => {
         resetControlPointIdCounter();
         const planes: HalfPlane[] = [
-            { normal: { x: 1, y: 0 }, offset: 0 },
-            { normal: { x: 0, y: 1 }, offset: 0 },
+            { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
+            { anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } },
         ];
         const assignments: ControlPointAssignment[] = [
             { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },

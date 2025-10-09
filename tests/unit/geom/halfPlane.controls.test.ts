@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import {
     deriveHalfPlaneFromPoints,
     derivePointsFromHalfPlane,
@@ -22,16 +23,17 @@ describe("halfPlaneControls", () => {
             { x: points[1].x, y: points[1].y },
         ]);
         expect(length(plane.normal)).toBeCloseTo(1, 12);
+        expect(plane.anchor.x).toBeCloseTo(points[0].x, 12);
+        expect(plane.anchor.y).toBeCloseTo(points[0].y, 12);
         expect(plane.normal.x).toBeCloseTo(1, 12);
         expect(plane.normal.y).toBeCloseTo(0, 12);
-        expect(plane.offset).toBeCloseTo(0, 12);
     });
 
     it("derives control points from a half-plane with spacing", () => {
-        const plane: HalfPlane = { normal: { x: -1, y: 0 }, offset: 0.5 };
+        const plane: HalfPlane = { anchor: { x: 0.5, y: 0 }, normal: { x: -1, y: 0 } };
         const points = derivePointsFromHalfPlane(plane, 0.25);
         for (const p of points) {
-            const value = plane.normal.x * p.x + plane.normal.y * p.y + plane.offset;
+            const value = evaluateHalfPlane(plane, p);
             expect(value).toBeCloseTo(0, 12);
         }
         expect(
@@ -43,18 +45,16 @@ describe("halfPlaneControls", () => {
     });
 
     it("round-trips between plane and points", () => {
-        const plane: HalfPlane = { normal: { x: 0.6, y: -0.8 }, offset: 1.5 };
-        const normalized: HalfPlane = {
-            normal: {
-                x: plane.normal.x / length(plane.normal),
-                y: plane.normal.y / length(plane.normal),
-            },
-            offset: plane.offset / length(plane.normal),
+        const plane: HalfPlane = {
+            anchor: { x: 0.5, y: -1.2 },
+            normal: { x: 0.6, y: -0.8 },
         };
+        const normalized = normalizeHalfPlane(plane);
         const points = derivePointsFromHalfPlane(normalized, 0.4);
         const back = deriveHalfPlaneFromPoints(points);
+        expect(back.anchor.x).toBeCloseTo(normalized.anchor.x, 12);
+        expect(back.anchor.y).toBeCloseTo(normalized.anchor.y, 12);
         expect(back.normal.x).toBeCloseTo(normalized.normal.x, 12);
         expect(back.normal.y).toBeCloseTo(normalized.normal.y, 12);
-        expect(back.offset).toBeCloseTo(normalized.offset, 12);
     });
 });

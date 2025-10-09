@@ -13,6 +13,7 @@ uniform vec3 uViewport; // (scale, tx, ty)
 
 const int MAX_GEODESICS = __MAX_GEODESICS__;
 uniform vec4 uGeodesicsA[MAX_GEODESICS];
+uniform int uGeodesicKinds[MAX_GEODESICS];
 
 const int MAX_TEXTURE_SLOTS = __MAX_TEXTURE_SLOTS__;
 uniform int uTextureCount;
@@ -39,8 +40,8 @@ float sdfCircleWorld(vec2 worldPoint, vec4 params) {
     return numerator / max(denom, 1e-6);
 }
 
-float sdfLineWorld(vec2 worldPoint, vec2 normal, float offset) {
-    return abs(dot(worldPoint, normal) + offset);
+float sdfLineWorld(vec2 worldPoint, vec2 normal, vec2 anchor) {
+    return abs(dot(worldPoint - anchor, normal));
 }
 
 mat2 rotationMatrix(float angle) {
@@ -98,11 +99,12 @@ void main() {
             break;
         }
         vec4 packed = uGeodesicsA[i];
-        if (packed.w < 0.5) {
+        if (uGeodesicKinds[i] == 0) {
             minSdfWorld = min(minSdfWorld, sdfCircleWorld(worldPoint, packed));
         } else {
             vec2 normal = normalize(packed.xy);
-            minSdfWorld = min(minSdfWorld, sdfLineWorld(worldPoint, normal, packed.z));
+            vec2 anchor = packed.zw;
+            minSdfWorld = min(minSdfWorld, sdfLineWorld(worldPoint, normal, anchor));
         }
     }
 

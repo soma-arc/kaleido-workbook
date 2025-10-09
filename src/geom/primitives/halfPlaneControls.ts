@@ -73,8 +73,7 @@ export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfP
     }
     const invLen = 1 / tangentLen;
     const normal = rotate90CW({ x: tangent.x * invLen, y: tangent.y * invLen });
-    const offset = -(normal.x * a.x + normal.y * a.y);
-    return normalizeHalfPlane({ normal, offset });
+    return normalizeHalfPlane({ anchor: { x: a.x, y: a.y }, normal });
 }
 
 export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [Vec2, Vec2] {
@@ -82,10 +81,7 @@ export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [V
         throw new Error("Half-plane control spacing must be positive");
     }
     const unit = normalizeHalfPlane(plane);
-    const origin = {
-        x: -unit.offset * unit.normal.x,
-        y: -unit.offset * unit.normal.y,
-    };
+    const origin = { x: unit.anchor.x, y: unit.anchor.y };
     const tangent = rotate90CCW(unit.normal);
     return [
         origin,

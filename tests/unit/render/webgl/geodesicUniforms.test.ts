@@ -33,8 +33,8 @@ const SCENE: HyperbolicScene = {
 const EUCLIDEAN_SCENE = {
     geometry: "euclidean" as const,
     halfPlanes: [
-        { normal: { x: 1, y: 0 }, offset: 0 },
-        { normal: { x: 0, y: 1 }, offset: 0 },
+        { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
+        { anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } },
     ],
 };
 
@@ -44,13 +44,15 @@ describe("packSceneGeodesics", () => {
         const count = packSceneGeodesics(SCENE, buffers);
         expect(count).toBe(2);
         expect(Array.from(buffers.data.slice(0, 4))).toEqual([0, 0, 0.5, 0]);
+        expect(buffers.kinds[0]).toBe(0);
         // line entry
         const lineOffset = 4;
         const data = Array.from(buffers.data.slice(lineOffset, lineOffset + 4));
         expect(data[0]).toBeCloseTo(0, 12);
         expect(data[1]).toBeCloseTo(1, 12);
         expect(data[2]).toBeCloseTo(0, 12);
-        expect(data[3]).toBe(1);
+        expect(data[3]).toBeCloseTo(0, 12);
+        expect(buffers.kinds[1]).toBe(1);
     });
 
     it("clears the remainder of the buffers when there are fewer primitives than slots", () => {
@@ -60,9 +62,12 @@ describe("packSceneGeodesics", () => {
         expect(count).toBe(1);
         expect(buffers.data[0]).toBe(0);
         expect(buffers.data[3]).toBe(0);
+        expect(buffers.kinds[0]).toBe(0);
         // remainder cleared
         const tail = buffers.data.slice(4);
         expect(Array.from(tail)).toEqual(Array(tail.length).fill(0));
+        const kindTail = buffers.kinds.slice(1);
+        expect(Array.from(kindTail)).toEqual(Array(kindTail.length).fill(0));
     });
 
     it("caps the number of packed primitives by the provided limit", () => {
@@ -70,6 +75,7 @@ describe("packSceneGeodesics", () => {
         const count = packSceneGeodesics(SCENE, buffers, 1);
         expect(count).toBe(1);
         expect(buffers.data.slice(4)).toEqual(new Float32Array([]));
+        expect(buffers.kinds.slice(1)).toEqual(new Int32Array([]));
     });
 
     it("packs euclidean half-planes as lines", () => {
@@ -78,6 +84,8 @@ describe("packSceneGeodesics", () => {
         expect(count).toBe(EUCLIDEAN_SCENE.halfPlanes.length);
         const data = Array.from(buffers.data.slice(0, 4));
         expect(Math.hypot(data[0], data[1])).toBeCloseTo(1, 12);
-        expect(data[3]).toBe(1);
+        expect(data[2]).toBeCloseTo(0, 12);
+        expect(data[3]).toBeCloseTo(0, 12);
+        expect(buffers.kinds[0]).toBe(1);
     });
 });

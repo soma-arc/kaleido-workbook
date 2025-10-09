@@ -2,13 +2,18 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
 const COMPONENTS_PER_VEC4 = 4;
 
+const GEODESIC_KIND_CIRCLE = 0;
+const GEODESIC_KIND_LINE = 1;
+
 export type GeodesicUniformBuffers = {
     data: Float32Array;
+    kinds: Int32Array;
 };
 
 export function createGeodesicUniformBuffers(
@@ -17,6 +22,7 @@ export function createGeodesicUniformBuffers(
     const size = Math.max(0, limit | 0) * COMPONENTS_PER_VEC4;
     return {
         data: new Float32Array(size),
+        kinds: new Int32Array(Math.max(0, limit | 0)),
     };
 }
 
@@ -62,7 +68,8 @@ function packCircleGeodesic(
     data[offset + 0] = geo.c.x;
     data[offset + 1] = geo.c.y;
     data[offset + 2] = geo.r;
-    data[offset + 3] = 0; // kind = circle
+    data[offset + 3] = 0;
+    buffers.kinds[index] = GEODESIC_KIND_CIRCLE;
 }
 
 function packDiameterGeodesic(
@@ -71,7 +78,8 @@ function packDiameterGeodesic(
     index: number,
 ): void {
     const normal = normalize({ x: -geo.dir.y, y: geo.dir.x });
-    packLine(normal, 0, buffers, index);
+    const anchor = { x: 0, y: 0 };
+    packLine(normal, anchor, buffers, index);
 }
 
 function packHalfPlaneGeodesic(
@@ -79,7 +87,12 @@ function packHalfPlaneGeodesic(
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
-    packLine(geo.normal, geo.offset, buffers, index);
+    const unit = normalize(geo.normal);
+    const anchor = {
+        x: -geo.offset * unit.x,
+        y: -geo.offset * unit.y,
+    };
+    packLine(unit, anchor, buffers, index);
 }
 
 function packSceneHalfPlane(
@@ -87,12 +100,13 @@ function packSceneHalfPlane(
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
-    packLine(plane.normal, plane.offset, buffers, index);
+    const unit = normalizeHalfPlane(plane);
+    packLine(unit.normal, unit.anchor, buffers, index);
 }
 
 function packLine(
     normal: { x: number; y: number },
-    offsetValue: number,
+    anchor: { x: number; y: number },
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
@@ -101,8 +115,9 @@ function packLine(
     const data = buffers.data;
     data[writeOffset + 0] = unit.x;
     data[writeOffset + 1] = unit.y;
-    data[writeOffset + 2] = offsetValue;
-    data[writeOffset + 3] = 1; // kind = line
+    data[writeOffset + 2] = anchor.x;
+    data[writeOffset + 3] = anchor.y;
+    buffers.kinds[index] = GEODESIC_KIND_LINE;
 }
 
 function normalize(v: { x: number; y: number }): { x: number; y: number } {
@@ -114,4 +129,7 @@ function clearRemainder(buffers: GeodesicUniformBuffers, startIndex: number): vo
     const offset = startIndex * COMPONENTS_PER_VEC4;
     if (offset >= buffers.data.length) return;
     buffers.data.fill(0, offset);
+    if (startIndex < buffers.kinds.length) {
+        buffers.kinds.fill(0, startIndex);
+    }
 }

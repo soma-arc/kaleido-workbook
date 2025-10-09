@@ -5,9 +5,9 @@ import type { Viewport } from "@/render/viewport";
 
 const VIEWPORT: Viewport = { scale: 100, tx: 120, ty: 120 };
 const PLANES: HalfPlane[] = [
-    { normal: { x: 1, y: 0 }, offset: 0 },
-    { normal: { x: 0, y: 1 }, offset: 0 },
-    { normal: { x: -Math.SQRT1_2, y: Math.SQRT1_2 }, offset: 0 },
+    { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
+    { anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } },
+    { anchor: { x: 0, y: 0 }, normal: { x: -Math.SQRT1_2, y: Math.SQRT1_2 } },
 ];
 
 describe("buildHyperbolicScene", () => {

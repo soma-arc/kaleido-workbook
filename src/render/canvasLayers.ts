@@ -1,5 +1,6 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { drawCircle, drawLine } from "./canvasAdapter";
 import type { GeodesicPrimitive, RenderScene } from "./scene";
@@ -79,9 +80,10 @@ function drawHalfPlaneBoundary(
     viewport: Viewport,
     style: { strokeStyle: string; lineWidth: number },
 ): void {
-    const normal = plane.normal;
+    const unit = normalizeHalfPlane(plane);
+    const normal = unit.normal;
     const tangent = { x: -normal.y, y: normal.x };
-    const origin = { x: -plane.offset * normal.x, y: -plane.offset * normal.y };
+    const origin = { x: unit.anchor.x, y: unit.anchor.y };
     const scale = Math.max(ctx.canvas.width, ctx.canvas.height) / (Math.abs(viewport.scale) || 1);
     const length = scale * 1.5;
     const aWorld = {
