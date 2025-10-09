@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { halfPlaneOffset } from "@/geom/primitives/halfPlane";
 import { SCENE_IDS, SCENES_BY_ID } from "@/ui/scenes";
 
 describe("single half-plane scene", () => {
@@ -12,7 +13,7 @@ describe("single half-plane scene", () => {
         const [plane] = halfPlanes;
         const length = Math.hypot(plane.normal.x, plane.normal.y);
         expect(length).toBeCloseTo(1, 12);
-        expect(plane.offset).toBeCloseTo(0, 12);
+        expect(halfPlaneOffset(plane)).toBeCloseTo(0, 12);
         expect(scene.supportsHandles).toBe(true);
         expect(scene.editable).toBe(true);
     });

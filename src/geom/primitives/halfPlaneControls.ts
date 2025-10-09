@@ -1,6 +1,6 @@
 import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 
 export type ControlPointId = string;
 
@@ -73,8 +73,7 @@ export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfP
     }
     const invLen = 1 / tangentLen;
     const normal = rotate90CW({ x: tangent.x * invLen, y: tangent.y * invLen });
-    const offset = -(normal.x * a.x + normal.y * a.y);
-    return normalizeHalfPlane({ normal, offset });
+    return normalizeHalfPlane({ anchor: { x: a.x, y: a.y }, normal });
 }
 
 /**
@@ -82,13 +81,13 @@ export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfP
  */
 export function orientHalfPlaneTowardPoint(plane: HalfPlane, point: Vec2): HalfPlane {
     const unit = normalizeHalfPlane(plane);
-    const value = unit.normal.x * point.x + unit.normal.y * point.y + unit.offset;
+    const value = evaluateHalfPlane(unit, point);
     if (value >= 0) {
         return unit;
     }
     return {
+        anchor: { x: unit.anchor.x, y: unit.anchor.y },
         normal: { x: -unit.normal.x, y: -unit.normal.y },
-        offset: -unit.offset,
     };
 }
 
@@ -104,10 +103,7 @@ export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [V
         throw new Error("Half-plane control spacing must be positive");
     }
     const unit = normalizeHalfPlane(plane);
-    const origin = {
-        x: -unit.offset * unit.normal.x,
-        y: -unit.offset * unit.normal.y,
-    };
+    const origin = { x: unit.anchor.x, y: unit.anchor.y };
     const tangent = rotate90CCW(unit.normal);
     return [
         origin,

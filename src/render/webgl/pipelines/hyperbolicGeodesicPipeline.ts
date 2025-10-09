@@ -93,6 +93,7 @@ class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
         const count = packSceneGeodesics(renderScene, this.geodesicBuffers, MAX_UNIFORM_GEODESICS);
         gl.uniform1i(this.uniforms.geodesicCount, count);
         gl.uniform4fv(this.uniforms.geodesics, this.geodesicBuffers.data);
+        gl.uniform1iv(this.uniforms.geodesicKinds, this.geodesicBuffers.kinds);
 
         const textureUniforms = this.textureManager.sync(textures);
         gl.uniform1iv(this.uniforms.textureEnabled, textureUniforms.enabled);
@@ -123,6 +124,7 @@ type UniformLocations = {
     viewport: WebGLUniformLocation;
     geodesicCount: WebGLUniformLocation;
     geodesics: WebGLUniformLocation;
+    geodesicKinds: WebGLUniformLocation;
     clipToDisk: WebGLUniformLocation;
     textureEnabled: WebGLUniformLocation;
     textureOffset: WebGLUniformLocation;
@@ -183,6 +185,7 @@ function resolveUniformLocations(
     const viewport = getUniformLocation(gl, program, "uViewport");
     const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
     const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
+    const geodesicKinds = getUniformLocation(gl, program, "uGeodesicKinds[0]");
     const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
     const textureEnabled = getUniformLocation(gl, program, "uTextureEnabled[0]");
     const textureOffset = getUniformLocation(gl, program, "uTextureOffset[0]");
@@ -196,6 +199,7 @@ function resolveUniformLocations(
         viewport,
         geodesicCount,
         geodesics,
+        geodesicKinds,
         clipToDisk,
         textureEnabled,
         textureOffset,

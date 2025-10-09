@@ -2,7 +2,11 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import {
+    halfPlaneFromNormalAndOffset,
+    halfPlaneOffset,
+    normalizeHalfPlane,
+} from "@/geom/primitives/halfPlane";
 import {
     controlPointsFromHalfPlanes,
     deriveHalfPlaneFromPoints,
@@ -38,10 +42,21 @@ const HANDLE_DEFAULT_SPACING = 0.6;
 const HANDLE_HIT_TOLERANCE_PX = 10;
 
 const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
-    { normal: { x: 1, y: 0 }, offset: 0 },
-    { normal: { x: 0, y: 1 }, offset: 0 },
-    { normal: { x: -Math.SQRT1_2, y: Math.SQRT1_2 }, offset: 0 },
+    halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0),
+    halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
+    halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ];
+
+function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
+    const unit = normalizeHalfPlane(plane);
+    const currentOffset = halfPlaneOffset(unit);
+    const delta = offset - currentOffset;
+    const anchor = {
+        x: unit.anchor.x - delta * unit.normal.x,
+        y: unit.anchor.y - delta * unit.normal.y,
+    };
+    return normalizeHalfPlane({ anchor, normal: unit.normal });
+}
 
 type PlaneDragState = {
     type: "plane";
@@ -230,10 +245,7 @@ export function EuclideanSceneHost({
             return null;
         }
         if (scene.initialHalfPlanes) {
-            return scene.initialHalfPlanes.map((plane) => ({
-                normal: { ...plane.normal },
-                offset: plane.offset,
-            }));
+            return scene.initialHalfPlanes.map((plane) => normalizeHalfPlane(plane));
         }
         if (paramError) {
             return null;
@@ -489,7 +501,7 @@ export function EuclideanSceneHost({
         const p0 = screenToWorld(viewport, screen);
         const snappedStartOffset = -(unit.normal.x * p0.x + unit.normal.y * p0.y);
         const updatedPlanes = normalizedHalfPlanes.map((plane, i) =>
-            i === idx ? { normal: plane.normal, offset: snappedStartOffset } : plane,
+            i === idx ? planeWithOffset(plane, snappedStartOffset) : plane,
         );
         setEditableHalfPlanes(updatedPlanes);
         if (scene.supportsHandles && showHandles) {
@@ -543,7 +555,7 @@ export function EuclideanSceneHost({
                     (plane) => normalizeHalfPlane(plane),
                 );
                 updatedPlanes = basePlanes.map((plane, idx) =>
-                    idx === drag.index ? { normal: plane.normal, offset: nextOffset } : plane,
+                    idx === drag.index ? planeWithOffset(plane, nextOffset) : plane,
                 );
                 return updatedPlanes;
             });

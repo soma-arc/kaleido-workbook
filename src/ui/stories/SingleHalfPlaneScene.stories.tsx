@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect, userEvent, waitFor } from "@storybook/test";
 import { useMemo } from "react";
+import { halfPlaneFromNormalAndOffset } from "@/geom/primitives/halfPlane";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import { detectRenderMode } from "@/render/engine";
 import { worldToScreen } from "@/render/viewport";
@@ -65,12 +66,7 @@ function SingleHalfPlaneSceneDemo({
         const unitNormal = toUnitNormal(normalAngle);
         return {
             ...baseScene,
-            initialHalfPlanes: [
-                {
-                    normal: unitNormal,
-                    offset,
-                },
-            ],
+            initialHalfPlanes: [halfPlaneFromNormalAndOffset(unitNormal, offset)],
             defaultHandleSpacing: clampSpacing(handleSpacing),
         };
     }, [baseScene, handleSpacing, normalAngle, offset]);
