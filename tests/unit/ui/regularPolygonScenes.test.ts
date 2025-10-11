@@ -152,6 +152,43 @@ describe("regular polygon scene config", () => {
         });
     });
 
+    it("preserves half-plane orientation when dragging a shared control point", () => {
+        const sides = 5;
+        const config = createRegularPolygonSceneConfig({ sides, radius: 0.7 });
+        const controls: HalfPlaneControlPoints[] = config.initialControlPoints.map(
+            ([a, b]) => [{ ...a }, { ...b }] as HalfPlaneControlPoints,
+        );
+        const baselinePlanes = config.halfPlanes.map((plane) => normalizeHalfPlane(plane));
+
+        const targetAssignment = config.controlAssignments.find(
+            (assignment) => assignment.id === "vertex-0" && assignment.pointIndex === 0,
+        );
+        const companionAssignment = config.controlAssignments.find(
+            (assignment) => assignment.id === "vertex-0" && assignment !== targetAssignment,
+        );
+        expect(targetAssignment).toBeTruthy();
+        expect(companionAssignment).toBeTruthy();
+        if (!targetAssignment || !companionAssignment) {
+            return;
+        }
+
+        const movedControls = updateControlPoint(controls, targetAssignment.planeIndex, 0, {
+            x: controls[targetAssignment.planeIndex][0].x + 0.12,
+            y: controls[targetAssignment.planeIndex][0].y - 0.05,
+        });
+        const updatedPlanes = halfPlanesFromControlPoints(movedControls, config.halfPlanes);
+
+        const affected = [targetAssignment.planeIndex, companionAssignment.planeIndex];
+        affected.forEach((index) => {
+            const updatedUnit = normalizeHalfPlane(updatedPlanes[index]);
+            const baselineUnit = baselinePlanes[index];
+            const dot =
+                updatedUnit.normal.x * baselineUnit.normal.x +
+                updatedUnit.normal.y * baselineUnit.normal.y;
+            expect(dot).toBeGreaterThan(0);
+        });
+    });
+
     it("preserves adjacency while sequentially dragging hexagon vertices", () => {
         const sides = 6;
         const config = createRegularPolygonSceneConfig({ sides, radius: 0.7 });

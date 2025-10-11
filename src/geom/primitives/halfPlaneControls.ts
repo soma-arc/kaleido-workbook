@@ -98,6 +98,32 @@ export function orientHalfPlaneTowardOrigin(plane: HalfPlane): HalfPlane {
     return orientHalfPlaneTowardPoint(plane, { x: 0, y: 0 });
 }
 
+function flipHalfPlaneNormal(plane: HalfPlane): HalfPlane {
+    return {
+        anchor: { x: plane.anchor.x, y: plane.anchor.y },
+        normal: { x: -plane.normal.x, y: -plane.normal.y },
+    };
+}
+
+/**
+ * 参照する Half-plane と同じ法線向きを保つように整列した Half-plane を返す。
+ */
+export function alignHalfPlaneOrientation(
+    reference: HalfPlane | undefined,
+    plane: HalfPlane,
+): HalfPlane {
+    const candidate = normalizeHalfPlane(plane);
+    if (!reference) {
+        return candidate;
+    }
+    const baseline = normalizeHalfPlane(reference);
+    const dot = baseline.normal.x * candidate.normal.x + baseline.normal.y * candidate.normal.y;
+    if (dot < 0) {
+        return flipHalfPlaneNormal(candidate);
+    }
+    return candidate;
+}
+
 export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [Vec2, Vec2] {
     if (!(spacing > EPS)) {
         throw new Error("Half-plane control spacing must be positive");

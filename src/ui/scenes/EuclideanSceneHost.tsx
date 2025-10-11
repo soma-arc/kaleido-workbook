@@ -8,6 +8,7 @@ import {
     normalizeHalfPlane,
 } from "@/geom/primitives/halfPlane";
 import {
+    alignHalfPlaneOrientation,
     controlPointsFromHalfPlanes,
     deriveHalfPlaneFromPoints,
     derivePointsFromHalfPlane,
@@ -382,7 +383,11 @@ export function EuclideanSceneHost({
                 const shouldUpdate = controlPointId
                     ? pair.some((point) => point.id === controlPointId)
                     : idx === primaryIndex;
-                return shouldUpdate ? deriveHalfPlaneFromPoints(pair) : plane;
+                if (!shouldUpdate) {
+                    return plane;
+                }
+                const derived = deriveHalfPlaneFromPoints(pair);
+                return alignHalfPlaneOrientation(plane, derived);
             });
         },
         [],
