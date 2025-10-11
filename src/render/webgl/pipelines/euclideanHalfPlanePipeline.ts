@@ -9,7 +9,7 @@ import {
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "../pipelineRegistry";
-import fragmentShaderSourceTemplate from "../shaders/euclideanReflectiveFill.frag?raw";
+import fragmentShaderSourceTemplate from "../shaders/euclideanReflection.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";

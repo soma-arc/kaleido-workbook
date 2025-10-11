@@ -82,8 +82,8 @@ vec4 sampleTextures(vec2 worldPoint) {
 
 float signedDistance(vec2 worldPoint, vec4 packed) {
     vec2 normal = packed.xy;
-    float offset = packed.z;
-    return dot(normal, worldPoint) + offset;
+    vec2 anchor = packed.zw;
+    return dot(normal, worldPoint - anchor);
 }
 
 void main() {

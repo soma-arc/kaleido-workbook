@@ -21,15 +21,19 @@ uniform float uTextureOpacity[MAX_TEXTURE_SLOTS];
 uniform sampler2D uTextures[MAX_TEXTURE_SLOTS];
 
 const int MAX_GEODESICS = __MAX_GEODESICS__;
-uniform vec4 uGeodesicsA[MAX_GEODESICS]; // Packed via packLine(...) as (unitNormal.x, unitNormal.y, signedOffset, kindFlag)
+uniform vec4 uGeodesicsA[MAX_GEODESICS]; // Packed via packLine(...) as (unitNormal.x, unitNormal.y, anchor.x, anchor.y)
 
 float signedDistance(vec2 point, vec4 plane) {
-    return dot(point, plane.xy) + plane.z;
+    vec2 normal = plane.xy;
+    vec2 anchor = plane.zw;
+    return dot(normal, point - anchor);
 }
 
 vec2 reflectPoint(vec2 point, vec4 plane) {
-    float dist = signedDistance(point, plane);
-    return point - 2.0 * dist * plane.xy;
+    vec2 normal = plane.xy;
+    vec2 anchor = plane.zw;
+    float dist = dot(normal, point - anchor);
+    return point - 2.0 * dist * normal;
 }
 
 vec2 screenToWorld(vec2 fragCoord) {
@@ -96,7 +100,7 @@ void main() {
 
     vec2 tracePoint = worldPoint;
     int reflections = 0;
-    const int MAX_REFLECTION_STEPS = 0;
+    const int MAX_REFLECTION_STEPS = 10;
 
     for (int step = 0; step < MAX_REFLECTION_STEPS; ++step) {
         bool reflected = false;
@@ -125,17 +129,16 @@ void main() {
         edgeAlpha = clamp(edgeAlpha, 0.0, 1.0);
     }
 
-vec3 bodyColor;
-if (reflections > 0) {
-    float refNorm = float(reflections);
-    float hue = fract(refNorm * 0.16180339);
-    vec3 wavePalette = palette(hue);
-    vec3 baseTone = normalize(uFillColor + vec3(1e-6));
-    bodyColor = mix(baseTone, wavePalette, 0.65);
-
-} else {
-    bodyColor = uFillColor;
-}
+    vec3 bodyColor;
+    if (reflections > 0) {
+        float refNorm = float(reflections);
+        float hue = fract(refNorm * 0.16180339);
+        vec3 wavePalette = palette(hue);
+        vec3 baseTone = normalize(uFillColor + vec3(1e-6));
+        bodyColor = mix(baseTone, wavePalette, 0.65);
+    } else {
+        bodyColor = vec3(0);
+    }
     vec4 textureColor = sampleTextures(tracePoint);
     vec3 fillBlend = mix(bodyColor, textureColor.rgb, textureColor.a);
 
