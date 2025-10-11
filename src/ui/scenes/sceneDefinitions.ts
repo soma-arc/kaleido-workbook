@@ -83,6 +83,7 @@ type SceneAlias =
     | "euclideanSingleHalfPlane"
     | "euclideanHalfPlanes"
     | "euclideanHinge"
+    | "euclideanCircleInversion"
     | "euclideanRegularSquare"
     | "euclideanRegularPentagon"
     | "euclideanRegularHexagon"
@@ -152,6 +153,27 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },
         ],
         initialControlPoints: cloneControlPointsList(HINGE_INITIAL_CONTROL_POINTS),
+    },
+    {
+        key: "euclideanCircleInversion",
+        label: "Circle Inversion",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "circle-inversion",
+        description:
+            "Inverts a draggable rectangle across a fixed circle using the WebGL pipeline.",
+        supportsHandles: false,
+        editable: true,
+        inversionConfig: {
+            fixedCircle: {
+                center: { x: 0, y: 0 },
+                radius: 0.6,
+            },
+            rectangle: {
+                center: { x: 0.3, y: 0 },
+                halfExtents: { x: 0.15, y: 0.1 },
+                rotation: 0,
+            },
+        },
     },
     {
         key: "euclideanRegularSquare",

@@ -5,6 +5,7 @@ import type {
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import type { CircleInversionSceneConfig } from "./circleInversionConfig";
 
 export type SceneVariant = string;
 
@@ -30,6 +31,7 @@ export interface SceneDefinition {
     initialControlPoints?: HalfPlaneControlPoints[];
     defaultHandleSpacing?: number;
     initialSphericalState?: SphericalSceneState;
+    inversionConfig?: CircleInversionSceneConfig;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
