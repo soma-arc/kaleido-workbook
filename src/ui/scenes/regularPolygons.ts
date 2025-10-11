@@ -4,7 +4,10 @@ import type {
     ControlPointAssignment,
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
-import { deriveHalfPlaneFromPoints } from "@/geom/primitives/halfPlaneControls";
+import {
+    deriveHalfPlaneFromPoints,
+    orientHalfPlaneTowardOrigin,
+} from "@/geom/primitives/halfPlaneControls";
 
 /**
  * Static configuration needed to bootstrap a regular polygon scene.
@@ -68,10 +71,12 @@ export function createRegularPolygonSceneConfig({
         const currentVertex = vertices[i];
         const nextVertex = vertices[nextIndex];
 
-        const plane = deriveHalfPlaneFromPoints([
-            { x: currentVertex.x, y: currentVertex.y },
-            { x: nextVertex.x, y: nextVertex.y },
-        ]);
+        const plane = orientHalfPlaneTowardOrigin(
+            deriveHalfPlaneFromPoints([
+                { x: currentVertex.x, y: currentVertex.y },
+                { x: nextVertex.x, y: nextVertex.y },
+            ]),
+        );
         halfPlanes.push(plane);
 
         initialControlPoints.push([

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { HyperbolicScene } from "../../../../src/render/scene";
-import {
-    createGeodesicUniformBuffers,
-    packSceneGeodesics,
-} from "../../../../src/render/webgl/geodesicUniforms";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { halfPlaneFromNormalAndOffset, halfPlaneOffset } from "@/geom/primitives/halfPlane";
+import type { EuclideanScene, HyperbolicScene } from "@/render/scene";
+import { createGeodesicUniformBuffers, packSceneGeodesics } from "@/render/webgl/geodesicUniforms";
 
 const SCENE: HyperbolicScene = {
     geometry: "hyperbolic",
@@ -30,12 +30,13 @@ const SCENE: HyperbolicScene = {
     ],
 };
 
-const EUCLIDEAN_SCENE = {
-    geometry: "euclidean" as const,
+const EUCLIDEAN_SCENE: EuclideanScene = {
+    geometry: GEOMETRY_KIND.euclidean,
     halfPlanes: [
         { anchor: { x: 0, y: 0 }, normal: { x: 1, y: 0 } },
         { anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } },
     ],
+    textures: [],
 };
 
 describe("packSceneGeodesics", () => {
@@ -87,5 +88,24 @@ describe("packSceneGeodesics", () => {
         expect(data[2]).toBeCloseTo(0, 12);
         expect(data[3]).toBeCloseTo(0, 12);
         expect(buffers.kinds[0]).toBe(1);
+    });
+
+    it("preserves euclidean half-plane orientation for signed distance evaluation", () => {
+        const plane: HalfPlane = halfPlaneFromNormalAndOffset({ x: -1, y: 0 }, 0.5);
+        expect(halfPlaneOffset(plane)).toBeCloseTo(0.5, 12);
+        const buffers = createGeodesicUniformBuffers(4);
+        const scene: EuclideanScene = {
+            geometry: GEOMETRY_KIND.euclidean,
+            halfPlanes: [plane],
+            textures: [],
+        };
+        const count = packSceneGeodesics(scene, buffers);
+        expect(count).toBe(1);
+        const [nx, ny, ax, ay] = Array.from(buffers.data.slice(0, 4));
+        expect(buffers.kinds[0]).toBe(1);
+        const evaluate = (point: { x: number; y: number }) =>
+            nx * (point.x - ax) + ny * (point.y - ay);
+        expect(evaluate({ x: 0.25, y: 0 })).toBeGreaterThan(0);
+        expect(evaluate({ x: 0.75, y: 0 })).toBeLessThan(0);
     });
 });

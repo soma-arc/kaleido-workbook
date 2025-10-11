@@ -98,9 +98,9 @@ export function createRenderEngine(
     const renderScene = (request: GeometryRenderRequest) => {
         if (disposed) return;
         lastRequest = request;
-        setCanvasDPR(canvas);
+        const pixelRatio = setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
-        const viewport = computeViewport(rect, canvas);
+        const viewport = computeViewport(rect, canvas, pixelRatio);
         const textures = request.textures ?? [];
         const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
@@ -186,13 +186,14 @@ function renderCanvasLayer(
     renderTileLayer(ctx, scene, viewport, options);
 }
 
-function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement): Viewport {
-    const width = rect.width || canvas.width || 1;
-    const height = rect.height || canvas.height || 1;
-    const size = Math.min(width, height);
-    const margin = 8;
-    const scale = Math.max(1, size / 2 - margin);
-    return { scale, tx: width / 2, ty: height / 2 };
+function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement, pixelRatio: number): Viewport {
+    const ratio = Number.isFinite(pixelRatio) && pixelRatio > 0 ? pixelRatio : 1;
+    const widthPx = canvas.width || Math.max(1, (rect.width || 1) * ratio);
+    const heightPx = canvas.height || Math.max(1, (rect.height || 1) * ratio);
+    const marginPx = 8 * ratio;
+    const sizePx = Math.min(widthPx, heightPx);
+    const scale = Math.max(1, sizePx / 2 - marginPx);
+    return { scale, tx: widthPx / 2, ty: heightPx / 2 };
 }
 
 function syncWebGLCanvas(webgl: WebGLInitResult, uiCanvas: HTMLCanvasElement) {

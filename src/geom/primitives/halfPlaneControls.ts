@@ -1,6 +1,6 @@
 import type { Vec2 } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
-import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 
 export type ControlPointId = string;
 
@@ -74,6 +74,54 @@ export function deriveHalfPlaneFromPoints(points: Readonly<[Vec2, Vec2]>): HalfP
     const invLen = 1 / tangentLen;
     const normal = rotate90CW({ x: tangent.x * invLen, y: tangent.y * invLen });
     return normalizeHalfPlane({ anchor: { x: a.x, y: a.y }, normal });
+}
+
+/**
+ * Reorients the half-plane so that the provided reference point lies on its non-negative side.
+ */
+export function orientHalfPlaneTowardPoint(plane: HalfPlane, point: Vec2): HalfPlane {
+    const unit = normalizeHalfPlane(plane);
+    const value = evaluateHalfPlane(unit, point);
+    if (value >= 0) {
+        return unit;
+    }
+    return {
+        anchor: { x: unit.anchor.x, y: unit.anchor.y },
+        normal: { x: -unit.normal.x, y: -unit.normal.y },
+    };
+}
+
+/**
+ * Ensures the half-plane faces the origin (0,0).
+ */
+export function orientHalfPlaneTowardOrigin(plane: HalfPlane): HalfPlane {
+    return orientHalfPlaneTowardPoint(plane, { x: 0, y: 0 });
+}
+
+function flipHalfPlaneNormal(plane: HalfPlane): HalfPlane {
+    return {
+        anchor: { x: plane.anchor.x, y: plane.anchor.y },
+        normal: { x: -plane.normal.x, y: -plane.normal.y },
+    };
+}
+
+/**
+ * 参照する Half-plane と同じ法線向きを保つように整列した Half-plane を返す。
+ */
+export function alignHalfPlaneOrientation(
+    reference: HalfPlane | undefined,
+    plane: HalfPlane,
+): HalfPlane {
+    const candidate = normalizeHalfPlane(plane);
+    if (!reference) {
+        return candidate;
+    }
+    const baseline = normalizeHalfPlane(reference);
+    const dot = baseline.normal.x * candidate.normal.x + baseline.normal.y * candidate.normal.y;
+    if (dot < 0) {
+        return flipHalfPlaneNormal(candidate);
+    }
+    return candidate;
 }
 
 export function derivePointsFromHalfPlane(plane: HalfPlane, spacing: number): [Vec2, Vec2] {

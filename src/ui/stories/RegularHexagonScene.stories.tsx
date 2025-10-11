@@ -1,12 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect, userEvent, waitFor } from "@storybook/test";
 import { useMemo, useState } from "react";
+import { getCanvasPixelRatio } from "@/render/canvas";
 import { detectRenderMode } from "@/render/engine";
 import { type Viewport, worldToScreen } from "@/render/viewport";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS, type SceneId } from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
+import { expectCanvasFill } from "./canvasAssertions";
 import { REGULAR_POLYGON_COMPONENT_DOC, REGULAR_POLYGON_PLAY_DOC } from "./regularPolygonDocs";
 
 const TRIANGLE_N_MAX = 100;
@@ -15,10 +17,11 @@ const DEPTH_RANGE = { min: 0, max: 10 } as const;
 
 function computeViewport(canvas: HTMLCanvasElement): Viewport {
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width || canvas.width || 1;
-    const height = rect.height || canvas.height || 1;
+    const ratio = getCanvasPixelRatio(canvas);
+    const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
+    const height = canvas.height || Math.max(1, (rect.height || 1) * ratio);
+    const margin = 8 * ratio;
     const size = Math.min(width, height);
-    const margin = 8;
     const scale = Math.max(1, size / 2 - margin);
     return { scale, tx: width / 2, ty: height / 2 };
 }
@@ -86,6 +89,14 @@ export const Default: Story = {
         if (!stage) {
             throw new Error("Stage canvas not found");
         }
+        await expectCanvasFill(stage, {
+            points: [
+                { x: 0.5, y: 0.5 },
+                { x: 0.4, y: 0.5 },
+                { x: 0.6, y: 0.5 },
+            ],
+            minAlpha: 24,
+        });
         const readout = canvasElement.querySelector('[data-testid="handle-coordinates"]');
         await waitFor(() => {
             expect(readout?.textContent).toBeTruthy();
@@ -106,6 +117,7 @@ export const Default: Story = {
 
         const rect = stage.getBoundingClientRect();
         const viewport = computeViewport(stage);
+        const ratio = getCanvasPixelRatio(stage);
         const vertexIndices = [0, 2, 4];
 
         for (const vertexIndex of vertexIndices) {
@@ -117,8 +129,8 @@ export const Default: Story = {
 
             const startScreen = worldToScreen(viewport, handle);
             const from = {
-                clientX: rect.left + startScreen.x,
-                clientY: rect.top + startScreen.y,
+                clientX: rect.left + startScreen.x / ratio,
+                clientY: rect.top + startScreen.y / ratio,
             };
             const targetWorld = {
                 x: handle.x + 0.06 * Math.cos(vertexIndex),
@@ -126,8 +138,8 @@ export const Default: Story = {
             };
             const targetScreen = worldToScreen(viewport, targetWorld);
             const to = {
-                clientX: rect.left + targetScreen.x,
-                clientY: rect.top + targetScreen.y,
+                clientX: rect.left + targetScreen.x / ratio,
+                clientY: rect.top + targetScreen.y / ratio,
             };
 
             await userEvent.pointer([
@@ -153,8 +165,8 @@ export const Default: Story = {
             }
             const movedScreen = worldToScreen(viewport, movedHandle);
             const movedCoords = {
-                clientX: rect.left + movedScreen.x,
-                clientY: rect.top + movedScreen.y,
+                clientX: rect.left + movedScreen.x / ratio,
+                clientY: rect.top + movedScreen.y / ratio,
             };
 
             await userEvent.pointer([

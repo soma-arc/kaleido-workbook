@@ -8,12 +8,14 @@ import {
     normalizeHalfPlane,
 } from "@/geom/primitives/halfPlane";
 import {
+    alignHalfPlaneOrientation,
     controlPointsFromHalfPlanes,
     deriveHalfPlaneFromPoints,
     derivePointsFromHalfPlane,
     type HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
+import { getCanvasPixelRatio } from "@/render/canvas";
 import { createRenderEngine, type RenderEngine, type RenderMode } from "@/render/engine";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
@@ -266,20 +268,42 @@ export function EuclideanSceneHost({
         return base.map((plane) => normalizeHalfPlane(plane));
     }, [scene.geometry, editableHalfPlanes, baseHalfPlanes]);
 
-    const editingKey = `${scene.id}:${params.p}:${params.q}:${params.r}`;
     useEffect(() => {
-        void editingKey;
         setEditableHalfPlanes(null);
         setDrag(null);
-        setHandleControls(null);
-    }, [editingKey]);
+        if (scene.geometry !== GEOMETRY_KIND.euclidean) {
+            setHandleControls(null);
+            latestEuclideanPlanesRef.current = null;
+            return;
+        }
+        const source = baseHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        const normalized = source.map((plane) => normalizeHalfPlane(plane));
+        let nextPoints: HalfPlaneControlPoints[];
+        if (scene.initialControlPoints && scene.initialControlPoints.length === normalized.length) {
+            nextPoints = scene.initialControlPoints.map((pair) => [
+                { ...pair[0] },
+                { ...pair[1] },
+            ]) as HalfPlaneControlPoints[];
+        } else {
+            nextPoints = controlPointsFromHalfPlanes(normalized, handleSpacing, controlAssignments);
+        }
+        setHandleControls({ spacing: handleSpacing, points: nextPoints });
+        latestEuclideanPlanesRef.current = normalized;
+    }, [
+        baseHalfPlanes,
+        controlAssignments,
+        handleSpacing,
+        scene.geometry,
+        scene.initialControlPoints,
+    ]);
 
     const computeViewport = (canvas: HTMLCanvasElement): Viewport => {
         const rect = canvas.getBoundingClientRect();
-        const width = rect.width || canvas.width || 1;
-        const height = rect.height || canvas.height || 1;
+        const ratio = getCanvasPixelRatio(canvas);
+        const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
+        const height = canvas.height || Math.max(1, (rect.height || 1) * ratio);
+        const margin = 8 * ratio;
         const size = Math.min(width, height);
-        const margin = 8;
         const scale = Math.max(1, size / 2 - margin);
         return { scale, tx: width / 2, ty: height / 2 };
     };
@@ -330,10 +354,12 @@ export function EuclideanSceneHost({
     ]);
 
     const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
+        const canvas = e.currentTarget;
+        const rect = canvas.getBoundingClientRect();
+        const ratio = getCanvasPixelRatio(canvas);
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
+            x: (e.clientX - rect.left) * ratio,
+            y: (e.clientY - rect.top) * ratio,
         };
     };
 
@@ -357,7 +383,11 @@ export function EuclideanSceneHost({
                 const shouldUpdate = controlPointId
                     ? pair.some((point) => point.id === controlPointId)
                     : idx === primaryIndex;
-                return shouldUpdate ? deriveHalfPlaneFromPoints(pair) : plane;
+                if (!shouldUpdate) {
+                    return plane;
+                }
+                const derived = deriveHalfPlaneFromPoints(pair);
+                return alignHalfPlaneOrientation(plane, derived);
             });
         },
         [],
@@ -412,6 +442,7 @@ export function EuclideanSceneHost({
         const canvas = e.currentTarget;
         const viewport = computeViewport(canvas);
         const screen = getPointer(e);
+        const ratio = getCanvasPixelRatio(canvas);
 
         if (
             scene.supportsHandles &&
@@ -423,7 +454,7 @@ export function EuclideanSceneHost({
                 currentControlPoints,
                 viewport,
                 screen,
-                HANDLE_HIT_TOLERANCE_PX,
+                HANDLE_HIT_TOLERANCE_PX * ratio,
             );
             if (hit) {
                 try {
@@ -464,7 +495,7 @@ export function EuclideanSceneHost({
             return;
         }
 
-        const idx = pickHalfPlaneIndex(normalizedHalfPlanes, viewport, screen, 8);
+        const idx = pickHalfPlaneIndex(normalizedHalfPlanes, viewport, screen, 8 * ratio);
         if (idx < 0) return;
         const unit = normalizedHalfPlanes[idx];
         try {

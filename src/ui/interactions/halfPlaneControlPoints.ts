@@ -5,6 +5,7 @@ import type {
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
 import {
+    alignHalfPlaneOrientation,
     controlPointsFromHalfPlanes as buildControlPoints,
     deriveHalfPlaneFromPoints,
 } from "@/geom/primitives/halfPlaneControls";
@@ -19,13 +20,17 @@ export function controlPointsFromHalfPlanes(
     return buildControlPoints(planes, spacing, assignments);
 }
 
-export function halfPlanesFromControlPoints(controls: HalfPlaneControlPoints[]): HalfPlane[] {
-    return controls.map((points) =>
-        deriveHalfPlaneFromPoints([
+export function halfPlanesFromControlPoints(
+    controls: HalfPlaneControlPoints[],
+    references: HalfPlane[] = [],
+): HalfPlane[] {
+    return controls.map((points, index) => {
+        const plane = deriveHalfPlaneFromPoints([
             { x: points[0].x, y: points[0].y },
             { x: points[1].x, y: points[1].y },
-        ]),
-    );
+        ]);
+        return alignHalfPlaneOrientation(references[index], plane);
+    });
 }
 
 export function hitTestControlPoints(

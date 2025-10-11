@@ -6,6 +6,7 @@ import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS, type SceneId } from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
+import { expectCanvasFill } from "./canvasAssertions";
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;
@@ -43,8 +44,18 @@ function HingeSceneDemo(): JSX.Element {
 const meta: Meta<typeof HingeSceneDemo> = {
     title: "Scenes/Hinge Mirrors",
     component: HingeSceneDemo,
+    tags: ["autodocs"],
     parameters: {
         layout: "fullscreen",
+        controls: {
+            hideNoControlsWarning: true,
+        },
+        docs: {
+            description: {
+                component:
+                    "Euclidean ヒンジシーンでは反射半平面の交差領域を WebGL パイプラインで塗りつぶし、ミラーリングされたテクスチャを重ねて表示します。",
+            },
+        },
     },
 };
 
@@ -58,6 +69,15 @@ export const Default: Story = {
         if (!stage) {
             throw new Error("Stage canvas not found");
         }
+
+        await expectCanvasFill(stage, {
+            points: [
+                { x: 0.5, y: 0.5 },
+                { x: 0.45, y: 0.55 },
+                { x: 0.55, y: 0.45 },
+            ],
+            minAlpha: 24,
+        });
 
         const readout = canvasElement.querySelector('[data-testid="handle-coordinates"]');
         await waitFor(() => {

@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import { resolveWebGLPipeline } from "@/render/webgl/pipelineRegistry";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/euclideanHalfPlanePipeline";
+import { HYPERBOLIC_GEODESIC_PIPELINE_ID } from "@/render/webgl/pipelines/hyperbolicGeodesicPipeline";
+import type { SceneDefinition } from "@/ui/scenes/types";
+
+import "@/render/webgl/pipelines/hyperbolicGeodesicPipeline";
+import "@/render/webgl/pipelines/euclideanHalfPlanePipeline";
+
+type MinimalSceneDefinition = Pick<
+    SceneDefinition,
+    "key" | "label" | "supportsHandles" | "editable" | "description" | "allowPlaneDrag"
+>;
+
+const BASE_SCENE: MinimalSceneDefinition = {
+    key: "test",
+    label: "Test",
+    supportsHandles: false,
+    editable: false,
+};
+
+describe("resolveWebGLPipeline", () => {
+    it("returns the hyperbolic pipeline for hyperbolic scenes", () => {
+        const registration = resolveWebGLPipeline({
+            ...BASE_SCENE,
+            id: `${GEOMETRY_KIND.hyperbolic}-sample`,
+            geometry: GEOMETRY_KIND.hyperbolic,
+            variant: "sample",
+        });
+        expect(registration.id).toBe(HYPERBOLIC_GEODESIC_PIPELINE_ID);
+    });
+
+    it("returns the euclidean pipeline for euclidean scenes", () => {
+        const registration = resolveWebGLPipeline({
+            ...BASE_SCENE,
+            id: `${GEOMETRY_KIND.euclidean}-sample`,
+            geometry: GEOMETRY_KIND.euclidean,
+            variant: "sample",
+        });
+        expect(registration.id).toBe(EUCLIDEAN_HALF_PLANE_PIPELINE_ID);
+    });
+});
