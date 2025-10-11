@@ -28,20 +28,29 @@ export function TextureDrawCanvas({
 }: TextureDrawCanvasProps): JSX.Element {
     const [canvasHandle, setCanvasHandle] = useState<CanvasTextureHandle | null>(null);
 
+    const { enableCanvas, disable } = textureInput;
+
     useEffect(() => {
-        const nextHandle = textureInput.enableCanvas(slot, {
+        const nextHandle = enableCanvas(slot, {
             width,
             height,
             devicePixelRatio,
         });
         setCanvasHandle(nextHandle);
         return () => {
-            textureInput.disable(slot);
+            disable(slot);
             setCanvasHandle(null);
         };
-    }, [textureInput, slot, width, height, devicePixelRatio]);
+    }, [disable, enableCanvas, slot, width, height, devicePixelRatio]);
+
+    useEffect(() => {
+        if (canvasHandle) {
+            canvasHandle.resize(width, height);
+        }
+    }, [canvasHandle, height, width]);
 
     const draw = useDrawCanvas(canvasHandle, { devicePixelRatio });
+    const { handlePointerDown, handlePointerMove, handlePointerUp } = draw;
 
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
@@ -57,20 +66,20 @@ export function TextureDrawCanvas({
             container.innerHTML = "";
             container.appendChild(canvas);
         }
-        const handlePointerDown = (event: PointerEvent) => draw.handlePointerDown(event);
-        const handlePointerMove = (event: PointerEvent) => draw.handlePointerMove(event);
-        const handlePointerUp = (event: PointerEvent) => draw.handlePointerUp(event);
-        canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
-        canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
-        canvas.addEventListener("pointerup", handlePointerUp, { passive: false });
-        canvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
+        const onPointerDown = (event: PointerEvent) => handlePointerDown(event);
+        const onPointerMove = (event: PointerEvent) => handlePointerMove(event);
+        const onPointerUp = (event: PointerEvent) => handlePointerUp(event);
+        canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+        canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+        canvas.addEventListener("pointerup", onPointerUp, { passive: false });
+        canvas.addEventListener("pointercancel", onPointerUp, { passive: false });
         return () => {
-            canvas.removeEventListener("pointerdown", handlePointerDown);
-            canvas.removeEventListener("pointermove", handlePointerMove);
-            canvas.removeEventListener("pointerup", handlePointerUp);
-            canvas.removeEventListener("pointercancel", handlePointerUp);
+            canvas.removeEventListener("pointerdown", onPointerDown);
+            canvas.removeEventListener("pointermove", onPointerMove);
+            canvas.removeEventListener("pointerup", onPointerUp);
+            canvas.removeEventListener("pointercancel", onPointerUp);
         };
-    }, [canvasHandle, draw, height, width]);
+    }, [canvasHandle, handlePointerDown, handlePointerMove, handlePointerUp, height, width]);
 
     const brushSummary = useMemo(
         () => ({
