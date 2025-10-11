@@ -74,6 +74,8 @@ function HandDrawnTexturePreviewDemo(): JSX.Element {
                 <StageCanvas
                     id={stageCanvasId}
                     ref={canvasRef}
+                    width={300}
+                    height={220}
                     style={{ width: "300px", height: "220px", border: "1px solid #cbd5e1" }}
                 />
                 <pre
