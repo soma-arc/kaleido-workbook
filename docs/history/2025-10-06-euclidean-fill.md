@@ -11,3 +11,7 @@
 4. 撮影した画像を `docs/history/2025-10-06-euclidean-fill.png` として保存し、今後の検証資料として共有します。
 
 > スクリーンショットは手動収集のためリポジトリには同梱していません。必要に応じて上記手順で再取得してください。
+
+## Circle Inversion シーン
+- `Scenes/Circle Inversion` では固定円と矩形の反転像をシェーダーで描画します。
+- Storybook Play では `data-testid="circle-inversion-state"` を参照して初期状態の半径・矩形サイズを検証できます。

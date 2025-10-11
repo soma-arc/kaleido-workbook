@@ -2,6 +2,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
+import type { CircleInversionState } from "@/ui/scenes/circleInversionConfig";
 import type { SceneDefinition } from "@/ui/scenes/types";
 import { attachResize, setCanvasDPR } from "./canvas";
 import {
@@ -35,6 +36,7 @@ export type GeometryRenderRequest =
           geometry: typeof GEOMETRY_KIND.euclidean;
           halfPlanes: HalfPlane[];
           handles?: HalfPlaneHandleRequest;
+          inversion?: CircleInversionState;
       } & RenderRequestBase);
 
 export interface RenderEngine {
@@ -110,6 +112,7 @@ export function createRenderEngine(
                     ? buildHyperbolicScene(request.params, viewport, { textures: sceneTextures })
                     : buildEuclideanScene(request.halfPlanes, viewport, {
                           textures: sceneTextures,
+                          inversion: request.inversion,
                       });
         } catch (error) {
             console.error("[RenderEngine] Failed to build scene", error);

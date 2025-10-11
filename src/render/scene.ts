@@ -6,6 +6,7 @@ import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TriangleFace } from "@/geom/triangle/group";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import { buildTiling } from "@/geom/triangle/tiling";
+import type { CircleInversionState } from "@/ui/scenes/circleInversionConfig";
 import { type CircleSpec, geodesicSpec, type LineSpec, unitDiskSpec } from "./primitives";
 import type { SphericalOrbitCamera } from "./spherical/camera";
 import type { SphericalRenderSettings } from "./spherical/renderer";
@@ -38,6 +39,7 @@ export type HyperbolicScene = SceneBase & {
 export type EuclideanScene = SceneBase & {
     geometry: typeof GEOMETRY_KIND.euclidean;
     halfPlanes: HalfPlane[];
+    inversion?: CircleInversionState;
 };
 
 export type SphericalScene = SceneBase & {
@@ -84,11 +86,12 @@ export function buildHyperbolicScene(
 export function buildEuclideanScene(
     planes: HalfPlane[],
     _vp: Viewport,
-    options: { textures?: SceneTextureLayer[] } = {},
+    options: { textures?: SceneTextureLayer[]; inversion?: CircleInversionState } = {},
 ): EuclideanScene {
     return {
         geometry: GEOMETRY_KIND.euclidean,
         halfPlanes: planes.map((plane) => normalizeHalfPlane(plane)),
         textures: options.textures ?? [],
+        inversion: options.inversion,
     };
 }

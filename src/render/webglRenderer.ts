@@ -9,6 +9,7 @@ import {
 import type { TextureLayer } from "./webgl/textures";
 import "./webgl/pipelines/hyperbolicGeodesicPipeline";
 import "./webgl/pipelines/euclideanHalfPlanePipeline";
+import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
 

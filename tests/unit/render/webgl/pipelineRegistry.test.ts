@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { resolveWebGLPipeline } from "@/render/webgl/pipelineRegistry";
+import { EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID } from "@/render/webgl/pipelines/euclideanCircleInversionPipeline";
 import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/euclideanHalfPlanePipeline";
 import { HYPERBOLIC_GEODESIC_PIPELINE_ID } from "@/render/webgl/pipelines/hyperbolicGeodesicPipeline";
+import { SCENE_IDS, SCENES_BY_ID } from "@/ui/scenes";
 import type { SceneDefinition } from "@/ui/scenes/types";
 
 import "@/render/webgl/pipelines/hyperbolicGeodesicPipeline";
 import "@/render/webgl/pipelines/euclideanHalfPlanePipeline";
+import "@/render/webgl/pipelines/euclideanCircleInversionPipeline";
 
 type MinimalSceneDefinition = Pick<
     SceneDefinition,
@@ -39,5 +42,11 @@ describe("resolveWebGLPipeline", () => {
             variant: "sample",
         });
         expect(registration.id).toBe(EUCLIDEAN_HALF_PLANE_PIPELINE_ID);
+    });
+
+    it("returns the inversion pipeline for the circle inversion scene", () => {
+        const scene = SCENES_BY_ID[SCENE_IDS.euclideanCircleInversion];
+        const registration = resolveWebGLPipeline(scene);
+        expect(registration.id).toBe(EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID);
     });
 });

@@ -35,6 +35,7 @@ import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/half
 import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
 import { getPresetGroupsForGeometry, getPresetsForGeometry } from "@/ui/trianglePresets";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
+import type { CircleInversionState } from "./circleInversionConfig";
 import { SceneLayout } from "./layouts";
 import { SCENE_IDS } from "./sceneDefinitions";
 import type { SceneDefinition, SceneId } from "./types";
@@ -47,6 +48,37 @@ const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
     halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
     halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ];
+
+function cloneCircleInversionState(state: CircleInversionState): CircleInversionState {
+    return {
+        fixedCircle: {
+            center: { x: state.fixedCircle.center.x, y: state.fixedCircle.center.y },
+            radius: state.fixedCircle.radius,
+        },
+        rectangle: {
+            center: { x: state.rectangle.center.x, y: state.rectangle.center.y },
+            halfExtents: {
+                x: state.rectangle.halfExtents.x,
+                y: state.rectangle.halfExtents.y,
+            },
+            rotation: state.rectangle.rotation,
+        },
+    };
+}
+
+function rectangleContainsPoint(state: CircleInversionState, point: { x: number; y: number }) {
+    const rect = state.rectangle;
+    const c = Math.cos(-rect.rotation);
+    const s = Math.sin(-rect.rotation);
+    const dx = point.x - rect.center.x;
+    const dy = point.y - rect.center.y;
+    const localX = c * dx - s * dy;
+    const localY = s * dx + c * dy;
+    return (
+        Math.abs(localX) <= rect.halfExtents.x + 1e-6 &&
+        Math.abs(localY) <= rect.halfExtents.y + 1e-6
+    );
+}
 
 function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
     const unit = normalizeHalfPlane(plane);
@@ -76,7 +108,13 @@ type HandleDragState = {
     controlPointId: string | null;
 };
 
-type DragState = PlaneDragState | HandleDragState;
+type CircleInversionDragState = {
+    type: "circle-inversion";
+    pointerId: number;
+    offset: { x: number; y: number };
+};
+
+type DragState = PlaneDragState | HandleDragState | CircleInversionDragState;
 
 export type EuclideanSceneHostProps = {
     scene: SceneDefinition;
@@ -116,6 +154,9 @@ export function EuclideanSceneHost({
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
+    const [circleInversionState, setCircleInversionState] = useState<CircleInversionState | null>(
+        () => (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null),
+    );
     const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
     const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
     const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
@@ -215,6 +256,14 @@ export function EuclideanSceneHost({
         const nextSpacing = scene.defaultHandleSpacing ?? HANDLE_DEFAULT_SPACING;
         setHandleSpacing(nextSpacing);
     }, [scene.supportsHandles, scene.defaultHandleSpacing]);
+
+    useEffect(() => {
+        if (scene.inversionConfig) {
+            setCircleInversionState(cloneCircleInversionState(scene.inversionConfig));
+        } else {
+            setCircleInversionState(null);
+        }
+    }, [scene.inversionConfig]);
 
     const controlAssignments = scene.controlAssignments;
 
@@ -398,6 +447,7 @@ export function EuclideanSceneHost({
             planes: HalfPlane[],
             overridePoints?: HalfPlaneControlPoints[] | null,
             overrideActive?: { planeIndex: number; pointIndex: 0 | 1 } | null,
+            overrideInversion?: CircleInversionState | null,
         ) => {
             const handlePoints = overridePoints ?? currentControlPoints;
             const active = overrideActive ?? activeHandle;
@@ -410,17 +460,24 @@ export function EuclideanSceneHost({
                       }
                     : undefined;
             latestEuclideanPlanesRef.current = planes;
+            const inversion =
+                overrideInversion ??
+                circleInversionState ??
+                (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
+            const halfPlanesForRender = scene.inversionConfig ? [] : planes;
             renderEngineRef.current?.render({
                 scene,
                 geometry: GEOMETRY_KIND.euclidean,
-                halfPlanes: planes,
+                halfPlanes: halfPlanesForRender,
                 handles,
                 textures: textureInput.textures,
+                inversion: inversion ?? undefined,
             });
         },
         [
             activeHandle,
             currentControlPoints,
+            circleInversionState,
             scene,
             scene.supportsHandles,
             showHandles,
@@ -443,6 +500,29 @@ export function EuclideanSceneHost({
         const viewport = computeViewport(canvas);
         const screen = getPointer(e);
         const ratio = getCanvasPixelRatio(canvas);
+        const worldPoint = screenToWorld(viewport, screen);
+
+        let activeInversionState = circleInversionState;
+        if (!activeInversionState && scene.inversionConfig) {
+            activeInversionState = cloneCircleInversionState(scene.inversionConfig);
+            setCircleInversionState(activeInversionState);
+        }
+        if (activeInversionState && rectangleContainsPoint(activeInversionState, worldPoint)) {
+            try {
+                canvas.setPointerCapture(e.pointerId);
+            } catch {
+                // ignore
+            }
+            setDrag({
+                type: "circle-inversion",
+                pointerId: e.pointerId,
+                offset: {
+                    x: worldPoint.x - activeInversionState.rectangle.center.x,
+                    y: worldPoint.y - activeInversionState.rectangle.center.y,
+                },
+            });
+            return;
+        }
 
         if (
             scene.supportsHandles &&
@@ -591,6 +671,29 @@ export function EuclideanSceneHost({
                 planeIndex: drag.index,
                 pointIndex: 0,
             });
+            return;
+        }
+
+        if (drag.type === "circle-inversion") {
+            const pointer = getPointer(e);
+            const worldPoint = screenToWorld(viewport, pointer);
+            const baseState =
+                circleInversionState ??
+                (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
+            if (!baseState) {
+                return;
+            }
+            const nextState = cloneCircleInversionState(baseState);
+            nextState.rectangle.center = {
+                x: worldPoint.x - drag.offset.x,
+                y: worldPoint.y - drag.offset.y,
+            };
+            setCircleInversionState(nextState);
+            const planes =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(planes, currentControlPoints, null, nextState);
             return;
         }
 
@@ -796,6 +899,15 @@ export function EuclideanSceneHost({
             {handleControls && scene.supportsHandles ? (
                 <span data-testid="handle-coordinates" style={{ display: "none" }}>
                     {JSON.stringify(handleControls.points)}
+                </span>
+            ) : null}
+            {scene.inversionConfig ? (
+                <span data-testid="circle-inversion-state" style={{ display: "none" }}>
+                    {JSON.stringify(
+                        circleInversionState
+                            ? circleInversionState
+                            : cloneCircleInversionState(scene.inversionConfig),
+                    )}
                 </span>
             ) : null}
             <StageCanvas
