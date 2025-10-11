@@ -2,17 +2,14 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { expect, userEvent, waitFor, within } from "@storybook/test";
 import { useEffect, useId, useMemo, useRef } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { createRenderEngine, type RenderEngine } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TextureDrawCanvas } from "@/ui/components/texture/TextureDrawCanvas";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 
-const DEFAULT_PLANES = [
-    halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0),
-    halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
-].map((plane) => normalizeHalfPlane(plane));
+const DEFAULT_PLANES: HalfPlane[] = [];
 
 function HandDrawnTexturePreviewDemo(): JSX.Element {
     const textureInput = useTextureInput();
