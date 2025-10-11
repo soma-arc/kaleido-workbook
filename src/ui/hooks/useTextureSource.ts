@@ -25,6 +25,21 @@ type UseTextureInputOptions = {
     presets?: TexturePreset[];
 };
 
+type CanvasTextureOptions = {
+    width?: number;
+    height?: number;
+    devicePixelRatio?: number;
+    id?: string;
+    transform?: TextureUVTransform;
+    onCreate?: (canvas: HTMLCanvasElement) => void;
+};
+
+export type CanvasTextureHandle = {
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D | null;
+    resize: (width: number, height: number) => void;
+};
+
 export type UseTextureInputResult = {
     textures: TextureLayer[];
     sceneTextures: SceneTextureLayer[];
@@ -32,6 +47,7 @@ export type UseTextureInputResult = {
     loadFile(slot: TextureSlot, file: File): Promise<void>;
     loadPreset(slot: TextureSlot, presetId: string): Promise<void>;
     enableCamera(slot?: TextureSlot): Promise<void>;
+    enableCanvas(slot?: TextureSlot, options?: CanvasTextureOptions): CanvasTextureHandle;
     disable(slot: TextureSlot): void;
     setTransform(slot: TextureSlot, transform: TextureUVTransform): void;
     presets: TexturePreset[];
@@ -58,6 +74,7 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
         return initial as SlotStateMap;
     });
     const activeStreams = useRef<Map<TextureSlot, () => void>>(new Map());
+    const activeCanvasSources = useRef<Map<TextureSlot, TextureSource>>(new Map());
     const slotsRef = useRef<SlotStateMap>(slots);
 
     const disposeLayer = useCallback((slot: TextureSlot, layer: TextureLayer | null) => {
@@ -68,6 +85,7 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
             console.warn("[TextureInput] Failed to dispose source", error);
         }
         activeStreams.current.delete(slot);
+        activeCanvasSources.current.delete(slot);
     }, []);
 
     const setSlot = useCallback(
@@ -270,6 +288,72 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
         [createTextureLayer, setSlot],
     );
 
+    const enableCanvas = useCallback(
+        (slot: TextureSlot = TEXTURE_SLOTS.base, options: CanvasTextureOptions = {}) => {
+            const width = Math.max(1, Math.floor(options.width ?? 512));
+            const height = Math.max(1, Math.floor(options.height ?? 512));
+            const dpr =
+                options.devicePixelRatio ??
+                (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            const context = canvas.getContext("2d");
+            if (context) {
+                context.lineCap = "round";
+                context.lineJoin = "round";
+            }
+            const source: TextureSource = {
+                id: options.id ?? `canvas-${slot}-${Date.now()}`,
+                kind: "canvas",
+                element: canvas,
+                width: canvas.width,
+                height: canvas.height,
+                ready: true,
+                dynamic: true,
+            };
+            activeCanvasSources.current.set(slot, source);
+            const transform = options.transform ?? IDENTITY_UV_TRANSFORM;
+            const layer = createTextureLayer(slot, source, "canvas", transform);
+            setSlot(slot, () => ({ layer, status: "ready", error: null }));
+            options.onCreate?.(canvas);
+            const handle: CanvasTextureHandle = {
+                canvas,
+                context,
+                resize: (nextWidth: number, nextHeight: number) => {
+                    const safeWidth = Math.max(1, Math.floor(nextWidth));
+                    const safeHeight = Math.max(1, Math.floor(nextHeight));
+                    const ratio =
+                        options.devicePixelRatio ??
+                        (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
+                    canvas.width = Math.round(safeWidth * ratio);
+                    canvas.height = Math.round(safeHeight * ratio);
+                    canvas.style.width = `${safeWidth}px`;
+                    canvas.style.height = `${safeHeight}px`;
+                    source.width = canvas.width;
+                    source.height = canvas.height;
+                    setSlot(slot, (prev) => {
+                        if (!prev.layer) return prev;
+                        if (prev.layer.source === source) {
+                            return prev;
+                        }
+                        return {
+                            ...prev,
+                            layer: {
+                                ...prev.layer,
+                                source,
+                            },
+                        };
+                    });
+                },
+            };
+            return handle;
+        },
+        [createTextureLayer, setSlot],
+    );
+
     const disable = useCallback(
         (slot: TextureSlot) => {
             setSlot(slot, () => ({ ...DEFAULT_SLOT_STATE }));
@@ -334,6 +418,7 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
         loadFile,
         loadPreset,
         enableCamera,
+        enableCanvas,
         disable,
         setTransform,
         presets,
