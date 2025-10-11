@@ -14,8 +14,8 @@ import {
 const SINGLE_HALF_PLANE = [halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0)] as const;
 
 const HINGE_HALF_PLANES = [
-    halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0),
-    halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
+    normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: -1, y: 0 } }),
+    normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } }),
 ] as const;
 
 const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
@@ -137,7 +137,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
         controlAssignments: [
             { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
-            { planeIndex: 1, pointIndex: 0, id: "hinge", fixed: true },
+            { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },
         ],
     },
     {
