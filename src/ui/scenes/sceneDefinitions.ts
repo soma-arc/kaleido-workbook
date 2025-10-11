@@ -1,5 +1,6 @@
 import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
 import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
@@ -17,6 +18,17 @@ const HINGE_HALF_PLANES = [
     normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: -1, y: 0 } }),
     normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } }),
 ] as const;
+
+const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
+    [
+        { id: "hinge", x: 0, y: 0, fixed: true },
+        { id: "hinge-plane-0-free", x: 0, y: 0.6, fixed: false },
+    ],
+    [
+        { id: "hinge-plane-1-free", x: -0.8, y: 0, fixed: false },
+        { id: "hinge", x: 0, y: 0, fixed: true },
+    ],
+];
 
 const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
     sides: 4,
@@ -139,6 +151,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
             { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },
         ],
+        initialControlPoints: cloneControlPointsList(HINGE_INITIAL_CONTROL_POINTS),
     },
     {
         key: "euclideanRegularSquare",
