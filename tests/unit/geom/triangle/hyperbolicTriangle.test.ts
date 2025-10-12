@@ -51,8 +51,8 @@ describe("geom/triangle/hyperbolicTriangle", () => {
 
         const hp0 = normalizeHalfPlane({ anchor: line1.anchor, normal: line1.normal });
         const hp1 = normalizeHalfPlane({ anchor: line2.anchor, normal: line2.normal });
-        expect(evaluateHalfPlane(hp0, interior)).toBeLessThan(0);
-        expect(evaluateHalfPlane(hp1, interior)).toBeLessThan(0);
+        expect(evaluateHalfPlane(hp0, interior)).toBeGreaterThan(0);
+        expect(evaluateHalfPlane(hp1, interior)).toBeGreaterThan(0);
         const cross = line1.normal.x * line2.normal.y - line1.normal.y * line2.normal.x;
         expect(cross).toBeLessThan(0);
 

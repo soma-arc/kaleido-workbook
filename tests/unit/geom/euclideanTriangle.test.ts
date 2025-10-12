@@ -39,7 +39,7 @@ describe("buildEuclideanTriangle", () => {
         for (const plane of tri.boundaries) {
             const unit = normalizeHalfPlane(plane);
             const value = evaluateHalfPlane(unit, center);
-            expect(value).toBeLessThan(0);
+            expect(value).toBeGreaterThan(0);
         }
     });
 

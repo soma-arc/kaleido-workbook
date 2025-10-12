@@ -13,7 +13,7 @@ function buildDiameterHalfPlaneFromDir(dir: Vec2, interiorPoint: Vec2): HalfPlan
         anchor: { x: 0, y: 0 },
         normal: { x: -unitDir.y, y: unitDir.x },
     });
-    if (evaluateHalfPlane(plane, interiorPoint) <= 0) {
+    if (evaluateHalfPlane(plane, interiorPoint) > 0) {
         return plane;
     }
     return normalizeHalfPlane({
@@ -72,7 +72,7 @@ export function buildHyperbolicTriangle(
 
     // g1, g2: diameters crossing at origin with angle alpha
     const aDir = unitDirection(alpha);
-    const g2 = geodesicFromBoundary({ x: -aDir.x, y: -aDir.y }, aDir);
+    const g2 = geodesicFromBoundary(aDir, { x: -aDir.x, y: -aDir.y });
 
     const third = solveThirdMirror(alpha, beta, gamma);
 
@@ -108,7 +108,6 @@ export function buildHyperbolicTriangle(
             ? orientedLineFromHalfPlane(buildDiameterHalfPlaneFromDir(g2.dir, interior))
             : orientedLineFromHalfPlane(buildDiameterHalfPlaneFromDir({ x: -1, y: 0 }, interior));
     const circleBoundary = orientedCircleFromCircleGeodesic(third.c, third.r, interior);
-
     return {
         kind: GEOMETRY_KIND.hyperbolic,
         boundaries: [lineBoundary1, lineBoundary2, circleBoundary],

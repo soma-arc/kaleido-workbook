@@ -58,7 +58,7 @@ function createMirror(a: Vec2, b: Vec2, interior: Vec2): HalfPlane {
         normal,
     });
     const value = evaluateHalfPlane(plane, interior);
-    if (value < 0) {
+    if (value > 0) {
         return plane;
     }
     return normalizeHalfPlane({
