@@ -896,9 +896,9 @@ export function EuclideanSceneHost({
 
     const canvas = (
         <>
-            {handleControls && scene.supportsHandles ? (
+            {scene.supportsHandles ? (
                 <span data-testid="handle-coordinates" style={{ display: "none" }}>
-                    {JSON.stringify(handleControls.points)}
+                    {JSON.stringify(handleControls?.points ?? [])}
                 </span>
             ) : null}
             {scene.inversionConfig ? (
