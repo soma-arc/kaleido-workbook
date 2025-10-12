@@ -8,8 +8,10 @@ import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TextureDrawCanvas } from "@/ui/components/texture/TextureDrawCanvas";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
+import { SCENE_IDS, SCENES_BY_ID } from "@/ui/scenes/sceneDefinitions";
 
 const DEFAULT_PLANES: HalfPlane[] = [];
+const DEBUG_TEXTURE_SCENE = SCENES_BY_ID[SCENE_IDS.debugTexture];
 
 function HandDrawnTexturePreviewDemo(): JSX.Element {
     const textureInput = useTextureInput();
@@ -43,6 +45,7 @@ function HandDrawnTexturePreviewDemo(): JSX.Element {
                 geometry: GEOMETRY_KIND.euclidean,
                 halfPlanes: DEFAULT_PLANES,
                 textures: textureInput.textures,
+                scene: DEBUG_TEXTURE_SCENE,
             });
             frameId = window.requestAnimationFrame(renderFrame);
             requestRef.current = frameId;
