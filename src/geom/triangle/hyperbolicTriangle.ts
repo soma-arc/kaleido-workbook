@@ -1,3 +1,4 @@
+import { g } from "vitest/dist/chunks/suite.B2jumIFP.js";
 import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
@@ -17,13 +18,20 @@ import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
  *   code can operate on geometric primitives without embedding tiling semantics here.
  */
 
-function buildDiameterHalfPlaneFromDir(dir: Vec2, interiorPoint: Vec2): HalfPlane {
+function buildDiameterHalfPlaneFromDir(dir: Vec2, interiorPoint: Vec2, reference: Vec2): HalfPlane {
     const length = Math.hypot(dir.x, dir.y) || 1;
     const unitDir = { x: dir.x / length, y: dir.y / length };
     let plane = normalizeHalfPlane({
         anchor: { x: 0, y: 0 },
         normal: { x: -unitDir.y, y: unitDir.x },
     });
+    const cross = reference.x * plane.normal.y - reference.y * plane.normal.x;
+    if (cross < 0) {
+        plane = normalizeHalfPlane({
+            anchor: { x: plane.anchor.x, y: plane.anchor.y },
+            normal: { x: -plane.normal.x, y: -plane.normal.y },
+        });
+    }
     if (evaluateHalfPlane(plane, interiorPoint) <= 0) {
         plane = normalizeHalfPlane({
             anchor: { x: plane.anchor.x, y: plane.anchor.y },
@@ -91,10 +99,12 @@ export function buildHyperbolicTriangle(
         y: (v0.y + v1.y + v2.y) / 3,
     };
 
-    const halfPlaneG1 = buildDiameterHalfPlaneFromDir({ x: 1, y: 0 }, interior);
+    const referenceNormal = { x: 0, y: 1 };
+    const halfPlaneG1 = buildDiameterHalfPlaneFromDir({ x: 1, y: 0 }, interior, referenceNormal);
     const halfPlaneG2 =
-        g2.kind === GEODESIC_KIND.diameter ? buildDiameterHalfPlaneFromDir(g2.dir, interior) : null;
-
+        g2.kind === GEODESIC_KIND.diameter
+            ? buildDiameterHalfPlaneFromDir(g2.dir, interior, referenceNormal)
+            : null;
     return {
         kind: GEOMETRY_KIND.hyperbolic,
         mirrors: [g1, g2, g3],

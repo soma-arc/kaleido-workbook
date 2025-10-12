@@ -47,8 +47,8 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         };
         expect(evaluateHalfPlane(hp0, interior)).toBeGreaterThan(0);
         expect(evaluateHalfPlane(hp1, interior)).toBeGreaterThan(0);
-        const dot = hp0.normal.x * hp1.normal.x + hp0.normal.y * hp1.normal.y;
-        expect(dot).toBeLessThan(0);
+        const cross = hp0.normal.x * hp1.normal.y - hp0.normal.y * hp1.normal.x;
+        expect(cross).toBeLessThan(0);
         warnSpy.mockRestore();
     });
 });
