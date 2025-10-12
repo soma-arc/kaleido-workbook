@@ -12,7 +12,9 @@ export type TrianglePrimitiveSet<M, K extends GeometryKind> = {
 export type HyperbolicTrianglePrimitives = TrianglePrimitiveSet<
     Geodesic,
     typeof GEOMETRY_KIND.hyperbolic
->;
+> & {
+    halfPlanes: [HalfPlane | null, HalfPlane | null, HalfPlane | null];
+};
 
 export type EuclideanTrianglePrimitives = TrianglePrimitiveSet<
     HalfPlane,

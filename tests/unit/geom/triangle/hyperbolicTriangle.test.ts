@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { evaluateHalfPlane } from "@/geom/primitives/halfPlane";
 import { angleBetweenGeodesicsAt } from "@/geom/triangle/geodesicAngles";
 import { buildHyperbolicTriangle } from "@/geom/triangle/hyperbolicTriangle";
 
@@ -33,6 +34,21 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         expect(tri.mirrors).toHaveLength(3);
         expect(warnSpy).toHaveBeenCalledTimes(1);
         expect(warnSpy.mock.calls[0]?.[0]).toContain("(p,q,r)=(3,3,3)");
+        const [hp0, hp1, hp2] = tri.halfPlanes;
+        expect(hp0).not.toBeNull();
+        expect(hp1).not.toBeNull();
+        expect(hp2).toBeNull();
+        if (!hp0 || !hp1) {
+            throw new Error("expected diameter half-planes to be defined");
+        }
+        const interior = {
+            x: (tri.vertices[0].x + tri.vertices[1].x + tri.vertices[2].x) / 3,
+            y: (tri.vertices[0].y + tri.vertices[1].y + tri.vertices[2].y) / 3,
+        };
+        expect(evaluateHalfPlane(hp0, interior)).toBeGreaterThan(0);
+        expect(evaluateHalfPlane(hp1, interior)).toBeGreaterThan(0);
+        const dot = hp0.normal.x * hp1.normal.x + hp0.normal.y * hp1.normal.y;
+        expect(dot).toBeLessThan(0);
         warnSpy.mockRestore();
     });
 });
