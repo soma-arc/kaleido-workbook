@@ -78,6 +78,7 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 type SceneAlias =
     | "hyperbolicTiling"
+    | "hyperbolicTripleReflection"
     | "debugTexture"
     | "euclideanCameraDebug"
     | "euclideanSingleHalfPlane"
@@ -98,6 +99,18 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         description: "Generates a {p,q,r} hyperbolic tiling rendered inside the Poincaré disk.",
         supportsHandles: false,
         editable: false,
+    },
+    {
+        key: "hyperbolicTripleReflection",
+        label: "Hyperbolic Triple Reflection",
+        geometry: GEOMETRY_KIND.hyperbolic,
+        variant: "tiling-333",
+        description:
+            "Displays three mirrors with intersection angles (3,3,3) and colors regions by reflection parity.",
+        supportsHandles: false,
+        editable: false,
+        fixedHyperbolicParams: { p: 3, q: 3, r: 3, depth: 0 },
+        showTriangleControls: false,
     },
     {
         key: "debugTexture",
