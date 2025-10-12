@@ -25,8 +25,14 @@ export function buildHyperbolicTriangle(
     q: number,
     r: number,
 ): HyperbolicTrianglePrimitives {
-    if (!(p > 1 && q > 1 && r > 1) || 1 / p + 1 / q + 1 / r >= 1) {
+    if (!(p > 1 && q > 1 && r > 1)) {
         throw new Error("Invalid (p,q,r) for hyperbolic triangle");
+    }
+    const hyperbolicConstraint = 1 / p + 1 / q + 1 / r;
+    if (hyperbolicConstraint >= 1) {
+        console.warn(
+            `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) does not satisfy hyperbolic constraint; continuing with computed mirrors`,
+        );
     }
     const alpha = Math.PI / p;
     const beta = Math.PI / q;
@@ -63,6 +69,7 @@ export function buildHyperbolicTriangle(
     const s = cdotu - root;
     const v2: Vec2 = { x: s * aDir.x, y: s * aDir.y };
 
+    console.log(g1, g2, g3);
     return {
         kind: GEOMETRY_KIND.hyperbolic,
         mirrors: [g1, g2, g3],

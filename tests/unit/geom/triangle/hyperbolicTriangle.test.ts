@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { angleBetweenGeodesicsAt } from "@/geom/triangle/geodesicAngles";
 import { buildHyperbolicTriangle } from "@/geom/triangle/hyperbolicTriangle";
 
@@ -25,5 +25,14 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         const c = angleBetweenGeodesicsAt(g2, g3);
         expect(Math.abs(b - beta)).toBeLessThan(5e-3); // numeric solve tolerance
         expect(Math.abs(c - gamma)).toBeLessThan(5e-3);
+    });
+
+    it("warns but returns mirrors for (3,3,3)", () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const tri = buildHyperbolicTriangle(3, 3, 3);
+        expect(tri.mirrors).toHaveLength(3);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0]?.[0]).toContain("(p,q,r)=(3,3,3)");
+        warnSpy.mockRestore();
     });
 });
