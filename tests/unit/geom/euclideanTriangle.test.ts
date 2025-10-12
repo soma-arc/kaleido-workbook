@@ -18,13 +18,13 @@ function barycenter(
 describe("buildEuclideanTriangle", () => {
     it("returns unit-norm mirrors whose boundaries pass through the expected vertices", () => {
         const tri = buildEuclideanTriangle(2, 4, 4);
-        const { mirrors, vertices } = tri;
+        const { boundaries, vertices } = tri;
         const edges: Array<[{ x: number; y: number }, { x: number; y: number }]> = [
             [vertices[1], vertices[2]],
             [vertices[0], vertices[2]],
             [vertices[0], vertices[1]],
         ];
-        mirrors.forEach((plane, index) => {
+        boundaries.forEach((plane, index) => {
             const unit = normalizeHalfPlane(plane);
             expect(length(unit.normal)).toBeCloseTo(1, 12);
             const [a, b] = edges[index];
@@ -36,7 +36,7 @@ describe("buildEuclideanTriangle", () => {
     it("places the triangle interior on the negative side of every mirror", () => {
         const tri = buildEuclideanTriangle(3, 3, 3);
         const center = barycenter(tri.vertices);
-        for (const plane of tri.mirrors) {
+        for (const plane of tri.boundaries) {
             const unit = normalizeHalfPlane(plane);
             const value = evaluateHalfPlane(unit, center);
             expect(value).toBeLessThan(0);

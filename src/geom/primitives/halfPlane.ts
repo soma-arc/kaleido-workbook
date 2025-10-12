@@ -8,7 +8,10 @@ const EPS = 1e-12;
 export type HalfPlane = {
     /** 任意の境界上アンカー点（点 P）。 */
     anchor: Vec2;
-    /** Half-plane の法線ベクトル（符号付き、単位長は normalize 後に保証）。 */
+    /**
+     * Half-plane の外向き法線ベクトル。
+     * normalize 後は単位長となり、法線方向が外側（正側）を表す。
+     */
     normal: Vec2;
 };
 

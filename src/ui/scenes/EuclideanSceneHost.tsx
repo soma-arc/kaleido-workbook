@@ -303,7 +303,7 @@ export function EuclideanSceneHost({
         }
         try {
             const result = buildEuclideanTriangle(params.p, params.q, params.r);
-            return result.mirrors;
+            return result.boundaries;
         } catch {
             return null;
         }

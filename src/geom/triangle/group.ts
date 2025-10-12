@@ -1,5 +1,6 @@
 import type { GeometryKind, Vec2 } from "@/geom/core/types";
 import { reflectAcrossHalfPlane } from "@/geom/primitives/halfPlane";
+import { orientedGeodesicToGeodesic } from "@/geom/primitives/orientedGeodesic";
 import { reflectAcrossGeodesic, type Transform2D } from "@/geom/transforms/reflect";
 import type {
     EuclideanTrianglePrimitives,
@@ -36,23 +37,23 @@ function qkey(p: Vec2, q = 1e-9): string {
     return `${qx}:${qy}`;
 }
 
-function applyTransform<M>(
+function applyTransform<B>(
     verts: [Vec2, Vec2, Vec2],
-    mirrors: [M, M, M],
+    boundaries: [B, B, B],
     idx: 0 | 1 | 2,
-    reflector: (mirror: M) => Transform2D,
+    reflector: (boundary: B) => Transform2D,
 ): [Vec2, Vec2, Vec2] {
-    const R = reflector(mirrors[idx]);
+    const R = reflector(boundaries[idx]);
     return [R(verts[0]), R(verts[1]), R(verts[2])];
 }
 
-export function expandTriangleGroup<M, K extends GeometryKind>(
-    base: TrianglePrimitiveSet<M, K>,
+export function expandTriangleGroup<B, K extends GeometryKind>(
+    base: TrianglePrimitiveSet<B, K>,
     depth: number,
-    reflector: (mirror: M) => Transform2D,
+    reflector: (boundary: B) => Transform2D,
     opts?: { maxFaces?: number },
 ) {
-    const mirrors = base.mirrors;
+    const boundaries = base.boundaries;
     const faces: TriangleFace[] = [];
     const seen = new Set<string>();
     const queue: { verts: [Vec2, Vec2, Vec2]; word: string }[] = [];
@@ -75,7 +76,7 @@ export function expandTriangleGroup<M, K extends GeometryKind>(
             if (!cur) continue;
             for (const j of [0, 1, 2] as const) {
                 const w = cur.word + (j + 1).toString();
-                const v = applyTransform(cur.verts as [Vec2, Vec2, Vec2], mirrors, j, reflector);
+                const v = applyTransform(cur.verts as [Vec2, Vec2, Vec2], boundaries, j, reflector);
                 pushFace(v, w);
                 if (opts?.maxFaces && faces.length >= opts.maxFaces) break;
             }
@@ -105,7 +106,12 @@ export function expandHyperbolicTriangleGroup(
     depth: number,
     opts?: { maxFaces?: number },
 ) {
-    return expandTriangleGroup(base, depth, reflectAcrossGeodesic, opts);
+    return expandTriangleGroup(
+        base,
+        depth,
+        (boundary) => reflectAcrossGeodesic(orientedGeodesicToGeodesic(boundary)),
+        opts,
+    );
 }
 
 export function expandEuclideanTriangleGroup(
