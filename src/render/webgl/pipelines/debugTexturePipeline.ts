@@ -6,6 +6,7 @@ import {
 import fragmentShaderSource from "../shaders/debugTexture.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { TEXTURE_SLOTS, type TextureSlot } from "../textures";
+import { getOptionalUniformLocation, getUniformLocation } from "./uniformUtils";
 
 const BASE_PIPELINE_ID = "webgl-debug-texture";
 const CAMERA_PIPELINE_ID = "webgl-debug-camera";
@@ -139,7 +140,9 @@ class DebugTexturePipeline implements WebGLPipelineInstance {
             );
             hasTexture = 0;
         }
-        gl.uniform1i(this.uniforms.hasTexture, hasTexture);
+        if (this.uniforms.hasTexture) {
+            gl.uniform1i(this.uniforms.hasTexture, hasTexture);
+        }
 
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -161,7 +164,7 @@ class DebugTexturePipeline implements WebGLPipelineInstance {
 type UniformLocations = {
     resolution: WebGLUniformLocation;
     textureSampler: WebGLUniformLocation;
-    hasTexture: WebGLUniformLocation;
+    hasTexture: WebGLUniformLocation | null;
 };
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -201,20 +204,10 @@ function resolveUniformLocations(
 ): UniformLocations {
     const resolution = getUniformLocation(gl, program, "uResolution");
     const textureSampler = getUniformLocation(gl, program, "uDebugTexture");
-    const hasTexture = getUniformLocation(gl, program, "uHasTexture");
+    const hasTexture = getOptionalUniformLocation(gl, program, "uHasTexture", {
+        label: "DebugTexturePipeline",
+    });
     return { resolution, textureSampler, hasTexture };
-}
-
-function getUniformLocation(
-    gl: WebGL2RenderingContext,
-    program: WebGLProgram,
-    name: string,
-): WebGLUniformLocation {
-    const location = gl.getUniformLocation(program, name);
-    if (!location) {
-        throw new Error(`Uniform ${name} not found`);
-    }
-    return location;
 }
 
 /**

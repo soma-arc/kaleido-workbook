@@ -20,7 +20,9 @@ void main() {
         return;
     }
     if (uHasTexture == 0) {
-        float grid = step(0.02, abs(fract(local.x * 10.0) - 0.5)) * step(0.02, abs(fract(local.y * 10.0) - 0.5));
+        float grid =
+            step(0.02, abs(fract(local.x * 10.0) - 0.5)) *
+            step(0.02, abs(fract(local.y * 10.0) - 0.5));
         vec3 fallback = mix(vec3(0.9, 0.2, 0.2), vec3(0.95, 0.95, 0.95), grid);
         fragColor = vec4(fallback, 1.0);
         return;

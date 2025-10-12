@@ -13,6 +13,7 @@ import fragmentShaderSourceTemplate from "../shaders/euclideanReflection.frag?ra
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
+import { getOptionalUniformLocation, getUniformLocation } from "./uniformUtils";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
@@ -65,11 +66,20 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
 
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
-        gl.uniform1f(gl.getUniformLocation(this.program, "uLineWidth"), LINE_WIDTH);
-        gl.uniform1f(gl.getUniformLocation(this.program, "uFeather"), LINE_FEATHER);
-        gl.uniform3f(gl.getUniformLocation(this.program, "uLineColor"), ...LINE_COLOR);
-        gl.uniform3f(gl.getUniformLocation(this.program, "uFillColor"), ...FILL_COLOR);
-        gl.uniform1f(gl.getUniformLocation(this.program, "uFillOpacity"), FILL_OPACITY);
+        const lineWidthLocation = getUniformLocation(gl, this.program, "uLineWidth");
+        const featherLocation = getUniformLocation(gl, this.program, "uFeather");
+        const lineColorLocation = getUniformLocation(gl, this.program, "uLineColor");
+        const fillColorLocation = getUniformLocation(gl, this.program, "uFillColor");
+        const fillOpacityLocation = getOptionalUniformLocation(gl, this.program, "uFillOpacity", {
+            label: "EuclideanHalfPlanePipeline",
+        });
+        gl.uniform1f(lineWidthLocation, LINE_WIDTH);
+        gl.uniform1f(featherLocation, LINE_FEATHER);
+        gl.uniform3f(lineColorLocation, ...LINE_COLOR);
+        gl.uniform3f(fillColorLocation, ...FILL_COLOR);
+        if (fillOpacityLocation) {
+            gl.uniform1f(fillOpacityLocation, FILL_OPACITY);
+        }
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
         gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
@@ -196,18 +206,6 @@ function resolveUniformLocations(
         textureCount,
         textureSamplers,
     };
-}
-
-function getUniformLocation(
-    gl: WebGL2RenderingContext,
-    program: WebGLProgram,
-    name: string,
-): WebGLUniformLocation {
-    const location = gl.getUniformLocation(program, name);
-    if (!location) {
-        throw new Error(`Uniform ${name} not found`);
-    }
-    return location;
 }
 
 function createEuclideanHalfPlanePipeline(
