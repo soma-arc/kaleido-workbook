@@ -14,6 +14,7 @@ import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import fragmentShaderSourceTemplate from "../shaders/hyperbolicGeodesic.frag?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
+import { getUniformLocation } from "./uniformUtils";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
@@ -209,18 +210,6 @@ function resolveUniformLocations(
         textureCount,
         textureSamplers,
     };
-}
-
-function getUniformLocation(
-    gl: WebGL2RenderingContext,
-    program: WebGLProgram,
-    name: string,
-): WebGLUniformLocation {
-    const location = gl.getUniformLocation(program, name);
-    if (!location) {
-        throw new Error(`Uniform ${name} not found`);
-    }
-    return location;
 }
 
 /**

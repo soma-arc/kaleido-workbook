@@ -15,3 +15,7 @@
 ## Circle Inversion シーン
 - `Scenes/Circle Inversion` では固定円と矩形の反転像をシェーダーで描画します。
 - Storybook Play では `data-testid="circle-inversion-state"` を参照して初期状態の半径・矩形サイズを検証できます。
+
+## Hand-Drawn Texture Preview
+- `Controls/Hand-Drawn Texture Preview` では手書きキャンバスと WebGL プレビューを並べて同期動作を確認できます。
+- Play ステップでストローク描画・モード切替・クリアを自動検証し、`preview-texture-state` に base テクスチャが反映されることを確認してください。

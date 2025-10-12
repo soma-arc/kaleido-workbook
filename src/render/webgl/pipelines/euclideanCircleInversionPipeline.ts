@@ -8,6 +8,7 @@ import {
 } from "../pipelineRegistry";
 import fragmentShaderSource from "../shaders/euclideanCircleInversion.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
+import { getUniformLocation } from "./uniformUtils";
 
 export const EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID = "webgl-euclidean-circle-inversion" as const;
 
@@ -206,14 +207,6 @@ function linkProgram(
         throw new Error(`Program link failed: ${info}`);
     }
     return program;
-}
-
-function getUniformLocation(gl: WebGL2RenderingContext, program: WebGLProgram, name: string) {
-    const location = gl.getUniformLocation(program, name);
-    if (!location) {
-        throw new Error(`Uniform not found: ${name}`);
-    }
-    return location;
 }
 
 function resolveUniformLocations(
