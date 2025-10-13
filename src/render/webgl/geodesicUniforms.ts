@@ -1,5 +1,4 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import {
