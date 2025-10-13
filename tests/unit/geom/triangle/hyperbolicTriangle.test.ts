@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { orientedGeodesicToGeodesic } from "@/geom/primitives/orientedGeodesic";
 import { angleBetweenGeodesicsAt } from "@/geom/triangle/geodesicAngles";
@@ -28,37 +28,22 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         expect(Math.abs(c - gamma)).toBeLessThan(5e-3);
     });
 
-    it("warns but returns oriented boundaries for (3,3,3)", () => {
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    it("falls back to Euclidean construction when 1/p+1/q+1/r ≈ 1", () => {
         const tri = buildHyperbolicTriangle(3, 3, 3);
         expect(tri.boundaries).toHaveLength(3);
-        expect(warnSpy).toHaveBeenCalledTimes(1);
-        expect(warnSpy.mock.calls[0]?.[0]).toContain("(p,q,r)=(3,3,3)");
-
-        const [line1, line2, circle] = tri.boundaries;
-        expect(line1.kind).toBe("line");
-        expect(line2.kind).toBe("line");
-        expect(circle.kind).toBe("circle");
-
-        if (line1.kind !== "line" || line2.kind !== "line" || circle.kind !== "circle") {
-            throw new Error("Unexpected boundary configuration");
-        }
-
         const interior = {
             x: (tri.vertices[0].x + tri.vertices[1].x + tri.vertices[2].x) / 3,
             y: (tri.vertices[0].y + tri.vertices[1].y + tri.vertices[2].y) / 3,
         };
 
-        const hp0 = normalizeHalfPlane({ anchor: line1.anchor, normal: line1.normal });
-        const hp1 = normalizeHalfPlane({ anchor: line2.anchor, normal: line2.normal });
-        expect(evaluateHalfPlane(hp0, interior)).toBeGreaterThan(0);
-        expect(evaluateHalfPlane(hp1, interior)).toBeGreaterThan(0);
-        const cross = line1.normal.x * line2.normal.y - line1.normal.y * line2.normal.x;
-        expect(cross).toBeLessThan(0);
+        tri.boundaries.forEach((boundary) => {
+            if (boundary.kind !== "line") throw new Error("expected line");
+            const hp = normalizeHalfPlane({ anchor: boundary.anchor, normal: boundary.normal });
+            expect(evaluateHalfPlane(hp, interior)).toBeGreaterThan(0);
+        });
+    });
 
-        const distance = Math.hypot(interior.x - circle.center.x, interior.y - circle.center.y);
-        expect(circle.orientation * (distance - circle.radius)).toBeLessThanOrEqual(0);
-
-        warnSpy.mockRestore();
+    it("throws when 1/p+1/q+1/r > 1", () => {
+        expect(() => buildHyperbolicTriangle(2.1, 2.1, 2.1)).toThrowError(/hyperbolic constraint/);
     });
 });

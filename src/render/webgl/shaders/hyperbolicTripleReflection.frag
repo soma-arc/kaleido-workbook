@@ -1,7 +1,7 @@
 #version 300 es
 precision highp float;
 
-#define HTR_DEBUG 1
+#define HTR_DEBUG 0
 
 in vec2 vFragCoord;
 layout(location = 0) out vec4 outColor;
@@ -97,7 +97,7 @@ vec4 sampleTextures(vec2 worldPoint) {
     return accum;
 }
 
-vec4 shadeReflections(vec2 worldPoint, float diskMask) {
+vec4 shadeReflections(const vec2 worldPoint, float diskMask) {
     float minAbsDistance = 1e9;
     for (int i = 0; i < MAX_GEODESICS; ++i) {
         if (i >= uGeodesicCount) {
@@ -116,13 +116,12 @@ vec4 shadeReflections(vec2 worldPoint, float diskMask) {
 
     vec2 tracePoint = worldPoint;
     int reflections = 0;
-    int limit = max(uMaxReflections, 10);
-
+    int limit = max(uMaxReflections, 0);
     for (int step = 0; step < limit; ++step) {
         bool reflected = false;
         for (int i = 0; i < MAX_GEODESICS; ++i) {
             if (i >= uGeodesicCount) {
-                break;
+                 break;
             }
             vec4 packed = uGeodesicsA[i];
             if (uGeodesicKinds[i] == 0) {
@@ -136,7 +135,7 @@ vec4 shadeReflections(vec2 worldPoint, float diskMask) {
             } else {
                 vec2 normal = normalize(packed.xy);
                 float dist = signedDistanceLine(tracePoint, normal, packed.zw);
-                if (dist > 0.0) {
+                if (dist < 0.0) {
                     tracePoint = reflectLine(tracePoint, normal, packed.zw);
                     reflections += 1;
                     reflected = true;
@@ -229,9 +228,11 @@ void main() {
     }
 
     vec4 color = shadeReflections(worldPoint, diskMask);
-#if HTR_DEBUG
-    color = shadeDebug(worldPoint, diskMask);
-#endif
+
+    if (HTR_DEBUG == 1) {
+        color = shadeDebug(worldPoint, diskMask);
+    }
+
     if (color.a <= 1e-4) {
         discard;
     }
