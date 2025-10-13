@@ -429,6 +429,29 @@ export function SphericalSceneHost({
         </>
     ) : null;
 
+    const overlay = useMemo(() => {
+        if (!embed) return null;
+        const defaultOverlay = (
+            <div
+                data-testid="embed-overlay-spherical"
+                style={{ display: "grid", gap: "6px", alignItems: "start" }}
+            >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "0.75rem", opacity: 0.65 }}>Scene</span>
+                    <strong style={{ fontSize: "1rem" }}>{scene.label}</strong>
+                </div>
+            </div>
+        );
+        if (!scene.embedOverlayFactory) {
+            return defaultOverlay;
+        }
+        return scene.embedOverlayFactory({
+            scene,
+            renderBackend: "hybrid",
+            controls: defaultOverlay,
+        });
+    }, [embed, scene]);
+
     const canvas = (
         <StageCanvas
             ref={canvasRef}
@@ -442,5 +465,12 @@ export function SphericalSceneHost({
         />
     );
 
-    return <SceneLayout controls={controls} canvas={canvas} embed={embed} />;
+    return (
+        <SceneLayout
+            controls={controls}
+            canvas={canvas}
+            embed={embed}
+            overlay={overlay ?? undefined}
+        />
+    );
 }
