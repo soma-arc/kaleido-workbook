@@ -5,7 +5,11 @@ import { createWebGLRenderer } from "../../../src/render/webglRenderer";
 const SCENE: HyperbolicScene = {
     geometry: "hyperbolic",
     disk: { cx: 0, cy: 0, r: 1 },
-    geodesics: [],
+    renderGeodesics: [],
+    tile: {
+        faces: [],
+        edges: [],
+    },
 };
 
 describe("createWebGLRenderer", () => {
