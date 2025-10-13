@@ -5,6 +5,7 @@ import type {
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import type { TilingParams } from "@/geom/triangle/tiling";
 import type { CircleInversionSceneConfig } from "./circleInversionConfig";
 
 export type SceneVariant = string;
@@ -32,6 +33,15 @@ export interface SceneDefinition {
     defaultHandleSpacing?: number;
     initialSphericalState?: SphericalSceneState;
     inversionConfig?: CircleInversionSceneConfig;
+    /**
+     * 固定のハイパーボリック三角形パラメータを利用したい場合に指定する。
+     * 指定時は UI 側のパラメータフォームを非表示にし、レンダリングはこの値で行う。
+     */
+    fixedHyperbolicParams?: TilingParams;
+    /**
+     * 三角形パラメータフォームを表示するかどうか。未指定時は true。
+     */
+    showTriangleControls?: boolean;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;

@@ -36,7 +36,7 @@ export function buildEuclideanTriangle(p: number, q: number, r: number): Euclide
         y: (v0.y + v1.y + v2.y) / 3,
     };
 
-    const mirrors: [HalfPlane, HalfPlane, HalfPlane] = [
+    const boundaries: [HalfPlane, HalfPlane, HalfPlane] = [
         createMirror(v1, v2, center),
         createMirror(v0, v2, center),
         createMirror(v0, v1, center),
@@ -44,7 +44,7 @@ export function buildEuclideanTriangle(p: number, q: number, r: number): Euclide
 
     return {
         kind: GEOMETRY_KIND.euclidean,
-        mirrors,
+        boundaries,
         vertices: [v0, v1, v2],
         angles: [alpha, beta, gamma],
     };
@@ -58,7 +58,7 @@ function createMirror(a: Vec2, b: Vec2, interior: Vec2): HalfPlane {
         normal,
     });
     const value = evaluateHalfPlane(plane, interior);
-    if (value < 0) {
+    if (value > 0) {
         return plane;
     }
     return normalizeHalfPlane({

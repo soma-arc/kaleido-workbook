@@ -43,7 +43,7 @@ pnpm ci             # biome ci + typecheck + test
 
 | Parameter | 値の例 | 説明 |
 |-----------|--------|------|
-| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`, `spherical-tetrahedron`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `hyperbolic-tiling-333`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`, `spherical-tetrahedron`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
 | `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
 
 - URL 例: `https://<host>/?scene=euclidean-hinge&embed=1`
@@ -78,6 +78,13 @@ Marp `theme: default` + `class: invert` などダーク系スライドに調和�
 ```
 
 シーンが増えた場合でも、`scene=<SceneId>` の値を差し替えるだけで同じスタイルを再利用できます。
+
+### Scene: Hyperbolic Triple Reflection (`hyperbolic-tiling-333`)
+
+- 3 本のジオデシック（2 本の直径 + 1 本の円弧）で構成される `(3,3,3)` 角の鏡配置を Poincaré 円板上に描画します。
+- WebGL シェーダで反射回数を追跡し、`euclideanReflection` シーンと同様のパレットで彩色します。最大反射ステップは Uniform (`uMaxReflections`) で制御できます。
+- `buildHyperbolicTriangle(3,3,3)` は双曲条件を満たさないため `console.warn` を出力しますが、計算したジオデシックをそのまま返すため、描画は継続します。
+- このシーンではハイパーボリック三角形パラメータフォームやデプススライダは表示されません（固定パラメータで描画します）。
 
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。

@@ -166,6 +166,7 @@ export function EuclideanSceneHost({
     const maxFrameRateInputId = useId();
 
     const isCameraDebugScene = scene.id === SCENE_IDS.euclideanCameraDebug;
+    const showTriangleControls = scene.showTriangleControls !== false;
 
     const hasDynamicTexture = useMemo(
         () => textureInput.textures.some((layer) => layer.source?.dynamic === true),
@@ -302,7 +303,7 @@ export function EuclideanSceneHost({
         }
         try {
             const result = buildEuclideanTriangle(params.p, params.q, params.r);
-            return result.mirrors;
+            return result.boundaries;
         } catch {
             return null;
         }
@@ -486,13 +487,14 @@ export function EuclideanSceneHost({
     );
 
     const renderHyperbolicScene = useCallback(() => {
+        const targetParams = scene.fixedHyperbolicParams ?? params;
         renderEngineRef.current?.render({
             scene,
             geometry: GEOMETRY_KIND.hyperbolic,
-            params,
+            params: targetParams,
             textures: textureInput.textures,
         });
-    }, [params, scene, textureInput.textures]);
+    }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
@@ -824,14 +826,18 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={renderMode}
             />
-            <PresetSelector
-                groups={presetGroups}
-                activePresetId={activePresetId}
-                onSelect={setFromPreset}
-                onClear={clearAnchor}
-                summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
-            />
-            <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+            {showTriangleControls && (
+                <>
+                    <PresetSelector
+                        groups={presetGroups}
+                        activePresetId={activePresetId}
+                        onSelect={setFromPreset}
+                        onClear={clearAnchor}
+                        summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
+                    />
+                    <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+                </>
+            )}
             <TexturePicker
                 slot={TEXTURE_SLOTS.base}
                 state={textureInput.slots[TEXTURE_SLOTS.base]}
@@ -873,24 +879,28 @@ export function EuclideanSceneHost({
                     disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
                 />
             )}
-            <TriangleParamForm
-                formInputs={formInputs}
-                params={params}
-                anchor={anchor}
-                paramError={paramError}
-                paramWarning={paramWarning}
-                geometryMode={scene.geometry}
-                rRange={rRange}
-                rStep={rStep}
-                rSliderValue={rSliderValue}
-                onParamChange={setParamInput}
-                onRSliderChange={setRFromSlider}
-            />
-            <DepthControls
-                depth={params.depth}
-                depthRange={depthRange}
-                onDepthChange={updateDepth}
-            />
+            {showTriangleControls && (
+                <>
+                    <TriangleParamForm
+                        formInputs={formInputs}
+                        params={params}
+                        anchor={anchor}
+                        paramError={paramError}
+                        paramWarning={paramWarning}
+                        geometryMode={scene.geometry}
+                        rRange={rRange}
+                        rStep={rStep}
+                        rSliderValue={rSliderValue}
+                        onParamChange={setParamInput}
+                        onRSliderChange={setRFromSlider}
+                    />
+                    <DepthControls
+                        depth={params.depth}
+                        depthRange={depthRange}
+                        onDepthChange={updateDepth}
+                    />
+                </>
+            )}
         </>
     );
 

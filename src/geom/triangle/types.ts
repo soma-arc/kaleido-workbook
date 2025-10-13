@@ -1,16 +1,16 @@
 import type { GEOMETRY_KIND, GeometryKind, Vec2 } from "@/geom/core/types";
-import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import type { OrientedGeodesic } from "@/geom/primitives/orientedGeodesic";
 
-export type TrianglePrimitiveSet<M, K extends GeometryKind> = {
+export type TrianglePrimitiveSet<B, K extends GeometryKind> = {
     kind: K;
-    mirrors: [M, M, M];
+    boundaries: [B, B, B];
     vertices: [Vec2, Vec2, Vec2];
     angles: [number, number, number];
 };
 
 export type HyperbolicTrianglePrimitives = TrianglePrimitiveSet<
-    Geodesic,
+    OrientedGeodesic,
     typeof GEOMETRY_KIND.hyperbolic
 >;
 

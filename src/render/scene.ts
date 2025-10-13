@@ -2,6 +2,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { OrientedGeodesic } from "@/geom/primitives/orientedGeodesic";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TriangleFace } from "@/geom/triangle/group";
 import type { TilingParams } from "@/geom/triangle/tiling";
@@ -33,7 +34,11 @@ type SceneBase = {
 export type HyperbolicScene = SceneBase & {
     geometry: typeof GEOMETRY_KIND.hyperbolic;
     disk: CircleSpec;
-    geodesics: GeodesicPrimitive[];
+    renderGeodesics: OrientedGeodesic[];
+    tile?: {
+        faces: TriangleFace[];
+        edges: GeodesicPrimitive[];
+    };
 };
 
 export type EuclideanScene = SceneBase & {
@@ -74,11 +79,16 @@ export function buildHyperbolicScene(
     vp: Viewport,
     options: { textures?: SceneTextureLayer[] } = {},
 ): HyperbolicScene {
-    const { faces } = buildTiling(params);
+    const { base, faces } = buildTiling(params);
+    const tileEdges = buildGeodesicPrimitives(faces, vp);
     return {
         geometry: GEOMETRY_KIND.hyperbolic,
         disk: unitDiskSpec(vp),
-        geodesics: buildGeodesicPrimitives(faces, vp),
+        renderGeodesics: [...base.boundaries],
+        tile: {
+            faces,
+            edges: tileEdges,
+        },
         textures: options.textures ?? [],
     };
 }

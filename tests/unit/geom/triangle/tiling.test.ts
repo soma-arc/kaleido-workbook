@@ -4,9 +4,10 @@ import { buildTiling } from "@/geom/triangle/tiling";
 describe("geom/triangle/tiling", () => {
     it("buildTiling produces deterministic faces and stats", () => {
         const params = { p: 2, q: 3, r: 7, depth: 2 };
-        const { faces, stats } = buildTiling(params);
+        const { base, faces, stats } = buildTiling(params);
         expect(stats.depth).toBe(2);
         expect(faces.length).toBeGreaterThan(0);
+        expect(base.boundaries).toHaveLength(3);
         // determinism
         const { faces: faces2 } = buildTiling(params);
         expect(faces.map((f) => f.id)).toEqual(faces2.map((f) => f.id));

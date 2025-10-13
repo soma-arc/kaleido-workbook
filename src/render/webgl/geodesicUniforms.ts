@@ -1,15 +1,19 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import type { Geodesic } from "@/geom/primitives/geodesic";
-import { GEODESIC_KIND } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import {
+    normalizeOrientedGeodesic,
+    type OrientedCircle,
+    type OrientedGeodesic,
+    type OrientedLine,
+} from "@/geom/primitives/orientedGeodesic";
 import type { RenderScene } from "../scene";
 
 export const MAX_UNIFORM_GEODESICS = 256;
 const COMPONENTS_PER_VEC4 = 4;
 
-const GEODESIC_KIND_CIRCLE = 0;
-const GEODESIC_KIND_LINE = 1;
+export const GEODESIC_KIND_CIRCLE = 0;
+export const GEODESIC_KIND_LINE = 1;
 
 export type GeodesicUniformBuffers = {
     data: Float32Array;
@@ -34,15 +38,10 @@ export function packSceneGeodesics(
     const maxCount = Math.min(limit, buffers.data.length / COMPONENTS_PER_VEC4);
     let count = 0;
     if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
-        for (const primitive of scene.geodesics) {
+        const geodesics = scene.renderGeodesics ?? [];
+        for (const geodesic of geodesics) {
             if (count >= maxCount) break;
-            if (primitive.geodesic.kind === GEODESIC_KIND.circle) {
-                packCircleGeodesic(primitive.geodesic, buffers, count);
-            } else if (primitive.geodesic.kind === GEODESIC_KIND.diameter) {
-                packDiameterGeodesic(primitive.geodesic, buffers, count);
-            } else {
-                packHalfPlaneGeodesic(primitive.geodesic, buffers, count);
-            }
+            packOrientedGeodesic(geodesic, buffers, count);
             count += 1;
         }
     } else if (scene.geometry === GEOMETRY_KIND.euclidean) {
@@ -58,41 +57,17 @@ export function packSceneGeodesics(
     return count;
 }
 
-function packCircleGeodesic(
-    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.circle }>,
+function packOrientedGeodesic(
+    boundary: OrientedGeodesic,
     buffers: GeodesicUniformBuffers,
     index: number,
 ): void {
-    const offset = index * COMPONENTS_PER_VEC4;
-    const data = buffers.data;
-    data[offset + 0] = geo.c.x;
-    data[offset + 1] = geo.c.y;
-    data[offset + 2] = geo.r;
-    data[offset + 3] = 0;
-    buffers.kinds[index] = GEODESIC_KIND_CIRCLE;
-}
-
-function packDiameterGeodesic(
-    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.diameter }>,
-    buffers: GeodesicUniformBuffers,
-    index: number,
-): void {
-    const normal = normalize({ x: -geo.dir.y, y: geo.dir.x });
-    const anchor = { x: 0, y: 0 };
-    packLine(normal, anchor, buffers, index);
-}
-
-function packHalfPlaneGeodesic(
-    geo: Extract<Geodesic, { kind: typeof GEODESIC_KIND.halfPlane }>,
-    buffers: GeodesicUniformBuffers,
-    index: number,
-): void {
-    const unit = normalize(geo.normal);
-    const anchor = {
-        x: -geo.offset * unit.x,
-        y: -geo.offset * unit.y,
-    };
-    packLine(unit, anchor, buffers, index);
+    const normalized = normalizeOrientedGeodesic(boundary);
+    if (normalized.kind === "circle") {
+        packOrientedCircle(normalized, buffers, index);
+        return;
+    }
+    packOrientedLine(normalized, buffers, index);
 }
 
 function packSceneHalfPlane(
@@ -102,6 +77,28 @@ function packSceneHalfPlane(
 ): void {
     const unit = normalizeHalfPlane(plane);
     packLine(unit.normal, unit.anchor, buffers, index);
+}
+
+function packOrientedCircle(
+    circle: OrientedCircle,
+    buffers: GeodesicUniformBuffers,
+    index: number,
+): void {
+    const offset = index * COMPONENTS_PER_VEC4;
+    const data = buffers.data;
+    data[offset + 0] = circle.center.x;
+    data[offset + 1] = circle.center.y;
+    data[offset + 2] = circle.radius;
+    data[offset + 3] = circle.orientation;
+    buffers.kinds[index] = GEODESIC_KIND_CIRCLE;
+}
+
+function packOrientedLine(
+    line: OrientedLine,
+    buffers: GeodesicUniformBuffers,
+    index: number,
+): void {
+    packLine(line.normal, line.anchor, buffers, index);
 }
 
 function packLine(

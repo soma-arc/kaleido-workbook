@@ -12,6 +12,7 @@ import "./webgl/pipelines/euclideanHalfPlanePipeline";
 import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
+import "./webgl/pipelines/hyperbolicTripleReflectionPipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;

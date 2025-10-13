@@ -5,6 +5,7 @@ import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
 export type TilingParams = { p: number; q: number; r: number; depth: number };
 
 export function buildTiling(params: TilingParams): {
+    base: HyperbolicTrianglePrimitives;
     faces: TriangleFace[];
     stats: { depth: number; total: number };
 } {
@@ -14,5 +15,5 @@ export function buildTiling(params: TilingParams): {
         params.r,
     );
     const { faces, stats } = expandHyperbolicTriangleGroup(base, params.depth);
-    return { faces, stats: { depth: stats.depth, total: faces.length } };
+    return { base, faces, stats: { depth: stats.depth, total: faces.length } };
 }
