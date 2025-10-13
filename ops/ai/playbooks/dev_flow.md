@@ -111,36 +111,6 @@ pnpm i
 
 ---
 
-## 9. 埋め込み(Embed)モードのオーバーレイ UI 実装ガイド
-
-### 9-1. SceneLayout への組み込み
-- `SceneLayout` は `overlay` プロパティを受け取り、`embed` モード時にキャンバス上へオーバーレイを重ねられる。
-- オーバーレイ容器は `position: absolute` で右上配置。レスポンシブ調整を行う場合は共通 CSS でスタイルを制御する。
-- 基本構造（2025-10-13 時点）: `src/ui/scenes/layouts.tsx` → `EMBED_OVERLAY_STYLE` を参照。
-
-### 9-2. シーン側の拡張ポイント
-- `SceneDefinition` に `embedOverlayFactory?: (context) => ReactNode` を追加済み。必要であればシーン専用 UI を生成できる。
-- デフォルトでは各 Host コンポーネントが共通オーバーレイを提供する。カスタマイズしたい場合は `sceneDefinitions.tsx` で factory を指定し、`context.controls` にデフォルト UI が渡される。
-- context には `scene`, `renderBackend`, `controls`, 任意の `extras` が含まれる。Euclidean ホストではハンドル表示状態とトグル関数が extras に含まれる。
-
-### 9-3. 共通コンポーネント
-- `EmbedOverlayPanel` (`src/ui/components/EmbedOverlayPanel.tsx`) はタイトル・サブタイトル・ボディを整形する共通ラッパー。Embed UI はこれを活用して一貫性を保つ。
-- ハンドルの表示切替などボタン操作を追加する際は、タップ領域と配色が埋め込み背景と馴染むよう `rgba(15,23,42,α)` を基調に設定する。
-
-### 9-4. テスト観点
-- `tests/unit/ui/sceneLayout.embed.test.tsx`: オーバーレイが `embed` 真偽値に応じて表示/非表示になることを検証。
-- `tests/unit/ui/scenes/sceneDefinitions.embed.test.tsx`: `embedOverlayFactory` がデフォルト UI を引き継ぎつつ追加要素を挿入できることを確認。
-- 新しいシーンで独自オーバーレイを追加する場合は同様のユニットテストを用意し、factory の挙動を固定化する。
-
-### 9-5. 実装フローの目安
-1. `SceneLayout` に必要なスタイル調整を加える（レスポンシブ挙動が必要ならクラス化も検討）。
-2. Host コンポーネントで `overlay` を生成。デフォルト UI → `scene.embedOverlayFactory` の順に適用。
-3. シーン定義へ factory を追加し、共通 UI をカスタマイズ。必要なハンドラは `extras` 経由で渡す。
-4. テストで DOM 構造とカスタマイズ結果を検証。
-5. Storybook や実アプリの embed 表示で視覚的な最終確認を行う。
-
----
-
 ## 8. 週次 10 分の棚卸し
 
 - 未着手：本文を整備／過大なら分割  
