@@ -47,7 +47,8 @@ export function renderTileLayer(
         if (shouldDrawDisk) {
             drawCircle(ctx, scene.disk, { strokeStyle: diskStroke, lineWidth });
         }
-        for (const primitive of scene.geodesics) {
+        const edgePrimitives = scene.tile?.edges ?? [];
+        for (const primitive of edgePrimitives) {
             drawGeodesicPrimitive(ctx, primitive, { strokeStyle: tileStroke, lineWidth });
         }
         return;

@@ -89,17 +89,4 @@ describe("createRenderEngine", () => {
         expect(ctx.clearRect).toHaveBeenCalled();
         engine.dispose();
     });
-
-    it("logs warning but renders when hyperbolic constraint fails", () => {
-        const { canvas, ctx } = createMockCanvas();
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const engine = createRenderEngine(canvas, { mode: "canvas" });
-        expect(() =>
-            engine.render({ geometry: "hyperbolic", params: { p: 3, q: 3, r: 3, depth: 1 } }),
-        ).not.toThrow();
-        expect(warnSpy).toHaveBeenCalled();
-        expect(ctx.clearRect).toHaveBeenCalled();
-        engine.dispose();
-        warnSpy.mockRestore();
-    });
 });

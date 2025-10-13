@@ -3,8 +3,11 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import { GEODESIC_KIND, geodesicFromBoundary } from "@/geom/primitives/geodesic";
 import { evaluateHalfPlane, type HalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { OrientedGeodesic } from "@/geom/primitives/orientedGeodesic";
+import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { solveThirdMirror, unitDirection } from "@/geom/triangle/thirdMirror";
 import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
+
+const SUM_TOL = 1e-6;
 
 function buildDiameterHalfPlaneFromDir(dir: Vec2, interiorPoint: Vec2): HalfPlane {
     const length = Math.hypot(dir.x, dir.y) || 1;
@@ -23,11 +26,11 @@ function buildDiameterHalfPlaneFromDir(dir: Vec2, interiorPoint: Vec2): HalfPlan
 }
 
 function orientedLineFromHalfPlane(plane: HalfPlane): OrientedGeodesic {
-    const normalised = normalizeHalfPlane(plane);
+    const chosen = normalizeHalfPlane(plane);
     return {
         kind: "line",
-        anchor: { x: normalised.anchor.x, y: normalised.anchor.y },
-        normal: { x: normalised.normal.x, y: normalised.normal.y },
+        anchor: { x: chosen.anchor.x, y: chosen.anchor.y },
+        normal: { x: chosen.normal.x, y: chosen.normal.y },
     };
 }
 
@@ -48,6 +51,19 @@ function orientedCircleFromCircleGeodesic(
     };
 }
 
+function buildEuclideanFallback(p: number, q: number, r: number): HyperbolicTrianglePrimitives {
+    const euclidean = buildEuclideanTriangle(p, q, r);
+    const orientedBoundaries = euclidean.boundaries.map((plane) =>
+        orientedLineFromHalfPlane(plane),
+    ) as [OrientedGeodesic, OrientedGeodesic, OrientedGeodesic];
+    return {
+        kind: GEOMETRY_KIND.hyperbolic,
+        boundaries: orientedBoundaries,
+        vertices: euclidean.vertices,
+        angles: euclidean.angles,
+    };
+}
+
 /**
  * buildHyperbolicTriangle
  * Construct a canonical (p,q,r) hyperbolic triangle primitive set.
@@ -61,9 +77,12 @@ export function buildHyperbolicTriangle(
         throw new Error("Invalid (p,q,r) for hyperbolic triangle");
     }
     const hyperbolicConstraint = 1 / p + 1 / q + 1 / r;
-    if (hyperbolicConstraint >= 1) {
-        console.warn(
-            `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) does not satisfy hyperbolic constraint; continuing with computed mirrors`,
+    if (Math.abs(hyperbolicConstraint - 1) <= SUM_TOL) {
+        return buildEuclideanFallback(p, q, r);
+    }
+    if (hyperbolicConstraint > 1 + SUM_TOL) {
+        throw new Error(
+            `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) violates hyperbolic constraint (1/p + 1/q + 1/r >= 1)`,
         );
     }
     const alpha = Math.PI / p;
