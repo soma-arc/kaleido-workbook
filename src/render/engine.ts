@@ -39,8 +39,11 @@ export type GeometryRenderRequest =
           inversion?: CircleInversionState;
       } & RenderRequestBase);
 
+export type CaptureRequestKind = "composite" | "webgl";
+
 export interface RenderEngine {
     render(request: GeometryRenderRequest): void;
+    capture(kind: CaptureRequestKind): HTMLCanvasElement | null;
     dispose(): void;
     getMode(): RenderMode;
 }
@@ -169,6 +172,19 @@ export function createRenderEngine(
 
     return {
         render: renderScene,
+        capture: (kind: CaptureRequestKind) => {
+            if (disposed) return null;
+            if (lastRequest) {
+                renderScene(lastRequest);
+            }
+            if (kind === "composite") {
+                return canvas;
+            }
+            if (!webgl || !webgl.ready || !webgl.canvas) {
+                return null;
+            }
+            return webgl.canvas;
+        },
         dispose: () => {
             disposed = true;
             for (const disposeHandler of resizeHandlers) disposeHandler();
