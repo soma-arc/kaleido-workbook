@@ -130,6 +130,17 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             "Displays the live camera texture (enable from the Camera input panel) for pipeline debugging.",
         supportsHandles: false,
         editable: false,
+        embedOverlayFactory: ({ controls }) => (
+            <div style={{ display: "grid", gap: "12px" }}>
+                {controls}
+                <p
+                    data-testid="camera-debug-overlay-note"
+                    style={{ fontSize: "0.8rem", lineHeight: 1.5, opacity: 0.85 }}
+                >
+                    カメラ入力を有効化するとライブテクスチャのプレビューがここに表示されます。
+                </p>
+            </div>
+        ),
     },
     {
         key: "euclideanHalfPlanes",

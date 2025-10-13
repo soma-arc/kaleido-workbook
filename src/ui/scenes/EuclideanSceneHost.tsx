@@ -21,6 +21,7 @@ import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
+import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
@@ -910,14 +911,7 @@ export function EuclideanSceneHost({
     const overlay = useMemo(() => {
         if (!embed) return null;
         const defaultOverlay = (
-            <div
-                data-testid="embed-overlay-euclidean"
-                style={{ display: "grid", gap: "8px", alignItems: "start" }}
-            >
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ fontSize: "0.75rem", opacity: 0.65 }}>Scene</span>
-                    <strong style={{ fontSize: "1rem" }}>{scene.label}</strong>
-                </div>
+            <EmbedOverlayPanel title={scene.label} subtitle="Scene">
                 {scene.supportsHandles ? (
                     <button
                         type="button"
@@ -931,11 +925,12 @@ export function EuclideanSceneHost({
                                 : "rgba(15,23,42,0.55)",
                             color: "#e2e8f0",
                         }}
+                        data-testid="embed-overlay-euclidean-toggle"
                     >
                         {showHandles ? "ハンドルを隠す" : "ハンドルを表示"}
                     </button>
                 ) : null}
-            </div>
+            </EmbedOverlayPanel>
         );
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;

@@ -10,6 +10,7 @@ import {
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
 import "@/render/webgl/pipelines/sphericalPipeline";
+import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import {
@@ -431,17 +432,7 @@ export function SphericalSceneHost({
 
     const overlay = useMemo(() => {
         if (!embed) return null;
-        const defaultOverlay = (
-            <div
-                data-testid="embed-overlay-spherical"
-                style={{ display: "grid", gap: "6px", alignItems: "start" }}
-            >
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ fontSize: "0.75rem", opacity: 0.65 }}>Scene</span>
-                    <strong style={{ fontSize: "1rem" }}>{scene.label}</strong>
-                </div>
-            </div>
-        );
+        const defaultOverlay = <EmbedOverlayPanel title={scene.label} subtitle="Scene" />;
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
         }
