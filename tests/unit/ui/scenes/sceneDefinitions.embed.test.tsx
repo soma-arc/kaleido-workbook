@@ -23,7 +23,7 @@ describe("sceneDefinitions embed overlay factory", () => {
         document.body.appendChild(container);
         const root = createRoot(container);
         act(() => {
-            root.render(<>{overlay}</>);
+            root.render(overlay ?? null);
         });
         expect(container.querySelector('[data-testid="default-controls"]')).toBeTruthy();
         const note = container.querySelector('[data-testid="camera-debug-overlay-note"]');
