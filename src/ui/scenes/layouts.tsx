@@ -5,6 +5,7 @@ export type SceneLayoutProps = {
     controls: ReactNode;
     canvas: ReactNode;
     embed?: boolean;
+    overlay?: ReactNode;
 };
 
 const BASE_CONTAINER_STYLE: CSSProperties = {
@@ -46,11 +47,32 @@ const EMBED_CONTAINER_STYLE: CSSProperties = {
     display: "block",
 };
 
-export function SceneLayout({ controls, canvas, embed }: SceneLayoutProps): JSX.Element {
+const EMBED_OVERLAY_STYLE: CSSProperties = {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "12px 16px",
+    borderRadius: 12,
+    background: "rgba(15, 23, 42, 0.65)",
+    color: "#e2e8f0",
+    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.35)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    maxWidth: "min(320px, 90%)",
+    pointerEvents: "auto",
+};
+
+export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutProps): JSX.Element {
     if (embed) {
         return (
             <div style={EMBED_CONTAINER_STYLE}>
-                <div style={CANVAS_FRAME_EMBED_STYLE}>{canvas}</div>
+                <div style={{ position: "relative" }}>
+                    <div style={CANVAS_FRAME_EMBED_STYLE}>{canvas}</div>
+                    {overlay ? <div style={EMBED_OVERLAY_STYLE}>{overlay}</div> : null}
+                </div>
             </div>
         );
     }

@@ -46,6 +46,14 @@
 1. 対象ホスト（`EuclideanSceneHost`, `HyperbolicSceneHost`, `SphericalSceneHost` など）に新シーンが選択肢として表示されるよう更新。
 2. コントロールパネルに追加パラメータが必要な場合は、最小限の入力に絞り、`useSceneRegistry` との整合を保つ。
 3. アクセシビリティ: Canvas の `aria-label`, フォーカス制御、固定ハンドルの表示を確認。
+4. **Embed モードのオーバーレイ UI**  
+   - `SceneLayout` は `overlay` プロパティを受け取り、`embed` モードではキャンバス上にカード形式の UI を重ねられる（実装は `src/ui/scenes/layouts.tsx` の `EMBED_OVERLAY_STYLE` を参照）。  
+   - 既定のオーバーレイは各 SceneHost が提供する。シーン固有 UI を追加したい場合は `SceneDefinition.embedOverlayFactory` を指定し、`context.controls`（共通 UI）に要素を追加・差し替える。  
+   - 共通デザインには `EmbedOverlayPanel` (`src/ui/components/EmbedOverlayPanel.tsx`) を使用し、ボタンや説明テキストをまとめる。  
+   - ユニットテスト例:  
+     - `tests/unit/ui/sceneLayout.embed.test.tsx` …… overlay の表示 / 非表示  
+     - `tests/unit/ui/scenes/sceneDefinitions.embed.test.tsx` …… factory による拡張  
+   - レスポンシブ対応が必要な場合は、`SceneLayout` 側のスタイル（または専用 CSS モジュール）でメディアクエリを設定し、幅が狭い環境ではレイアウトを縦並びに切り替える。
 
 ## 7. Storybook 整備
 1. CSF3 で `stories/<SceneName>.stories.tsx` を追加/更新し、Controls / Docs / Play / Accessibility を整備。

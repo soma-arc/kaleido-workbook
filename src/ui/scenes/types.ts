@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type {
@@ -42,6 +43,11 @@ export interface SceneDefinition {
      * 三角形パラメータフォームを表示するかどうか。未指定時は true。
      */
     showTriangleControls?: boolean;
+    /**
+     * embed モード時にキャンバス上へ表示するオーバーレイ UI をシーンごとにカスタマイズしたい場合に指定する。
+     * 実装しない場合はホスト側が用意した既定 UI が利用される。
+     */
+    embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
@@ -80,3 +86,10 @@ function isGeometryKind(value: string): value is GeometryKind {
         value === GEOMETRY_KIND.spherical
     );
 }
+
+export type SceneEmbedOverlayContext = {
+    scene: SceneDefinition;
+    renderBackend: "canvas" | "hybrid";
+    controls: ReactNode;
+    extras?: unknown;
+};

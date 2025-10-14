@@ -21,6 +21,7 @@ import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
+import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
@@ -167,6 +168,9 @@ export function EuclideanSceneHost({
 
     const isCameraDebugScene = scene.id === SCENE_IDS.euclideanCameraDebug;
     const showTriangleControls = scene.showTriangleControls !== false;
+    const toggleHandles = useCallback(() => {
+        setShowHandles((prev) => !prev);
+    }, []);
 
     const hasDynamicTexture = useMemo(
         () => textureInput.textures.some((layer) => layer.source?.dynamic === true),
@@ -904,6 +908,44 @@ export function EuclideanSceneHost({
         </>
     );
 
+    const overlay = useMemo(() => {
+        if (!embed) return null;
+        const defaultOverlay = (
+            <EmbedOverlayPanel title={scene.label} subtitle="Scene">
+                {scene.supportsHandles ? (
+                    <button
+                        type="button"
+                        onClick={toggleHandles}
+                        style={{
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(148, 163, 184, 0.6)",
+                            background: showHandles
+                                ? "rgba(59,130,246,0.25)"
+                                : "rgba(15,23,42,0.55)",
+                            color: "#e2e8f0",
+                        }}
+                        data-testid="embed-overlay-euclidean-toggle"
+                    >
+                        {showHandles ? "ハンドルを隠す" : "ハンドルを表示"}
+                    </button>
+                ) : null}
+            </EmbedOverlayPanel>
+        );
+        if (!scene.embedOverlayFactory) {
+            return defaultOverlay;
+        }
+        return scene.embedOverlayFactory({
+            scene,
+            renderBackend: renderMode,
+            controls: defaultOverlay,
+            extras: {
+                showHandles,
+                toggleHandles,
+            },
+        });
+    }, [embed, renderMode, scene, showHandles, toggleHandles]);
+
     const canvas = (
         <>
             {scene.supportsHandles ? (
@@ -931,5 +973,12 @@ export function EuclideanSceneHost({
         </>
     );
 
-    return <SceneLayout controls={controls} canvas={canvas} embed={embed} />;
+    return (
+        <SceneLayout
+            controls={controls}
+            canvas={canvas}
+            embed={embed}
+            overlay={overlay ?? undefined}
+        />
+    );
 }
