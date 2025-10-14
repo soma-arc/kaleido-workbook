@@ -16,13 +16,24 @@ import {
 } from "@/geom/primitives/halfPlaneControls";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
-import { createRenderEngine, type RenderEngine, type RenderMode } from "@/render/engine";
+import {
+    type CaptureRequestKind,
+    createRenderEngine,
+    type RenderEngine,
+    type RenderMode,
+} from "@/render/engine";
+import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
 import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
+import {
+    ImageExportControls,
+    type ImageExportMode,
+    type ImageExportStatus,
+} from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
@@ -35,6 +46,7 @@ import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclidea
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
 import { DEFAULT_TEXTURE_PRESETS } from "@/ui/texture/presets";
 import { getPresetGroupsForGeometry, getPresetsForGeometry } from "@/ui/trianglePresets";
+import { downloadDataUrl } from "@/ui/utils/download";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import type { CircleInversionState } from "./circleInversionConfig";
 import { SceneLayout } from "./layouts";
@@ -90,6 +102,17 @@ function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
         y: unit.anchor.y - delta * unit.normal.y,
     };
     return normalizeHalfPlane({ anchor, normal: unit.normal });
+}
+
+function pad(value: number): string {
+    return value.toString().padStart(2, "0");
+}
+
+function buildFilename(kind: CaptureRequestKind): string {
+    const now = new Date();
+    const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    return `hp-capture-${kind}-${datePart}-${timePart}.png`;
 }
 
 type PlaneDragState = {
@@ -155,6 +178,7 @@ export function EuclideanSceneHost({
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
+    const [engineReady, setEngineReady] = useState(false);
     const [circleInversionState, setCircleInversionState] = useState<CircleInversionState | null>(
         () => (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null),
     );
@@ -165,6 +189,8 @@ export function EuclideanSceneHost({
     const frameRequestRef = useRef<number | null>(null);
     const lastFrameTimeRef = useRef<number>(0);
     const maxFrameRateInputId = useId();
+    const [exportMode, setExportMode] = useState<ImageExportMode>("composite");
+    const [exportStatus, setExportStatus] = useState<ImageExportStatus>(null);
 
     const isCameraDebugScene = scene.id === SCENE_IDS.euclideanCameraDebug;
     const showTriangleControls = scene.showTriangleControls !== false;
@@ -289,9 +315,11 @@ export function EuclideanSceneHost({
         if (!canvas) return;
         const engine = createRenderEngine(canvas, { mode: renderMode });
         renderEngineRef.current = engine;
+        setEngineReady(true);
         return () => {
             renderEngineRef.current = null;
             engine.dispose();
+            setEngineReady(false);
         };
     }, [renderMode]);
 
@@ -343,6 +371,7 @@ export function EuclideanSceneHost({
         }
         setHandleControls({ spacing: handleSpacing, points: nextPoints });
         latestEuclideanPlanesRef.current = normalized;
+        setExportStatus(null);
     }, [
         baseHalfPlanes,
         controlAssignments,
@@ -822,6 +851,59 @@ export function EuclideanSceneHost({
         };
     }, [hasDynamicTexture, isCameraDebugScene, normalizedHalfPlanes, renderEuclideanScene]);
 
+    const handleExportImage = useCallback(() => {
+        const engine = renderEngineRef.current;
+        if (!engine) {
+            setExportStatus({
+                tone: "error",
+                message: "レンダーエンジンの初期化を待っています。",
+            });
+            return;
+        }
+        const primaryKind: CaptureRequestKind = exportMode === "webgl" ? "webgl" : "composite";
+        let canvasForExport = engine.capture(primaryKind);
+        let usedKind: CaptureRequestKind = primaryKind;
+        if (!canvasForExport && primaryKind === "webgl") {
+            canvasForExport = engine.capture("composite");
+            if (canvasForExport) {
+                usedKind = "composite";
+            }
+        }
+        if (!canvasForExport) {
+            setExportStatus({
+                tone: "error",
+                message: "保存用の描画を取得できませんでした。",
+            });
+            return;
+        }
+        const dataUrl = exportPNG(canvasForExport);
+        const filename = buildFilename(usedKind);
+        const success = downloadDataUrl(filename, dataUrl);
+        if (!success) {
+            setExportStatus({
+                tone: "error",
+                message: "ダウンロード操作を開始できませんでした。",
+            });
+            return;
+        }
+        if (usedKind !== primaryKind) {
+            setExportStatus({
+                tone: "warning",
+                message: "WebGL が無効化されていたため、Canvas 合成で保存しました。",
+            });
+        } else {
+            setExportStatus({
+                tone: "info",
+                message: `${filename} を保存しました。`,
+            });
+        }
+    }, [exportMode]);
+
+    const handleExportModeChange = useCallback((mode: ImageExportMode) => {
+        setExportMode(mode);
+        setExportStatus(null);
+    }, []);
+
     const controls = (
         <>
             <ModeControls
@@ -855,6 +937,13 @@ export function EuclideanSceneHost({
                 state={textureInput.slots[TEXTURE_SLOTS.camera]}
                 onEnable={() => textureInput.enableCamera(TEXTURE_SLOTS.camera)}
                 onDisable={() => textureInput.disable(TEXTURE_SLOTS.camera)}
+            />
+            <ImageExportControls
+                mode={exportMode}
+                onModeChange={handleExportModeChange}
+                onExport={handleExportImage}
+                disabled={!engineReady}
+                status={exportStatus}
             />
             {isCameraDebugScene && (
                 <label
