@@ -138,13 +138,15 @@ void main() {
         edgeAlpha = clamp(edgeAlpha, 0.0, 1.0);
     }
 
-    float hue = fract(float(reflections) * 0.16180339);
-    vec3 reflectionPalette = palette(hue);
-    vec3 baseFill = mix(uMirrorFillColor, reflectionPalette, 0.35);
-
     vec4 textureColor = sampleTextures(tracePoint);
-    vec3 texturedFill = mix(baseFill, textureColor.rgb, textureColor.a);
-    vec3 bodyColor = mix(uBackgroundColor, texturedFill, 0.75);
+    vec3 bodyColor = uBackgroundColor;
+    if (reflections > 0) {
+        float hue = fract(float(reflections) * 0.16180339);
+        vec3 reflectionPalette = palette(hue);
+        vec3 baseFill = mix(uMirrorFillColor, reflectionPalette, 0.35);
+        vec3 texturedFill = mix(baseFill, textureColor.rgb, textureColor.a);
+        bodyColor = mix(uBackgroundColor, texturedFill, 0.75);
+    }
 
     vec2 localRect = worldPoint - uRectangleCenter;
     vec2 absRect = abs(localRect);
