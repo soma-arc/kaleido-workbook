@@ -33,4 +33,38 @@ describe("sceneDefinitions embed overlay factory", () => {
         });
         container.remove();
     });
+
+    it("provides multi-plane slider for the multi-plane scene", () => {
+        const scene = getSceneDefinition(SCENE_IDS.euclideanMultiPlane);
+        expect(scene.embedOverlayFactory).toBeTruthy();
+        const onChange = vi.fn();
+        const overlay = scene.embedOverlayFactory?.({
+            scene,
+            renderBackend: "hybrid",
+            controls: null,
+            extras: {
+                multiPlaneControls: {
+                    minSides: 3,
+                    maxSides: 20,
+                    value: 6,
+                    onChange,
+                },
+            },
+        });
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        act(() => {
+            root.render(overlay ?? null);
+        });
+        const input = container.querySelector<HTMLInputElement>("input[type=range]");
+        expect(input).toBeTruthy();
+        expect(onChange).not.toHaveBeenCalled();
+        onChange(7);
+        expect(onChange).toHaveBeenCalledWith(7);
+        act(() => {
+            root.unmount();
+        });
+        container.remove();
+    });
 });

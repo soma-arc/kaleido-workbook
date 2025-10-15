@@ -190,6 +190,7 @@ export function EuclideanSceneHost({
     const frameRequestRef = useRef<number | null>(null);
     const lastFrameTimeRef = useRef<number>(0);
     const maxFrameRateInputId = useId();
+    const multiPlaneSliderId = useId();
     const [exportMode, setExportMode] = useState<ImageExportMode>("composite");
     const [exportStatus, setExportStatus] = useState<ImageExportStatus>(null);
 
@@ -310,6 +311,12 @@ export function EuclideanSceneHost({
         }
         setMultiPlaneSides(multiPlaneConfig.initialSides);
     }, [multiPlaneConfig]);
+
+    const handleMultiPlaneSidesChange = useCallback((nextSides: number) => {
+        setMultiPlaneSides(nextSides);
+        setEditableHalfPlanes(null);
+        setExportStatus(null);
+    }, []);
 
     const presetGroups = useMemo(
         () => getPresetGroupsForGeometry(scene.geometry),
@@ -939,6 +946,24 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={renderMode}
             />
+            {multiPlaneConfig ? (
+                <div style={{ display: "grid", gap: "4px" }}>
+                    <label htmlFor={multiPlaneSliderId} style={{ fontWeight: 600 }}>
+                        Mirrors: {multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    </label>
+                    <input
+                        id={multiPlaneSliderId}
+                        type="range"
+                        min={multiPlaneConfig.minSides}
+                        max={multiPlaneConfig.maxSides}
+                        step={1}
+                        value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                        onChange={(event) =>
+                            handleMultiPlaneSidesChange(Number(event.target.value))
+                        }
+                    />
+                </div>
+            ) : null}
             {showTriangleControls && (
                 <>
                     <PresetSelector
@@ -1058,9 +1083,26 @@ export function EuclideanSceneHost({
             extras: {
                 showHandles,
                 toggleHandles,
+                multiPlaneControls: multiPlaneConfig
+                    ? {
+                          minSides: multiPlaneConfig.minSides,
+                          maxSides: multiPlaneConfig.maxSides,
+                          value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                          onChange: handleMultiPlaneSidesChange,
+                      }
+                    : undefined,
             },
         });
-    }, [embed, renderMode, scene, showHandles, toggleHandles]);
+    }, [
+        embed,
+        renderMode,
+        scene,
+        showHandles,
+        toggleHandles,
+        multiPlaneConfig,
+        multiPlaneSides,
+        handleMultiPlaneSidesChange,
+    ]);
 
     const canvas = (
         <>

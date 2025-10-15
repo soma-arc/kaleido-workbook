@@ -3,6 +3,7 @@ import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primiti
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import {
     createSceneId,
@@ -213,6 +214,29 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             maxSides: 20,
             initialSides: 4,
             radius: 0.7,
+        },
+        embedOverlayFactory: ({ extras }) => {
+            const context =
+                (extras as {
+                    multiPlaneControls?: {
+                        minSides: number;
+                        maxSides: number;
+                        value: number;
+                        onChange: (next: number) => void;
+                    };
+                }) ?? {};
+            if (!context.multiPlaneControls) {
+                return null;
+            }
+            const { multiPlaneControls } = context;
+            return (
+                <MultiPlaneOverlayControls
+                    minSides={multiPlaneControls.minSides}
+                    maxSides={multiPlaneControls.maxSides}
+                    value={multiPlaneControls.value}
+                    onChange={multiPlaneControls.onChange}
+                />
+            );
         },
     },
     {
