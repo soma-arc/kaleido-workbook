@@ -62,7 +62,7 @@ const EMBED_OVERLAY_STYLE: CSSProperties = {
     boxShadow: "0 12px 24px rgba(15, 23, 42, 0.35)",
     backdropFilter: "blur(10px)",
     WebkitBackdropFilter: "blur(10px)",
-    width: "min(360px, 32vw)",
+    width: "fit-content",
     maxWidth: "calc(100vw - 32px)",
     pointerEvents: "auto",
 };

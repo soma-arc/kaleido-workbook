@@ -1037,7 +1037,6 @@ export function EuclideanSceneHost({
                           presetGroups,
                           activePresetId,
                           selectPreset: setFromPreset,
-                          clearPreset: clearAnchor,
                           snapEnabled,
                           setSnapEnabled: handleOverlaySnapToggle,
                       }
@@ -1060,7 +1059,6 @@ export function EuclideanSceneHost({
         presetGroups,
         activePresetId,
         setFromPreset,
-        clearAnchor,
         snapEnabled,
         handleOverlaySnapToggle,
         renderMode,

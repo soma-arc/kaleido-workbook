@@ -41,7 +41,6 @@ describe("sceneDefinitions embed overlay factory", () => {
         const controls = <div data-testid="default-controls">Default</div>;
         const groups = getPresetGroupsForGeometry(scene.geometry);
         const selectPreset = vi.fn();
-        const clearPreset = vi.fn();
         const toggleHandles = vi.fn();
         const setSnapEnabled = vi.fn();
         const context: SceneEmbedOverlayContext = {
@@ -55,7 +54,6 @@ describe("sceneDefinitions embed overlay factory", () => {
                     presetGroups: groups,
                     activePresetId: "euc-333",
                     selectPreset,
-                    clearPreset,
                     snapEnabled: true,
                     setSnapEnabled,
                 },

@@ -152,7 +152,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
         supportsHandles: true,
         editable: true,
-        embedOverlayFactory: ({ scene, controls, extras }) => {
+        embedOverlayFactory: ({ controls, extras }) => {
             const context = (extras as {
                 showHandles?: boolean;
                 toggleHandles?: () => void;
@@ -160,7 +160,6 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
                     presetGroups: readonly TrianglePresetGroup[];
                     activePresetId?: string;
                     selectPreset: (preset: TrianglePreset) => void;
-                    clearPreset?: () => void;
                     snapEnabled: boolean;
                     setSnapEnabled: (enabled: boolean) => void;
                 };
@@ -172,11 +171,9 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             const toggleHandles = context.toggleHandles ?? (() => {});
             return (
                 <HalfPlaneOverlayControls
-                    title={scene.label}
                     presetGroups={halfPlaneControls.presetGroups}
                     activePresetId={halfPlaneControls.activePresetId}
                     onSelectPreset={halfPlaneControls.selectPreset}
-                    onClearPreset={halfPlaneControls.clearPreset}
                     snapEnabled={halfPlaneControls.snapEnabled}
                     onSnapToggle={halfPlaneControls.setSnapEnabled}
                     showHandles={context.showHandles ?? false}
