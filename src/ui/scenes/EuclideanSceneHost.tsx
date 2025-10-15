@@ -997,6 +997,13 @@ export function EuclideanSceneHost({
         </>
     );
 
+    const handleOverlaySnapToggle = useCallback(
+        (enabled: boolean) => {
+            setSnapEnabled(enabled);
+        },
+        [setSnapEnabled],
+    );
+
     const overlay = useMemo(() => {
         if (!embed) return null;
         const defaultOverlay = (
@@ -1021,6 +1028,21 @@ export function EuclideanSceneHost({
                 ) : null}
             </EmbedOverlayPanel>
         );
+        const overlayExtras = {
+            showHandles,
+            toggleHandles,
+            halfPlaneControls:
+                scene.key === "euclideanHalfPlanes"
+                    ? {
+                          presetGroups,
+                          activePresetId,
+                          selectPreset: setFromPreset,
+                          clearPreset: clearAnchor,
+                          snapEnabled,
+                          setSnapEnabled: handleOverlaySnapToggle,
+                      }
+                    : undefined,
+        };
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
         }
@@ -1028,12 +1050,21 @@ export function EuclideanSceneHost({
             scene,
             renderBackend: renderMode,
             controls: defaultOverlay,
-            extras: {
-                showHandles,
-                toggleHandles,
-            },
+            extras: overlayExtras,
         });
-    }, [embed, renderMode, scene, showHandles, toggleHandles]);
+    }, [
+        embed,
+        scene,
+        showHandles,
+        toggleHandles,
+        presetGroups,
+        activePresetId,
+        setFromPreset,
+        clearAnchor,
+        snapEnabled,
+        handleOverlaySnapToggle,
+        renderMode,
+    ]);
 
     const canvas = (
         <>
