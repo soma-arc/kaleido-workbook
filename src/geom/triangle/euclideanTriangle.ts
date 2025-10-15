@@ -36,16 +36,20 @@ export function buildEuclideanTriangle(p: number, q: number, r: number): Euclide
         y: (v0.y + v1.y + v2.y) / 3,
     };
 
+    const translate = (vertex: Vec2): Vec2 => ({ x: vertex.x - center.x, y: vertex.y - center.y });
+    const shiftedVertices: [Vec2, Vec2, Vec2] = [translate(v0), translate(v1), translate(v2)];
+    const interior: Vec2 = { x: 0, y: 0 };
+
     const boundaries: [HalfPlane, HalfPlane, HalfPlane] = [
-        createMirror(v1, v2, center),
-        createMirror(v0, v2, center),
-        createMirror(v0, v1, center),
+        createMirror(shiftedVertices[1], shiftedVertices[2], interior),
+        createMirror(shiftedVertices[0], shiftedVertices[2], interior),
+        createMirror(shiftedVertices[0], shiftedVertices[1], interior),
     ];
 
     return {
         kind: GEOMETRY_KIND.euclidean,
         boundaries,
-        vertices: [v0, v1, v2],
+        vertices: shiftedVertices,
         angles: [alpha, beta, gamma],
     };
 }

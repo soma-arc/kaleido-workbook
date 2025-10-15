@@ -50,4 +50,11 @@ describe("buildEuclideanTriangle", () => {
         expect(beta).toBeCloseTo(Math.PI / 3, 9);
         expect(gamma).toBeCloseTo(Math.PI / 6, 9);
     });
+
+    it("recenters triangle vertices so the barycenter lies at the origin", () => {
+        const tri = buildEuclideanTriangle(2, 4, 4);
+        const center = barycenter(tri.vertices);
+        expect(center.x).toBeCloseTo(0, 12);
+        expect(center.y).toBeCloseTo(0, 12);
+    });
 });
