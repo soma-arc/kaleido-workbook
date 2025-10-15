@@ -16,6 +16,7 @@ import {
 } from "@/geom/primitives/halfPlaneControls";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
+import { cropToCenteredSquare } from "@/render/crop";
 import {
     type CaptureRequestKind,
     createRenderEngine,
@@ -61,6 +62,15 @@ const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
     halfPlaneFromNormalAndOffset({ x: 0, y: 1 }, 0),
     halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ];
+
+const MODE_TO_CAPTURE_KIND: Record<ImageExportMode, CaptureRequestKind> = {
+    composite: "composite",
+    webgl: "webgl",
+    "square-composite": "composite",
+    "square-webgl": "webgl",
+};
+
+const SQUARE_MODES: ReadonlySet<ImageExportMode> = new Set(["square-composite", "square-webgl"]);
 
 function cloneCircleInversionState(state: CircleInversionState): CircleInversionState {
     return {
@@ -108,11 +118,11 @@ function pad(value: number): string {
     return value.toString().padStart(2, "0");
 }
 
-function buildFilename(kind: CaptureRequestKind): string {
+function buildFilename(mode: ImageExportMode): string {
     const now = new Date();
     const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    return `hp-capture-${kind}-${datePart}-${timePart}.png`;
+    return `hp-capture-${mode}-${datePart}-${timePart}.png`;
 }
 
 type PlaneDragState = {
@@ -860,13 +870,15 @@ export function EuclideanSceneHost({
             });
             return;
         }
-        const primaryKind: CaptureRequestKind = exportMode === "webgl" ? "webgl" : "composite";
+        const primaryKind = MODE_TO_CAPTURE_KIND[exportMode];
+        let resolvedMode: ImageExportMode = exportMode;
         let canvasForExport = engine.capture(primaryKind);
         let usedKind: CaptureRequestKind = primaryKind;
         if (!canvasForExport && primaryKind === "webgl") {
             canvasForExport = engine.capture("composite");
             if (canvasForExport) {
                 usedKind = "composite";
+                resolvedMode = SQUARE_MODES.has(exportMode) ? "square-composite" : "composite";
             }
         }
         if (!canvasForExport) {
@@ -876,8 +888,11 @@ export function EuclideanSceneHost({
             });
             return;
         }
+        if (SQUARE_MODES.has(resolvedMode)) {
+            canvasForExport = cropToCenteredSquare(canvasForExport);
+        }
         const dataUrl = exportPNG(canvasForExport);
-        const filename = buildFilename(usedKind);
+        const filename = buildFilename(resolvedMode);
         const success = downloadDataUrl(filename, dataUrl);
         if (!success) {
             setExportStatus({

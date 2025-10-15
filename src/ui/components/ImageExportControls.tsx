@@ -1,6 +1,6 @@
 import { type ChangeEvent, useId } from "react";
 
-export type ImageExportMode = "webgl" | "composite";
+export type ImageExportMode = "composite" | "webgl" | "square-composite" | "square-webgl";
 
 export type ImageExportStatus = { tone: "info" | "warning" | "error"; message: string } | null;
 
@@ -18,6 +18,13 @@ const STATUS_COLOR: Record<Exclude<ImageExportStatus, null>["tone"], string> = {
     error: "#dc2626",
 };
 
+const MODE_LABELS: Record<ImageExportMode, string> = {
+    composite: "フル（合成）",
+    webgl: "フル（WebGL のみ）",
+    "square-composite": "正方形（合成）",
+    "square-webgl": "正方形（WebGL 優先）",
+};
+
 export function ImageExportControls({
     mode,
     onModeChange,
@@ -25,43 +32,35 @@ export function ImageExportControls({
     disabled = false,
     status = null,
 }: ImageExportControlsProps): JSX.Element {
-    const radioGroupId = useId();
-    const handleRadioChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const nextMode = event.target.value === "webgl" ? "webgl" : "composite";
-        onModeChange(nextMode);
+    const selectId = useId();
+    const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        const value = event.target.value as ImageExportMode;
+        onModeChange(value);
     };
 
     return (
         <fieldset style={{ border: "1px solid #ddd", borderRadius: 6, padding: "8px 12px" }}>
             <legend style={{ padding: "0 4px", fontSize: "0.9rem" }}>画像保存</legend>
-            <div
-                style={{
-                    display: "grid",
-                    gap: "4px",
-                    marginBottom: "8px",
-                }}
+            <label
+                htmlFor={selectId}
+                style={{ display: "block", marginBottom: 4, fontSize: "0.85rem", fontWeight: 600 }}
             >
-                <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                        type="radio"
-                        name={`image-export-mode-${radioGroupId}`}
-                        value="webgl"
-                        checked={mode === "webgl"}
-                        onChange={handleRadioChange}
-                    />
-                    <span>WebGL のみ</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                        type="radio"
-                        name={`image-export-mode-${radioGroupId}`}
-                        value="composite"
-                        checked={mode === "composite"}
-                        onChange={handleRadioChange}
-                    />
-                    <span>WebGL + Canvas 合成</span>
-                </label>
-            </div>
+                保存モード
+            </label>
+            <select
+                id={selectId}
+                name="image-export-mode"
+                value={mode}
+                onChange={handleSelectChange}
+                disabled={disabled}
+                style={{ width: "100%", marginBottom: 8 }}
+            >
+                {(Object.keys(MODE_LABELS) as ImageExportMode[]).map((option) => (
+                    <option key={option} value={option}>
+                        {MODE_LABELS[option]}
+                    </option>
+                ))}
+            </select>
             <button type="button" onClick={onExport} disabled={disabled}>
                 PNG を保存
             </button>
