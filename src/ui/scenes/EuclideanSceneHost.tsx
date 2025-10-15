@@ -14,6 +14,7 @@ import {
     derivePointsFromHalfPlane,
     type HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolygon";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import {
@@ -298,6 +299,18 @@ export function EuclideanSceneHost({
 
     const controlAssignments = scene.controlAssignments;
 
+    const multiPlaneConfig = scene.multiPlaneConfig ?? null;
+    const [multiPlaneSides, setMultiPlaneSides] = useState<number | null>(
+        () => multiPlaneConfig?.initialSides ?? null,
+    );
+
+    useEffect(() => {
+        if (!multiPlaneConfig) {
+            return;
+        }
+        setMultiPlaneSides(multiPlaneConfig.initialSides);
+    }, [multiPlaneConfig]);
+
     const presetGroups = useMemo(
         () => getPresetGroupsForGeometry(scene.geometry),
         [scene.geometry],
@@ -327,6 +340,13 @@ export function EuclideanSceneHost({
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
             return null;
         }
+        if (multiPlaneConfig) {
+            const sides = multiPlaneSides ?? multiPlaneConfig.initialSides;
+            return generateRegularPolygonHalfplanes(sides, {
+                radius: multiPlaneConfig.radius,
+                initialAngle: multiPlaneConfig.initialAngle,
+            });
+        }
         if (scene.initialHalfPlanes) {
             return scene.initialHalfPlanes.map((plane) => normalizeHalfPlane(plane));
         }
@@ -339,7 +359,14 @@ export function EuclideanSceneHost({
         } catch {
             return null;
         }
-    }, [scene.geometry, scene.initialHalfPlanes, params, paramError]);
+    }, [
+        scene.geometry,
+        scene.initialHalfPlanes,
+        params,
+        paramError,
+        multiPlaneConfig,
+        multiPlaneSides,
+    ]);
 
     const normalizedHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {

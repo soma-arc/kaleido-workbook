@@ -85,6 +85,7 @@ type SceneAlias =
     | "euclideanHalfPlanes"
     | "euclideanHinge"
     | "euclideanCircleInversion"
+    | "euclideanMultiPlane"
     | "euclideanRegularSquare"
     | "euclideanRegularPentagon"
     | "euclideanRegularHexagon"
@@ -197,6 +198,21 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
                 halfExtents: { x: 0.15, y: 0.1 },
                 rotation: 0,
             },
+        },
+    },
+    {
+        key: "euclideanMultiPlane",
+        label: "Multi-Plane Mirrors",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "multi-plane",
+        description: "Displays a configurable number of mirrors arranged as a regular polygon.",
+        supportsHandles: false,
+        editable: false,
+        multiPlaneConfig: {
+            minSides: 3,
+            maxSides: 20,
+            initialSides: 4,
+            radius: 0.7,
         },
     },
     {
