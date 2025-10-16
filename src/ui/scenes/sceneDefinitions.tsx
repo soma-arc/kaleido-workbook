@@ -215,7 +215,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             initialSides: 4,
             radius: 0.7,
         },
-        embedOverlayFactory: ({ extras }) => {
+        embedOverlayFactory: ({ controls, extras }) => {
             const context =
                 (extras as {
                     multiPlaneControls?: {
@@ -235,7 +235,9 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
                     maxSides={multiPlaneControls.maxSides}
                     value={multiPlaneControls.value}
                     onChange={multiPlaneControls.onChange}
-                />
+                >
+                    {controls}
+                </MultiPlaneOverlayControls>
             );
         },
     },

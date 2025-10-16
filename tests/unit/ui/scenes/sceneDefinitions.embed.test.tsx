@@ -38,10 +38,11 @@ describe("sceneDefinitions embed overlay factory", () => {
         const scene = getSceneDefinition(SCENE_IDS.euclideanMultiPlane);
         expect(scene.embedOverlayFactory).toBeTruthy();
         const onChange = vi.fn();
+        const defaultControls = <div data-testid="default-controls">Toggle</div>;
         const overlay = scene.embedOverlayFactory?.({
             scene,
             renderBackend: "hybrid",
-            controls: null,
+            controls: defaultControls,
             extras: {
                 multiPlaneControls: {
                     minSides: 3,
@@ -59,6 +60,7 @@ describe("sceneDefinitions embed overlay factory", () => {
         });
         const input = container.querySelector<HTMLInputElement>("input[type=range]");
         expect(input).toBeTruthy();
+        expect(container.querySelector('[data-testid="default-controls"]')).toBeTruthy();
         expect(onChange).not.toHaveBeenCalled();
         onChange(7);
         expect(onChange).toHaveBeenCalledWith(7);
