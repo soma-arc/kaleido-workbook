@@ -36,6 +36,7 @@ import {
     type ImageExportStatus,
 } from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
+import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
@@ -1051,6 +1052,34 @@ export function EuclideanSceneHost({
 
     const overlay = useMemo(() => {
         if (!embed) return null;
+
+        if (multiPlaneConfig) {
+            const overlayContent = (
+                <MultiPlaneOverlayControls
+                    minSides={multiPlaneConfig.minSides}
+                    maxSides={multiPlaneConfig.maxSides}
+                    value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    onChange={handleMultiPlaneSidesChange}
+                />
+            );
+            if (!scene.embedOverlayFactory) {
+                return overlayContent;
+            }
+            return scene.embedOverlayFactory({
+                scene,
+                renderBackend: renderMode,
+                controls: null,
+                extras: {
+                    multiPlaneControls: {
+                        minSides: multiPlaneConfig.minSides,
+                        maxSides: multiPlaneConfig.maxSides,
+                        value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                        onChange: handleMultiPlaneSidesChange,
+                    },
+                },
+            });
+        }
+
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
                 {scene.supportsHandles ? (
@@ -1083,14 +1112,6 @@ export function EuclideanSceneHost({
             extras: {
                 showHandles,
                 toggleHandles,
-                multiPlaneControls: multiPlaneConfig
-                    ? {
-                          minSides: multiPlaneConfig.minSides,
-                          maxSides: multiPlaneConfig.maxSides,
-                          value: multiPlaneSides ?? multiPlaneConfig.initialSides,
-                          onChange: handleMultiPlaneSidesChange,
-                      }
-                    : undefined,
             },
         });
     }, [
