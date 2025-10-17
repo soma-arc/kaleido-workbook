@@ -19,6 +19,17 @@ const HINGE_HALF_PLANES = [
     normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } }),
 ] as const;
 
+const CIRCLE_INVERSION_LINE_HALF_PLANE = [
+    normalizeHalfPlane({ anchor: { x: -0.6, y: 0 }, normal: { x: 0, y: 1 } }),
+] as const;
+
+const CIRCLE_INVERSION_LINE_CONTROL_POINTS: HalfPlaneControlPoints[] = [
+    [
+        { id: "circle-line-start", x: -0.6, y: 0, fixed: false },
+        { id: "circle-line-end", x: 0.6, y: 0.2, fixed: false },
+    ],
+];
+
 const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
     [
         { id: "hinge", x: 0, y: 0, fixed: true },
@@ -185,17 +196,35 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         variant: "circle-inversion",
         description:
             "Inverts a draggable rectangle across a fixed circle using the WebGL pipeline.",
-        supportsHandles: false,
+        supportsHandles: true,
         editable: true,
+        defaultHandleSpacing: 1.2,
+        initialHalfPlanes: cloneHalfPlanes(CIRCLE_INVERSION_LINE_HALF_PLANE),
+        controlAssignments: [
+            { planeIndex: 0, pointIndex: 0, id: "circle-line-start" },
+            { planeIndex: 0, pointIndex: 1, id: "circle-line-end" },
+        ],
+        initialControlPoints: cloneControlPointsList(CIRCLE_INVERSION_LINE_CONTROL_POINTS),
         inversionConfig: {
             fixedCircle: {
                 center: { x: 0, y: 0 },
                 radius: 0.6,
             },
+            line: {
+                start: { x: -0.6, y: 0 },
+                end: { x: 0.6, y: 0.2 },
+            },
             rectangle: {
                 center: { x: 0.3, y: 0 },
                 halfExtents: { x: 0.15, y: 0.1 },
                 rotation: 0,
+            },
+            display: {
+                showReferenceLine: true,
+                showInvertedLine: true,
+                showReferenceRectangle: true,
+                showInvertedRectangle: true,
+                textureEnabled: true,
             },
         },
     },

@@ -68,6 +68,10 @@ function cloneCircleInversionState(state: CircleInversionState): CircleInversion
             center: { x: state.fixedCircle.center.x, y: state.fixedCircle.center.y },
             radius: state.fixedCircle.radius,
         },
+        line: {
+            start: { x: state.line.start.x, y: state.line.start.y },
+            end: { x: state.line.end.x, y: state.line.end.y },
+        },
         rectangle: {
             center: { x: state.rectangle.center.x, y: state.rectangle.center.y },
             halfExtents: {
@@ -75,6 +79,13 @@ function cloneCircleInversionState(state: CircleInversionState): CircleInversion
                 y: state.rectangle.halfExtents.y,
             },
             rotation: state.rectangle.rotation,
+        },
+        display: {
+            showReferenceLine: state.display.showReferenceLine,
+            showInvertedLine: state.display.showInvertedLine,
+            showReferenceRectangle: state.display.showReferenceRectangle,
+            showInvertedRectangle: state.display.showInvertedRectangle,
+            textureEnabled: state.display.textureEnabled,
         },
     };
 }

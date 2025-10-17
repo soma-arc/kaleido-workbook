@@ -155,11 +155,16 @@ function resolveInversionState(
                 center: { ...runtimeState.fixedCircle.center },
                 radius: runtimeState.fixedCircle.radius,
             },
+            line: {
+                start: { ...runtimeState.line.start },
+                end: { ...runtimeState.line.end },
+            },
             rectangle: {
                 center: { ...runtimeState.rectangle.center },
                 halfExtents: { ...runtimeState.rectangle.halfExtents },
                 rotation: runtimeState.rectangle.rotation,
             },
+            display: { ...runtimeState.display },
         };
     }
     if (config) {
@@ -168,11 +173,16 @@ function resolveInversionState(
                 center: { ...config.fixedCircle.center },
                 radius: config.fixedCircle.radius,
             },
+            line: {
+                start: { ...config.line.start },
+                end: { ...config.line.end },
+            },
             rectangle: {
                 center: { ...config.rectangle.center },
                 halfExtents: { ...config.rectangle.halfExtents },
                 rotation: config.rectangle.rotation,
             },
+            display: { ...config.display },
         };
     }
     return null;
