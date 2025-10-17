@@ -3,6 +3,8 @@ import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primiti
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
+import type { TrianglePreset, TrianglePresetGroup } from "@/ui/trianglePresets";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import {
     createSceneId,
@@ -171,6 +173,35 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
         supportsHandles: true,
         editable: true,
+        embedOverlayFactory: ({ controls, extras }) => {
+            const context = (extras as {
+                showHandles?: boolean;
+                toggleHandles?: () => void;
+                halfPlaneControls?: {
+                    presetGroups: readonly TrianglePresetGroup[];
+                    activePresetId?: string;
+                    selectPreset: (preset: TrianglePreset) => void;
+                    snapEnabled: boolean;
+                    setSnapEnabled: (enabled: boolean) => void;
+                };
+            }) ?? { showHandles: false };
+            if (!context.halfPlaneControls) {
+                return controls ?? null;
+            }
+            const { halfPlaneControls } = context;
+            const toggleHandles = context.toggleHandles ?? (() => {});
+            return (
+                <HalfPlaneOverlayControls
+                    presetGroups={halfPlaneControls.presetGroups}
+                    activePresetId={halfPlaneControls.activePresetId}
+                    onSelectPreset={halfPlaneControls.selectPreset}
+                    snapEnabled={halfPlaneControls.snapEnabled}
+                    onSnapToggle={halfPlaneControls.setSnapEnabled}
+                    showHandles={context.showHandles ?? false}
+                    onToggleHandles={toggleHandles}
+                />
+            );
+        },
     },
     {
         key: "euclideanSingleHalfPlane",
