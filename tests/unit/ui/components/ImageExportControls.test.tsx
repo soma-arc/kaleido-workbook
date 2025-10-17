@@ -41,21 +41,22 @@ function renderComponent(
 }
 
 describe("ImageExportControls", () => {
-    it("calls onModeChange when switching radio buttons", () => {
-        const { container, handleMode, cleanup } = renderComponent("webgl");
-        const compositeRadio = container.querySelector<HTMLInputElement>(
-            'input[value="composite"]',
+    it("calls onModeChange when switching select options", () => {
+        const { container, handleMode, cleanup } = renderComponent("composite");
+        const select = container.querySelector<HTMLSelectElement>(
+            'select[name="image-export-mode"]',
         );
-        if (!compositeRadio) throw new Error("radio not found");
+        if (!select) throw new Error("select not found");
         act(() => {
-            compositeRadio.click();
+            select.value = "square-webgl";
+            select.dispatchEvent(new Event("change", { bubbles: true }));
         });
-        expect(handleMode).toHaveBeenCalledWith("composite");
+        expect(handleMode).toHaveBeenCalledWith("square-webgl");
         cleanup();
     });
 
     it("calls onExport when pressing the save button", () => {
-        const { container, handleExport, cleanup } = renderComponent("composite");
+        const { container, handleExport, cleanup } = renderComponent("square-composite");
         const button = container.querySelector("button");
         if (!button) throw new Error("button not found");
         act(() => {
@@ -66,7 +67,7 @@ describe("ImageExportControls", () => {
     });
 
     it("renders status messages", () => {
-        const { container, cleanup } = renderComponent("composite", {
+        const { container, cleanup } = renderComponent("webgl", {
             tone: "warning",
             message: "Fallback used",
         });

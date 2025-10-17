@@ -34,6 +34,9 @@ describe("SceneLayout (embed overlays)", () => {
         });
         const overlay = container.querySelector('[data-testid="overlay"]');
         expect(overlay).toBeTruthy();
+        const wrapper = overlay?.parentElement;
+        expect(wrapper?.style.left).toBe("16px");
+        expect(wrapper?.style.right).toBe("auto");
         cleanup();
     });
 

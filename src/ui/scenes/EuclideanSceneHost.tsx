@@ -17,6 +17,7 @@ import {
 import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolygon";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
+import { cropToCenteredSquare } from "@/render/crop";
 import {
     type CaptureRequestKind,
     createRenderEngine,
@@ -64,6 +65,15 @@ const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
     halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ];
 
+const MODE_TO_CAPTURE_KIND: Record<ImageExportMode, CaptureRequestKind> = {
+    composite: "composite",
+    webgl: "webgl",
+    "square-composite": "composite",
+    "square-webgl": "webgl",
+};
+
+const SQUARE_MODES: ReadonlySet<ImageExportMode> = new Set(["square-composite", "square-webgl"]);
+
 function cloneCircleInversionState(state: CircleInversionState): CircleInversionState {
     return {
         fixedCircle: {
@@ -110,11 +120,11 @@ function pad(value: number): string {
     return value.toString().padStart(2, "0");
 }
 
-function buildFilename(kind: CaptureRequestKind): string {
+function buildFilename(mode: ImageExportMode): string {
     const now = new Date();
     const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    return `hp-capture-${kind}-${datePart}-${timePart}.png`;
+    return `hp-capture-${mode}-${datePart}-${timePart}.png`;
 }
 
 type PlaneDragState = {
@@ -895,13 +905,15 @@ export function EuclideanSceneHost({
             });
             return;
         }
-        const primaryKind: CaptureRequestKind = exportMode === "webgl" ? "webgl" : "composite";
+        const primaryKind = MODE_TO_CAPTURE_KIND[exportMode];
+        let resolvedMode: ImageExportMode = exportMode;
         let canvasForExport = engine.capture(primaryKind);
         let usedKind: CaptureRequestKind = primaryKind;
         if (!canvasForExport && primaryKind === "webgl") {
             canvasForExport = engine.capture("composite");
             if (canvasForExport) {
                 usedKind = "composite";
+                resolvedMode = SQUARE_MODES.has(exportMode) ? "square-composite" : "composite";
             }
         }
         if (!canvasForExport) {
@@ -911,8 +923,11 @@ export function EuclideanSceneHost({
             });
             return;
         }
+        if (SQUARE_MODES.has(resolvedMode)) {
+            canvasForExport = cropToCenteredSquare(canvasForExport);
+        }
         const dataUrl = exportPNG(canvasForExport);
-        const filename = buildFilename(usedKind);
+        const filename = buildFilename(resolvedMode);
         const success = downloadDataUrl(filename, dataUrl);
         if (!success) {
             setExportStatus({
@@ -1050,6 +1065,13 @@ export function EuclideanSceneHost({
         </>
     );
 
+    const handleOverlaySnapToggle = useCallback(
+        (enabled: boolean) => {
+            setSnapEnabled(enabled);
+        },
+        [setSnapEnabled],
+    );
+
     const overlay = useMemo(() => {
         if (!embed) return null;
 
@@ -1102,6 +1124,20 @@ export function EuclideanSceneHost({
                 ) : null}
             </EmbedOverlayPanel>
         );
+        const overlayExtras = {
+            showHandles,
+            toggleHandles,
+            halfPlaneControls:
+                scene.key === "euclideanHalfPlanes"
+                    ? {
+                          presetGroups,
+                          activePresetId,
+                          selectPreset: setFromPreset,
+                          snapEnabled,
+                          setSnapEnabled: handleOverlaySnapToggle,
+                      }
+                    : undefined,
+        };
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
         }
@@ -1109,10 +1145,7 @@ export function EuclideanSceneHost({
             scene,
             renderBackend: renderMode,
             controls: defaultOverlay,
-            extras: {
-                showHandles,
-                toggleHandles,
-            },
+            extras: overlayExtras,
         });
     }, [
         embed,
@@ -1120,6 +1153,11 @@ export function EuclideanSceneHost({
         scene,
         showHandles,
         toggleHandles,
+        presetGroups,
+        activePresetId,
+        setFromPreset,
+        snapEnabled,
+        handleOverlaySnapToggle,
         multiPlaneConfig,
         multiPlaneSides,
         handleMultiPlaneSidesChange,
