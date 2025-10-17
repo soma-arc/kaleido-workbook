@@ -6,6 +6,7 @@ import type { SphericalSceneState } from "@/geom/spherical/types";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import {
     createSceneId,
+    type FacingMirrorSceneConfig,
     type SceneDefinition,
     type SceneDefinitionInput,
     type SceneId,
@@ -29,6 +30,17 @@ const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
         { id: "hinge", x: 0, y: 0, fixed: true },
     ],
 ];
+
+const FACING_MIRROR_HALF_PLANES = [
+    normalizeHalfPlane({ anchor: { x: -0.5, y: 0 }, normal: { x: 1, y: 0 } }),
+    normalizeHalfPlane({ anchor: { x: 0.5, y: 0 }, normal: { x: -1, y: 0 } }),
+] as const;
+
+const FACING_MIRROR_CONFIG: FacingMirrorSceneConfig = {
+    rectangleCenter: { x: 0, y: 0 },
+    rectangleHalfExtents: { x: 0.25, y: 0.25 },
+    fallbackColor: { r: 0.86, g: 0.89, b: 0.96, a: 0.95 },
+};
 
 const REGULAR_SQUARE_CONFIG = createRegularPolygonSceneConfig({
     sides: 4,
@@ -74,6 +86,14 @@ function cloneControlPointsList(
     ]);
 }
 
+function cloneFacingMirrorConfig(config: FacingMirrorSceneConfig): FacingMirrorSceneConfig {
+    return {
+        rectangleCenter: { ...config.rectangleCenter },
+        rectangleHalfExtents: { ...config.rectangleHalfExtents },
+        fallbackColor: { ...config.fallbackColor },
+    };
+}
+
 type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 type SceneAlias =
@@ -85,6 +105,7 @@ type SceneAlias =
     | "euclideanHalfPlanes"
     | "euclideanHinge"
     | "euclideanCircleInversion"
+    | "facingMirrorRoom"
     | "euclideanRegularSquare"
     | "euclideanRegularPentagon"
     | "euclideanRegularHexagon"
@@ -198,6 +219,19 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
                 rotation: 0,
             },
         },
+    },
+    {
+        key: "facingMirrorRoom",
+        label: "Facing Mirrors",
+        geometry: GEOMETRY_KIND.euclidean,
+        variant: "facing-mirror-room",
+        description:
+            "Displays two opposing mirrors with a central square panel that can display textures.",
+        supportsHandles: false,
+        editable: false,
+        allowPlaneDrag: false,
+        initialHalfPlanes: cloneHalfPlanes(FACING_MIRROR_HALF_PLANES),
+        facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),
     },
     {
         key: "euclideanRegularSquare",
