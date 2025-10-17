@@ -14,6 +14,7 @@ import {
     derivePointsFromHalfPlane,
     type HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolygon";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import { cropToCenteredSquare } from "@/render/crop";
@@ -36,6 +37,7 @@ import {
     type ImageExportStatus,
 } from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
+import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
@@ -199,6 +201,7 @@ export function EuclideanSceneHost({
     const frameRequestRef = useRef<number | null>(null);
     const lastFrameTimeRef = useRef<number>(0);
     const maxFrameRateInputId = useId();
+    const multiPlaneSliderId = useId();
     const [exportMode, setExportMode] = useState<ImageExportMode>("composite");
     const [exportStatus, setExportStatus] = useState<ImageExportStatus>(null);
 
@@ -308,6 +311,24 @@ export function EuclideanSceneHost({
 
     const controlAssignments = scene.controlAssignments;
 
+    const multiPlaneConfig = scene.multiPlaneConfig ?? null;
+    const [multiPlaneSides, setMultiPlaneSides] = useState<number | null>(
+        () => multiPlaneConfig?.initialSides ?? null,
+    );
+
+    useEffect(() => {
+        if (!multiPlaneConfig) {
+            return;
+        }
+        setMultiPlaneSides(multiPlaneConfig.initialSides);
+    }, [multiPlaneConfig]);
+
+    const handleMultiPlaneSidesChange = useCallback((nextSides: number) => {
+        setMultiPlaneSides(nextSides);
+        setEditableHalfPlanes(null);
+        setExportStatus(null);
+    }, []);
+
     const presetGroups = useMemo(
         () => getPresetGroupsForGeometry(scene.geometry),
         [scene.geometry],
@@ -337,6 +358,13 @@ export function EuclideanSceneHost({
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
             return null;
         }
+        if (multiPlaneConfig) {
+            const sides = multiPlaneSides ?? multiPlaneConfig.initialSides;
+            return generateRegularPolygonHalfplanes(sides, {
+                radius: multiPlaneConfig.radius,
+                initialAngle: multiPlaneConfig.initialAngle,
+            });
+        }
         if (scene.initialHalfPlanes) {
             return scene.initialHalfPlanes.map((plane) => normalizeHalfPlane(plane));
         }
@@ -349,7 +377,14 @@ export function EuclideanSceneHost({
         } catch {
             return null;
         }
-    }, [scene.geometry, scene.initialHalfPlanes, params, paramError]);
+    }, [
+        scene.geometry,
+        scene.initialHalfPlanes,
+        params,
+        paramError,
+        multiPlaneConfig,
+        multiPlaneSides,
+    ]);
 
     const normalizedHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
@@ -927,6 +962,24 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={renderMode}
             />
+            {multiPlaneConfig ? (
+                <div style={{ display: "grid", gap: "4px" }}>
+                    <label htmlFor={multiPlaneSliderId} style={{ fontWeight: 600 }}>
+                        Mirrors: {multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    </label>
+                    <input
+                        id={multiPlaneSliderId}
+                        type="range"
+                        min={multiPlaneConfig.minSides}
+                        max={multiPlaneConfig.maxSides}
+                        step={1}
+                        value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                        onChange={(event) =>
+                            handleMultiPlaneSidesChange(Number(event.target.value))
+                        }
+                    />
+                </div>
+            ) : null}
             {showTriangleControls && (
                 <>
                     <PresetSelector
@@ -1021,6 +1074,34 @@ export function EuclideanSceneHost({
 
     const overlay = useMemo(() => {
         if (!embed) return null;
+
+        if (multiPlaneConfig) {
+            const overlayContent = (
+                <MultiPlaneOverlayControls
+                    minSides={multiPlaneConfig.minSides}
+                    maxSides={multiPlaneConfig.maxSides}
+                    value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    onChange={handleMultiPlaneSidesChange}
+                />
+            );
+            if (!scene.embedOverlayFactory) {
+                return overlayContent;
+            }
+            return scene.embedOverlayFactory({
+                scene,
+                renderBackend: renderMode,
+                controls: null,
+                extras: {
+                    multiPlaneControls: {
+                        minSides: multiPlaneConfig.minSides,
+                        maxSides: multiPlaneConfig.maxSides,
+                        value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                        onChange: handleMultiPlaneSidesChange,
+                    },
+                },
+            });
+        }
+
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
                 {scene.supportsHandles ? (
@@ -1068,6 +1149,7 @@ export function EuclideanSceneHost({
         });
     }, [
         embed,
+        renderMode,
         scene,
         showHandles,
         toggleHandles,
@@ -1076,7 +1158,9 @@ export function EuclideanSceneHost({
         setFromPreset,
         snapEnabled,
         handleOverlaySnapToggle,
-        renderMode,
+        multiPlaneConfig,
+        multiPlaneSides,
+        handleMultiPlaneSidesChange,
     ]);
 
     const canvas = (

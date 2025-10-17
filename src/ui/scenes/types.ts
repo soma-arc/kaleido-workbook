@@ -5,6 +5,7 @@ import type {
     ControlPointAssignment,
     HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import type { RegularPolygonOptions } from "@/geom/primitives/regularPolygon";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import type { CircleInversionSceneConfig } from "./circleInversionConfig";
@@ -15,6 +16,13 @@ export type FacingMirrorSceneConfig = {
     fallbackColor: { r: number; g: number; b: number; a: number };
 };
 
+export type MultiPlaneSceneConfig = {
+    minSides: number;
+    maxSides: number;
+    initialSides: number;
+    radius: number;
+    initialAngle?: RegularPolygonOptions["initialAngle"];
+};
 export type SceneVariant = string;
 
 export type SceneKey = {
@@ -58,6 +66,7 @@ export interface SceneDefinition {
      * 実装しない場合はホスト側が用意した既定 UI が利用される。
      */
     embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
+    multiPlaneConfig?: MultiPlaneSceneConfig;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
