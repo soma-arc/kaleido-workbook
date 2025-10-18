@@ -3,6 +3,7 @@ import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primiti
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import { euclideanCircleInversionScene } from "@/scenes/euclidean/circle-inversion";
 import { euclideanMultiPlaneScene } from "@/scenes/euclidean/multi-plane";
 import { hyperbolicTripleReflectionScene } from "@/scenes/hyperbolic/tiling-333";
 import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
@@ -23,17 +24,6 @@ const HINGE_HALF_PLANES = [
     normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: -1, y: 0 } }),
     normalizeHalfPlane({ anchor: { x: 0, y: 0 }, normal: { x: 0, y: 1 } }),
 ] as const;
-
-const CIRCLE_INVERSION_LINE_HALF_PLANE = [
-    normalizeHalfPlane({ anchor: { x: -0.6, y: 0 }, normal: { x: 0, y: 1 } }),
-] as const;
-
-const CIRCLE_INVERSION_LINE_CONTROL_POINTS: HalfPlaneControlPoints[] = [
-    [
-        { id: "circle-line-start", x: -0.6, y: 0, fixed: false },
-        { id: "circle-line-end", x: 0.6, y: 0.2, fixed: false },
-    ],
-];
 
 const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
     [
@@ -113,6 +103,10 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 const HYPERBOLIC_TRIPLE_REFLECTION_SCENE: SceneDefinitionEntry = {
     ...hyperbolicTripleReflectionScene,
+};
+
+const EUCLIDEAN_CIRCLE_INVERSION_SCENE: SceneDefinitionEntry = {
+    ...euclideanCircleInversionScene,
 };
 
 const EUCLIDEAN_MULTI_PLANE_SCENE: SceneDefinitionEntry = {
@@ -241,53 +235,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         ],
         initialControlPoints: cloneControlPointsList(HINGE_INITIAL_CONTROL_POINTS),
     },
-    {
-        key: "euclideanCircleInversion",
-        label: "Circle Inversion",
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "circle-inversion",
-        description:
-            "Inverts a draggable rectangle across a fixed circle using the WebGL pipeline.",
-        supportsHandles: true,
-        editable: true,
-        defaultHandleSpacing: 1.2,
-        initialHalfPlanes: cloneHalfPlanes(CIRCLE_INVERSION_LINE_HALF_PLANE),
-        controlAssignments: [
-            { planeIndex: 0, pointIndex: 0, id: "circle-line-start" },
-            { planeIndex: 0, pointIndex: 1, id: "circle-line-end" },
-        ],
-        initialControlPoints: cloneControlPointsList(CIRCLE_INVERSION_LINE_CONTROL_POINTS),
-        inversionConfig: {
-            fixedCircle: {
-                center: { x: 0, y: 0 },
-                radius: 0.6,
-            },
-            line: {
-                start: { x: -0.6, y: 0 },
-                end: { x: 0.6, y: 0.2 },
-            },
-            rectangle: {
-                center: { x: 0.3, y: 0 },
-                halfExtents: { x: 0.15, y: 0.1 },
-                rotation: 0,
-            },
-            secondaryRectangle: {
-                center: { x: -0.25, y: 0.15 },
-                halfExtents: { x: 0.12, y: 0.08 },
-                rotation: 0,
-            },
-            display: {
-                showReferenceLine: true,
-                showInvertedLine: true,
-                showReferenceRectangle: true,
-                showInvertedRectangle: true,
-                textureEnabled: true,
-                showSecondaryRectangle: true,
-                showSecondaryInvertedRectangle: true,
-            },
-            textureAspect: null,
-        },
-    },
+    EUCLIDEAN_CIRCLE_INVERSION_SCENE,
     EUCLIDEAN_MULTI_PLANE_SCENE,
     {
         key: "facingMirrorRoom",
