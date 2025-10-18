@@ -251,6 +251,8 @@ export function EuclideanSceneHost({
     const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
     const loadPresetTexture = textureInput.loadPreset;
     const baseTextureSlot = textureInput.slots[TEXTURE_SLOTS.base];
+    const baseTextureLayer = baseTextureSlot?.layer ?? null;
+    const baseTextureSource = baseTextureLayer?.source ?? null;
     const defaultCircleTextureApplied = useRef(false);
     const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
     const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
@@ -273,7 +275,7 @@ export function EuclideanSceneHost({
         [textureInput.textures],
     );
 
-    const baseSlotLayer = baseTextureSlot?.layer ?? null;
+    const baseSlotLayer = baseTextureLayer;
     const baseSlotStatus = baseTextureSlot?.status ?? "idle";
 
     useEffect(() => {
@@ -703,6 +705,39 @@ export function EuclideanSceneHost({
         normalizedHalfPlanes,
         renderEuclideanScene,
     ]);
+
+    useEffect(() => {
+        const source = baseTextureSource;
+        if (!source || !(source.width > 0) || !(source.height > 0)) {
+            return;
+        }
+        const aspect = source.width / source.height;
+        const baseState =
+            circleInversionState ??
+            sceneCircleInitial ??
+            (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
+        if (!baseState) {
+            return;
+        }
+        const currentHalfExtents = baseState.rectangle.halfExtents;
+        const currentAspect =
+            baseState.textureAspect ??
+            (currentHalfExtents.y > 0 ? currentHalfExtents.x / currentHalfExtents.y : aspect);
+        if (Math.abs(currentAspect - aspect) <= 1e-6) {
+            return;
+        }
+        if (!(currentHalfExtents.y > 0)) {
+            return;
+        }
+        const nextState = cloneCircleInversionState(baseState);
+        const normalizedHeight = currentHalfExtents.y;
+        nextState.rectangle.halfExtents = {
+            x: normalizedHeight * aspect,
+            y: normalizedHeight,
+        };
+        nextState.textureAspect = aspect;
+        setCircleInversionState(nextState);
+    }, [baseTextureSource, circleInversionState, sceneCircleInitial, scene.inversionConfig]);
 
     const renderHyperbolicScene = useCallback(() => {
         const targetParams = scene.fixedHyperbolicParams ?? params;

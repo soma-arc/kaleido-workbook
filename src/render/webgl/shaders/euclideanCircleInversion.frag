@@ -17,6 +17,7 @@ uniform vec4 uCircleColor;
 uniform float uRectFeatherPx;
 uniform float uCircleStrokeWidthPx;
 uniform float uCircleFeatherPx;
+uniform float uTextureAspect;
 uniform vec2 uRect2Center;
 uniform vec2 uRect2HalfExtents;
 uniform float uRect2Rotation;
@@ -104,19 +105,21 @@ float lineStrokeMask(float distPx, float strokeWidthPx, float featherPx) {
 }
 
 vec2 applyTextureTransform(vec2 uv) {
-    vec2 centered = (uv - 0.5) * uTextureScale;
+    vec2 scaled = uv * uTextureScale;
     float c = cos(uTextureRotation);
     float s = sin(uTextureRotation);
-    vec2 rotated = vec2(c * centered.x - s * centered.y, s * centered.x + c * centered.y);
-    return rotated + 0.5 + uTextureOffset;
+    vec2 rotated = vec2(c * scaled.x - s * scaled.y, s * scaled.x + c * scaled.y);
+    return rotated + uTextureOffset;
 }
 
 vec4 sampleRectangleColor(vec2 local, vec4 fallbackColor) {
     if (uTextureEnabled == 0) {
         return fallbackColor;
     }
-    vec2 uv = (local / (uRectHalfExtents * 2.0)) + 0.5;
-    uv = applyTextureTransform(uv);
+    vec2 safeHalfExtents = max(uRectHalfExtents, vec2(1e-6));
+    float aspect = max(uTextureAspect, 1e-6);
+    vec2 normalized = vec2(local.x / (safeHalfExtents.y * aspect), local.y / safeHalfExtents.y);
+    vec2 uv = applyTextureTransform(normalized);
     vec4 texColor = texture(uRectTexture, uv);
     float opacity = clamp(mix(fallbackColor.a, texColor.a, uTextureOpacity), 0.0, 1.0);
     vec3 blended = mix(fallbackColor.rgb, texColor.rgb, uTextureOpacity);

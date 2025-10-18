@@ -276,7 +276,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             secondaryRectangle: {
                 center: { x: -0.25, y: 0.15 },
                 halfExtents: { x: 0.12, y: 0.08 },
-                rotation: 0.35,
+                rotation: 0,
             },
             display: {
                 showReferenceLine: true,
@@ -287,6 +287,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
                 showSecondaryRectangle: true,
                 showSecondaryInvertedRectangle: true,
             },
+            textureAspect: null,
         },
     },
     {

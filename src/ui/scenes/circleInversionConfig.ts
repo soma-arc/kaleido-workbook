@@ -31,6 +31,7 @@ export interface CircleInversionState {
     rectangle: CircleInversionRectangleState;
     secondaryRectangle: CircleInversionRectangleState;
     display: CircleInversionDisplayOptions;
+    textureAspect?: number | null;
 }
 
 export type CircleInversionSceneConfig = CircleInversionState;
@@ -62,6 +63,7 @@ export function cloneCircleInversionState(state: CircleInversionState): CircleIn
             rotation: state.secondaryRectangle.rotation,
         },
         display: { ...state.display },
+        textureAspect: state.textureAspect ?? null,
     };
 }
 

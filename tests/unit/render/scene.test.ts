@@ -34,11 +34,30 @@ describe("buildEuclideanScene", () => {
     it("includes inversion data when provided", () => {
         const inversion: CircleInversionState = {
             fixedCircle: { center: { x: 0, y: 0 }, radius: 0.5 },
+            line: {
+                start: { x: -0.4, y: -0.1 },
+                end: { x: 0.45, y: 0.2 },
+            },
             rectangle: {
                 center: { x: 0.25, y: -0.1 },
                 halfExtents: { x: 0.2, y: 0.12 },
                 rotation: 0.1,
             },
+            secondaryRectangle: {
+                center: { x: -0.3, y: 0.15 },
+                halfExtents: { x: 0.18, y: 0.09 },
+                rotation: 0.25,
+            },
+            display: {
+                showReferenceLine: true,
+                showInvertedLine: true,
+                showReferenceRectangle: true,
+                showInvertedRectangle: true,
+                textureEnabled: true,
+                showSecondaryRectangle: true,
+                showSecondaryInvertedRectangle: true,
+            },
+            textureAspect: 1.8,
         };
         const scene = buildEuclideanScene(PLANES, VIEWPORT, { inversion });
         expect(scene.inversion).toEqual(inversion);

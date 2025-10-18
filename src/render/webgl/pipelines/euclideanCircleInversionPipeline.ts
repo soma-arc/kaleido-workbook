@@ -29,6 +29,7 @@ const LINE_COLOR = [0.94, 0.94, 0.98, 0.85] as const;
 const INVERTED_LINE_COLOR = [0.18, 0.76, 0.86, 0.75] as const;
 const LINE_STROKE_WIDTH_PX = 2.0;
 const LINE_FEATHER_PX = 1.1;
+const DEFAULT_TEXTURE_ASPECT = 1;
 
 export type CircleInversionLineUniforms = {
     start: Vec2;
@@ -155,6 +156,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
         gl.uniform2f(this.uniforms.textureScale, 1, 1);
         gl.uniform1f(this.uniforms.textureRotation, 0);
         gl.uniform1f(this.uniforms.textureOpacity, 1);
+        gl.uniform1f(this.uniforms.textureAspect, DEFAULT_TEXTURE_ASPECT);
         gl.uniform1i(this.uniforms.showReferenceRectangle, 1);
         gl.uniform1i(this.uniforms.showInvertedRectangle, 1);
         gl.uniform1i(this.uniforms.showSecondaryRectangle, 1);
@@ -229,6 +231,12 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
             resolvedState.rectangle.halfExtents.y,
         );
         gl.uniform1f(this.uniforms.rectRotation, resolvedState.rectangle.rotation);
+        const textureAspect =
+            resolvedState.textureAspect && resolvedState.textureAspect > 0
+                ? resolvedState.textureAspect
+                : resolvedState.rectangle.halfExtents.x /
+                  Math.max(resolvedState.rectangle.halfExtents.y, 1e-6);
+        gl.uniform1f(this.uniforms.textureAspect, textureAspect);
         gl.uniform2f(
             this.uniforms.secondaryRectCenter,
             resolvedState.secondaryRectangle.center.x,
@@ -299,6 +307,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
             gl.uniform2f(this.uniforms.textureScale, 1, 1);
             gl.uniform1f(this.uniforms.textureRotation, 0);
             gl.uniform1f(this.uniforms.textureOpacity, 1);
+            gl.uniform1f(this.uniforms.textureAspect, textureAspect);
         }
 
         gl.clearColor(0, 0, 0, 0);
@@ -339,6 +348,7 @@ type UniformLocations = {
     secondaryRectColor: WebGLUniformLocation;
     secondaryInvertedColor: WebGLUniformLocation;
     secondaryRectFeatherPx: WebGLUniformLocation;
+    textureAspect: WebGLUniformLocation;
     showReferenceRectangle: WebGLUniformLocation;
     showInvertedRectangle: WebGLUniformLocation;
     showSecondaryRectangle: WebGLUniformLocation;
@@ -395,6 +405,7 @@ function resolveInversionState(
                 rotation: runtimeState.secondaryRectangle.rotation,
             },
             display: { ...runtimeState.display },
+            textureAspect: runtimeState.textureAspect ?? null,
         };
     }
     if (config) {
@@ -418,6 +429,7 @@ function resolveInversionState(
                 rotation: config.secondaryRectangle.rotation,
             },
             display: { ...config.display },
+            textureAspect: config.textureAspect ?? null,
         };
     }
     return null;
@@ -478,6 +490,7 @@ function resolveUniformLocations(
         secondaryRectColor: getUniformLocation(gl, program, "uRect2Color"),
         secondaryInvertedColor: getUniformLocation(gl, program, "uRect2InvertedColor"),
         secondaryRectFeatherPx: getUniformLocation(gl, program, "uRect2FeatherPx"),
+        textureAspect: getUniformLocation(gl, program, "uTextureAspect"),
         showReferenceRectangle: getUniformLocation(gl, program, "uShowReferenceRectangle"),
         showInvertedRectangle: getUniformLocation(gl, program, "uShowInvertedRectangle"),
         showSecondaryRectangle: getUniformLocation(gl, program, "uShowSecondaryRectangle"),

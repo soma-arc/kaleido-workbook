@@ -32,6 +32,7 @@ const BASE_STATE = {
         showSecondaryRectangle: true,
         showSecondaryInvertedRectangle: true,
     },
+    textureAspect: null,
 } as const;
 
 describe("circle inversion config helpers", () => {
