@@ -88,3 +88,21 @@
 - 将来的に `sceneUniforms` を型安全にするため `SceneRuntimeConfig` ジェネリクスを導入。
 - SceneHost 間で共有する UI コンポーネント群を `src/ui/scenes/components/` 配下に整理。
 - Hyperbolic シーンの追加（共役操作など）に備えた state machine 設計を検討。
+
+## フェーズC 設計メモ（2025-10-19）
+- **ホスト分割方針**
+  - `HyperbolicSceneHost` を新設し、既存 `EuclideanSceneHost` から双曲描画 (`renderHyperbolicScene`) とテクスチャピッカー程度の共通処理のみを抽出。Euclidean 専用ハンドル/円反転ロジックを排除する。
+  - `EuclideanSceneHost` は Euclidean 専用のハンドル／半平面ドラッグ／円反転 UI に集中させ、共通フック (`useRenderEngine`, `useSceneTextures`) で WebGL 呼び出しを共有。
+- **controlsFactory/overlayFactory**
+  - `SceneDefinition` に `controlsFactory?: (ctx: SceneControlsContext) => ReactNode` を追加し、シーン固有 UI を定義側に寄せる。`ctx` には `triangle`, `textureInput`, `setSnapEnabled` など必要ハンドルを提供。
+  - 既存の `euclideanHalfPlanes` `embedOverlayFactory` は `controlsFactory` へ移行し、`EuclideanSceneHost` では `scene.controlsFactory?.(context)` を呼び出すだけにする。
+- **共通フック**
+  - `useRenderEngineWithCanvas(canvasRef, mode)` で `createRenderEngine` 初期化と dispose を管理。
+  - `useSceneTextures` で `useTextureInput` と `TEXTURE_SLOTS` 操作をラップ。
+- **データフロー**
+  - `sceneUniforms`（Phase Bで導入予定）に加え、`SceneRuntimeState` をジェネリクスで扱えるよう型設計。Hyperbolic/Euclidean で個別 state を扱い、ホスト→レンダラー間の契約を明示。
+- **移行ステップ**
+  1. `useRenderEngineWithCanvas` / `useSceneTextures` を追加し、`EuclideanSceneHost` の既存コードをフック利用に置き換える。
+  2. `SceneDefinition` に `controlsFactory` を追加し、`euclideanMultiPlane` と `hyperbolic-tiling-333` を先行移行。
+  3. `HyperbolicSceneHost` を実装し、`App.tsx` で geometry ごとにホストを切り替える。
+  4. 既存テスト（`app.embed.test.tsx` など）を更新し、`pnpm typecheck` / `pnpm test` を実行。

@@ -4,6 +4,7 @@ import { detectRenderMode, type RenderMode } from "@/render/engine";
 import { useTriangleParams } from "./hooks/useTriangleParams";
 import { DEFAULT_SCENE_ID, getSceneDefinition, type SceneId } from "./scenes";
 import { EuclideanSceneHost } from "./scenes/EuclideanSceneHost";
+import { HyperbolicSceneHost } from "./scenes/HyperbolicSceneHost";
 import { SphericalSceneHost } from "./scenes/SphericalSceneHost";
 import { useSceneRegistry } from "./scenes/useSceneRegistry";
 import { applyEmbedClass, parseSceneEmbedQuery, syncSceneEmbedQuery } from "./utils/queryParams";
@@ -70,6 +71,19 @@ export function App(): JSX.Element {
                 scenes={scenes}
                 activeSceneId={selectedSceneId}
                 onSceneChange={setSelectedSceneId}
+                embed={embed}
+            />
+        );
+    }
+
+    if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
+        return (
+            <HyperbolicSceneHost
+                scene={scene}
+                scenes={scenes}
+                activeSceneId={selectedSceneId}
+                onSceneChange={setSelectedSceneId}
+                triangle={triangleParams}
                 embed={embed}
             />
         );

@@ -1,3 +1,4 @@
+export * from "./HyperbolicSceneHost";
 export * from "./registry";
 export * from "./SphericalSceneHost";
 export * from "./sceneDefinitions";
