@@ -1,7 +1,6 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
-import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_SINGLE_HALF_PLANE_SCENE_KEY = "euclideanSingleHalfPlane" as const;

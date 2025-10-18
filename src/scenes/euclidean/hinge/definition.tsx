@@ -1,5 +1,4 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
@@ -21,17 +20,6 @@ const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
         { id: "hinge", x: 0, y: 0, fixed: true },
     ],
 ];
-
-function cloneHalfPlanes(
-    planes: readonly { anchor: { x: number; y: number }; normal: { x: number; y: number } }[],
-): HalfPlane[] {
-    return planes.map((plane) =>
-        normalizeHalfPlane({
-            anchor: { x: plane.anchor.x, y: plane.anchor.y },
-            normal: { x: plane.normal.x, y: plane.normal.y },
-        }),
-    );
-}
 
 function cloneControlPointsList(
     controlPoints: readonly [
