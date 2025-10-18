@@ -4,6 +4,7 @@ import {
     cloneCircleInversionState,
     updateCircleInversionDisplay,
     updateCircleInversionLineFromControls,
+    updateCircleInversionRectangleCenter,
 } from "@/ui/scenes/circleInversionConfig";
 
 const BASE_STATE = {
@@ -85,5 +86,21 @@ describe("circle inversion config helpers", () => {
             showReferenceLine: state.display.showReferenceLine,
         });
         expect(next).toBe(state);
+    });
+
+    it("updates rectangle centers via rectangle updater", () => {
+        const state = cloneCircleInversionState(BASE_STATE);
+        const nextPrimary = updateCircleInversionRectangleCenter(state, "primary", {
+            x: 0.5,
+            y: -0.25,
+        });
+        expect(nextPrimary.rectangle.center).toEqual({ x: 0.5, y: -0.25 });
+        expect(nextPrimary.secondaryRectangle.center).toEqual(state.secondaryRectangle.center);
+
+        const nextSecondary = updateCircleInversionRectangleCenter(nextPrimary, "secondary", {
+            x: -0.1,
+            y: 0.3,
+        });
+        expect(nextSecondary.secondaryRectangle.center).toEqual({ x: -0.1, y: 0.3 });
     });
 });

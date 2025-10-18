@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import {
@@ -50,10 +51,12 @@ import { downloadDataUrl } from "@/ui/utils/download";
 import type { UseTriangleParamsResult } from "../hooks/useTriangleParams";
 import {
     type CircleInversionDisplayOptions,
+    type CircleInversionRectangleState,
     type CircleInversionState,
     cloneCircleInversionState,
     updateCircleInversionDisplay,
     updateCircleInversionLineFromControls,
+    updateCircleInversionRectangleCenter,
 } from "./circleInversionConfig";
 import { SceneLayout } from "./layouts";
 import { SCENE_IDS } from "./sceneDefinitions";
@@ -84,8 +87,12 @@ function findCircleLineControls(
     return null;
 }
 
-function rectangleContainsPoint(state: CircleInversionState, point: { x: number; y: number }) {
-    const rect = state.rectangle;
+type CircleInversionOverlayTarget = {
+    kind: "circle-inversion-rectangle";
+    rectangle: "primary" | "secondary";
+};
+
+function rectangleContains(rect: CircleInversionRectangleState, point: Vec2): boolean {
     const c = Math.cos(-rect.rotation);
     const s = Math.sin(-rect.rotation);
     const dx = point.x - rect.center.x;
@@ -96,6 +103,40 @@ function rectangleContainsPoint(state: CircleInversionState, point: { x: number;
         Math.abs(localX) <= rect.halfExtents.x + 1e-6 &&
         Math.abs(localY) <= rect.halfExtents.y + 1e-6
     );
+}
+
+function hitTestCircleInversionRectangles(
+    state: CircleInversionState | null,
+    point: Vec2,
+): CircleInversionOverlayTarget | null {
+    if (!state) {
+        return null;
+    }
+    const overlays: Array<{
+        key: CircleInversionOverlayTarget["rectangle"];
+        rect: CircleInversionRectangleState;
+        visible: boolean;
+    }> = [
+        {
+            key: "secondary",
+            rect: state.secondaryRectangle,
+            visible:
+                state.display.showSecondaryRectangle ||
+                state.display.showSecondaryInvertedRectangle,
+        },
+        {
+            key: "primary",
+            rect: state.rectangle,
+            visible: state.display.showReferenceRectangle || state.display.showInvertedRectangle,
+        },
+    ];
+    for (const overlay of overlays) {
+        if (!overlay.visible) continue;
+        if (rectangleContains(overlay.rect, point)) {
+            return { kind: "circle-inversion-rectangle", rectangle: overlay.key };
+        }
+    }
+    return null;
 }
 
 function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
@@ -137,13 +178,14 @@ type HandleDragState = {
     controlPointId: string | null;
 };
 
-type CircleInversionDragState = {
-    type: "circle-inversion";
+type OverlayDragState = {
+    type: "overlay";
     pointerId: number;
-    offset: { x: number; y: number };
+    target: CircleInversionOverlayTarget;
+    offset: Vec2;
 };
 
-type DragState = PlaneDragState | HandleDragState | CircleInversionDragState;
+type DragState = PlaneDragState | HandleDragState | OverlayDragState;
 
 export type EuclideanSceneHostProps = {
     scene: SceneDefinition;
@@ -636,24 +678,36 @@ export function EuclideanSceneHost({
         const ratio = getCanvasPixelRatio(canvas);
         const worldPoint = screenToWorld(viewport, screen);
 
-        let activeInversionState = circleInversionState;
-        if (!activeInversionState && scene.inversionConfig) {
-            activeInversionState = cloneCircleInversionState(scene.inversionConfig);
-            setCircleInversionState(activeInversionState);
-        }
-        if (activeInversionState && rectangleContainsPoint(activeInversionState, worldPoint)) {
+        const overlayTarget = hitTestCircleInversionRectangles(
+            effectiveCircleInversion,
+            worldPoint,
+        );
+        if (overlayTarget) {
+            const referenceState =
+                circleInversionState ??
+                sceneCircleInitial ??
+                (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
+            if (!referenceState) {
+                return;
+            }
             try {
                 canvas.setPointerCapture(e.pointerId);
             } catch {
                 // ignore
             }
+            const rect =
+                overlayTarget.rectangle === "primary"
+                    ? referenceState.rectangle
+                    : referenceState.secondaryRectangle;
+            const offset: Vec2 = {
+                x: worldPoint.x - rect.center.x,
+                y: worldPoint.y - rect.center.y,
+            };
             setDrag({
-                type: "circle-inversion",
+                type: "overlay",
                 pointerId: e.pointerId,
-                offset: {
-                    x: worldPoint.x - activeInversionState.rectangle.center.x,
-                    y: worldPoint.y - activeInversionState.rectangle.center.y,
-                },
+                target: overlayTarget,
+                offset,
             });
             return;
         }
@@ -808,26 +862,34 @@ export function EuclideanSceneHost({
             return;
         }
 
-        if (drag.type === "circle-inversion") {
+        if (drag.type === "overlay") {
             const pointer = getPointer(e);
             const worldPoint = screenToWorld(viewport, pointer);
             const baseState =
                 circleInversionState ??
+                sceneCircleInitial ??
                 (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
             if (!baseState) {
                 return;
             }
-            const nextState = cloneCircleInversionState(baseState);
-            nextState.rectangle.center = {
-                x: worldPoint.x - drag.offset.x,
-                y: worldPoint.y - drag.offset.y,
-            };
-            setCircleInversionState(nextState);
-            const planes =
+            const updatedState = updateCircleInversionRectangleCenter(
+                baseState,
+                drag.target.rectangle,
+                {
+                    x: worldPoint.x - drag.offset.x,
+                    y: worldPoint.y - drag.offset.y,
+                },
+            );
+            let stateForRender = baseState;
+            if (updatedState !== baseState) {
+                stateForRender = updatedState;
+                setCircleInversionState(updatedState);
+            }
+            const planesForRender =
                 latestEuclideanPlanesRef.current ??
                 normalizedHalfPlanes ??
                 DEFAULT_EUCLIDEAN_PLANES;
-            renderEuclideanScene(planes, currentControlPoints, null, nextState);
+            renderEuclideanScene(planesForRender, currentControlPoints, null, stateForRender);
             return;
         }
 

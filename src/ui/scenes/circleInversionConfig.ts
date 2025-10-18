@@ -107,3 +107,23 @@ export function updateCircleInversionDisplay(
     next.display = nextValues;
     return next;
 }
+
+export type CircleInversionRectangleKey = "primary" | "secondary";
+
+export function updateCircleInversionRectangleCenter(
+    state: CircleInversionState,
+    key: CircleInversionRectangleKey,
+    center: Vec2,
+): CircleInversionState {
+    const current = key === "primary" ? state.rectangle.center : state.secondaryRectangle.center;
+    if (current.x === center.x && current.y === center.y) {
+        return state;
+    }
+    const next = cloneCircleInversionState(state);
+    if (key === "primary") {
+        next.rectangle.center = { x: center.x, y: center.y };
+    } else {
+        next.secondaryRectangle.center = { x: center.x, y: center.y };
+    }
+    return next;
+}

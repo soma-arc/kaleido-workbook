@@ -31,9 +31,13 @@ describe("Circle Inversion scene definition", () => {
         expect(config.fixedCircle.radius).toBeGreaterThan(0);
         expect(config.rectangle.halfExtents.x).toBeGreaterThan(0);
         expect(config.rectangle.halfExtents.y).toBeGreaterThan(0);
+        expect(config.secondaryRectangle.halfExtents.x).toBeGreaterThan(0);
+        expect(config.secondaryRectangle.halfExtents.y).toBeGreaterThan(0);
         expect(config.line.start.x).not.toBe(config.line.end.x);
         expect(config.display.showReferenceLine).toBe(true);
         expect(config.display.showInvertedRectangle).toBe(true);
         expect(config.display.textureEnabled).toBe(true);
+        expect(config.display.showSecondaryRectangle).toBe(true);
+        expect(config.display.showSecondaryInvertedRectangle).toBe(true);
     });
 });
