@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/ui/App";
 import { SCENE_IDS } from "@/ui/scenes";
 import type { EuclideanSceneHostProps } from "@/ui/scenes/EuclideanSceneHost";
+import type { HyperbolicSceneHostProps } from "@/ui/scenes/HyperbolicSceneHost";
 
-const hostSpy = vi.fn<(props: EuclideanSceneHostProps) => void>();
+const euclideanHostSpy = vi.fn<(props: EuclideanSceneHostProps) => void>();
+const hyperbolicHostSpy = vi.fn<(props: HyperbolicSceneHostProps) => void>();
 
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
@@ -17,8 +19,21 @@ vi.mock("@/ui/scenes/EuclideanSceneHost", async () => {
     return {
         ...actual,
         EuclideanSceneHost: (props: EuclideanSceneHostProps) => {
-            hostSpy(props);
+            euclideanHostSpy(props);
             return <div data-testid="euclidean-scene-host" />;
+        },
+    };
+});
+
+vi.mock("@/ui/scenes/HyperbolicSceneHost", async () => {
+    const actual = await vi.importActual<typeof import("@/ui/scenes/HyperbolicSceneHost")>(
+        "@/ui/scenes/HyperbolicSceneHost",
+    );
+    return {
+        ...actual,
+        HyperbolicSceneHost: (props: HyperbolicSceneHostProps) => {
+            hyperbolicHostSpy(props);
+            return <div data-testid="hyperbolic-scene-host" />;
         },
     };
 });
@@ -47,7 +62,8 @@ function renderApp() {
 
 describe("App query parameters", () => {
     beforeEach(() => {
-        hostSpy.mockClear();
+        euclideanHostSpy.mockClear();
+        hyperbolicHostSpy.mockClear();
         setSearchParams({});
         document.body.classList.remove("embed-mode");
     });
@@ -72,7 +88,7 @@ describe("App query parameters", () => {
     it("selects scene and embed mode from query", () => {
         setSearchParams({ scene: SCENE_IDS.euclideanMultiPlane, embed: "1" });
         renderApp();
-        const lastCall = hostSpy.mock.calls.at(-1);
+        const lastCall = euclideanHostSpy.mock.calls.at(-1);
         expect(lastCall).toBeTruthy();
         const props = lastCall?.[0];
         expect(props).toBeTruthy();
@@ -82,12 +98,14 @@ describe("App query parameters", () => {
         expect(document.body.classList.contains("embed-mode")).toBe(true);
     });
 
-    it("falls back to default scene when query is invalid", () => {
+    it("falls back to default scene when query is invalid", async () => {
         setSearchParams({ scene: "invalid" });
         renderApp();
-        const lastCall = hostSpy.mock.calls.at(-1);
-        expect(lastCall).toBeTruthy();
-        const props = lastCall?.[0];
+        await act(async () => {
+            await Promise.resolve();
+        });
+        const props =
+            euclideanHostSpy.mock.calls.at(-1)?.[0] || hyperbolicHostSpy.mock.calls.at(-1)?.[0];
         expect(props).toBeTruthy();
         if (!props) return;
         expect(Object.values(SCENE_IDS)).toContain(props.activeSceneId);
@@ -96,14 +114,15 @@ describe("App query parameters", () => {
 
     it("updates URL when scene changes", () => {
         setSearchParams({ embed: "1" });
+        setSearchParams({ scene: SCENE_IDS.euclideanHalfPlanes, embed: "1" });
         renderApp();
-        const initial = hostSpy.mock.calls.at(-1)?.[0];
+        const initial = euclideanHostSpy.mock.calls.at(-1)?.[0];
         expect(initial).toBeTruthy();
         if (!initial) return;
         act(() => {
             initial.onSceneChange(SCENE_IDS.euclideanHinge);
         });
-        const next = hostSpy.mock.calls.at(-1)?.[0];
+        const next = euclideanHostSpy.mock.calls.at(-1)?.[0];
         expect(next).toBeTruthy();
         if (!next) return;
         expect(next.activeSceneId).toBe(SCENE_IDS.euclideanHinge);

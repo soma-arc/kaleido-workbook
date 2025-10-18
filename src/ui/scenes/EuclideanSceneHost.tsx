@@ -19,12 +19,7 @@ import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolyg
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import { cropToCenteredSquare } from "@/render/crop";
-import {
-    type CaptureRequestKind,
-    createRenderEngine,
-    type RenderEngine,
-    type RenderMode,
-} from "@/render/engine";
+import type { CaptureRequestKind, RenderMode } from "@/render/engine";
 import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
@@ -45,6 +40,7 @@ import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TriangleParamForm } from "@/ui/components/TriangleParamForm";
 import { CameraInput } from "@/ui/components/texture/CameraInput";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
@@ -228,15 +224,18 @@ export function EuclideanSceneHost({
     triangle,
     embed = false,
 }: EuclideanSceneHostProps): JSX.Element {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const renderEngineRef = useRef<RenderEngine | null>(null);
+    const {
+        canvasRef,
+        renderEngineRef,
+        renderMode: resolvedRenderMode,
+        ready: engineReady,
+    } = useRenderEngineWithCanvas({ mode: renderMode });
     const latestEuclideanPlanesRef = useRef<HalfPlane[] | null>(null);
     const [editableHalfPlanes, setEditableHalfPlanes] = useState<HalfPlane[] | null>(null);
     const [drag, setDrag] = useState<DragState | null>(null);
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
-    const [engineReady, setEngineReady] = useState(false);
     const [circleInversionState, setCircleInversionState] = useState<CircleInversionState | null>(
         () => (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null),
     );
@@ -425,19 +424,6 @@ export function EuclideanSceneHost({
         );
         return match?.id;
     }, [flatPresets, params]);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const engine = createRenderEngine(canvas, { mode: renderMode });
-        renderEngineRef.current = engine;
-        setEngineReady(true);
-        return () => {
-            renderEngineRef.current = null;
-            engine.dispose();
-            setEngineReady(false);
-        };
-    }, [renderMode]);
 
     const baseHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
@@ -646,6 +632,7 @@ export function EuclideanSceneHost({
             scene.supportsHandles,
             showHandles,
             textureInput.textures,
+            renderEngineRef,
         ],
     );
 
@@ -747,7 +734,7 @@ export function EuclideanSceneHost({
             params: targetParams,
             textures: textureInput.textures,
         });
-    }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures]);
+    }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures, renderEngineRef]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
@@ -1163,7 +1150,7 @@ export function EuclideanSceneHost({
                 message: `${filename} を保存しました。`,
             });
         }
-    }, [exportMode]);
+    }, [exportMode, renderEngineRef]);
 
     const handleExportModeChange = useCallback((mode: ImageExportMode) => {
         setExportMode(mode);
@@ -1257,7 +1244,7 @@ export function EuclideanSceneHost({
                 scenes={scenes}
                 activeSceneId={activeSceneId}
                 onSceneChange={onSceneChange}
-                renderBackend={renderMode}
+                renderBackend={resolvedRenderMode}
             />
             {showTriangleControls && (
                 <>
@@ -1360,7 +1347,7 @@ export function EuclideanSceneHost({
     const controls = scene.controlsFactory
         ? scene.controlsFactory({
               scene,
-              renderBackend: renderMode,
+              renderBackend: resolvedRenderMode,
               defaultControls,
               extras: controlsExtras,
           })
@@ -1390,7 +1377,7 @@ export function EuclideanSceneHost({
             }
             return scene.embedOverlayFactory({
                 scene,
-                renderBackend: renderMode,
+                renderBackend: resolvedRenderMode,
                 controls: null,
                 extras: {
                     multiPlaneControls: {
@@ -1444,13 +1431,13 @@ export function EuclideanSceneHost({
         }
         return scene.embedOverlayFactory({
             scene,
-            renderBackend: renderMode,
+            renderBackend: resolvedRenderMode,
             controls: defaultOverlay,
             extras: overlayExtras,
         });
     }, [
         embed,
-        renderMode,
+        resolvedRenderMode,
         scene,
         showHandles,
         toggleHandles,

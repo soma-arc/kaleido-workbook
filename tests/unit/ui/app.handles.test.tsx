@@ -50,6 +50,12 @@ describe("App handle rendering", () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        await vi.waitUntil(() => renderMock.mock.calls.length > 0);
         const calls = renderMock.mock.calls.map((call) => call[0]);
         const finalCall = calls.at(-1);
         expect(finalCall?.geometry).toBe("euclidean");

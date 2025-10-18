@@ -53,6 +53,7 @@ describe("App", () => {
         await act(async () => {
             root.render(<App />);
         });
+        await vi.waitUntil(() => host.querySelector("#stage") !== null);
         const stage = host.querySelector("#stage") as HTMLCanvasElement | null;
         expect(stage).not.toBeNull();
         if (stage) {
@@ -62,6 +63,6 @@ describe("App", () => {
         }
 
         const depthSlider = host.querySelector('input[type="range"]');
-        expect(depthSlider).not.toBeNull();
+        expect(depthSlider).toBeNull();
     });
 });

@@ -148,7 +148,7 @@ describe("EuclideanSceneHost image export", () => {
         });
 
         await act(async () => {
-            await Promise.resolve();
+            await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
         const controls = latestControlsProps.current;
@@ -160,6 +160,7 @@ describe("EuclideanSceneHost image export", () => {
             controls.onModeChange("square-composite");
         });
         await act(async () => {
+            await Promise.resolve();
             await Promise.resolve();
         });
         const updatedControls = latestControlsProps.current;

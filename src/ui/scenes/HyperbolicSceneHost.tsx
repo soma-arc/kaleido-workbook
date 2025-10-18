@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import type { RenderEngine, RenderMode } from "@/render/engine";
-import { createRenderEngine, detectRenderMode } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import type { UseTriangleParamsResult } from "@/ui/hooks/useTriangleParams";
 import type { SceneDefinition, SceneId } from "@/ui/scenes/types";
@@ -29,21 +28,8 @@ export function HyperbolicSceneHost({
     triangle,
     embed = false,
 }: HyperbolicSceneHostProps): JSX.Element {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const renderEngineRef = useRef<RenderEngine | null>(null);
-    const renderMode: RenderMode = useMemo(() => detectRenderMode(), []);
+    const { canvasRef, renderEngineRef, renderMode, ready } = useRenderEngineWithCanvas();
     const textureInput = useTextureInput();
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const engine = createRenderEngine(canvas, { mode: renderMode });
-        renderEngineRef.current = engine;
-        return () => {
-            renderEngineRef.current = null;
-            engine.dispose();
-        };
-    }, [renderMode]);
 
     useEffect(() => {
         if (scene.geometry !== GEOMETRY_KIND.hyperbolic) {
@@ -51,7 +37,7 @@ export function HyperbolicSceneHost({
         }
         const engine = renderEngineRef.current;
         const canvas = canvasRef.current;
-        if (!engine || !canvas) {
+        if (!engine || !canvas || !ready) {
             return;
         }
         engine.render({
@@ -60,7 +46,7 @@ export function HyperbolicSceneHost({
             scene,
             textures: textureInput.textures,
         });
-    }, [scene, triangle, textureInput.textures]);
+    }, [scene, triangle, textureInput.textures, ready, renderEngineRef, canvasRef]);
 
     const defaultControls: ReactNode = (
         <>
