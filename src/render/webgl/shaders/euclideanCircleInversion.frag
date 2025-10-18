@@ -17,8 +17,16 @@ uniform vec4 uCircleColor;
 uniform float uRectFeatherPx;
 uniform float uCircleStrokeWidthPx;
 uniform float uCircleFeatherPx;
+uniform vec2 uRect2Center;
+uniform vec2 uRect2HalfExtents;
+uniform float uRect2Rotation;
+uniform vec4 uRect2Color;
+uniform vec4 uRect2InvertedColor;
+uniform float uRect2FeatherPx;
 uniform int uShowReferenceRectangle;
 uniform int uShowInvertedRectangle;
+uniform int uShowSecondaryRectangle;
+uniform int uShowSecondaryInvertedRectangle;
 
 uniform vec2 uLineA;
 uniform vec2 uLineB;
@@ -128,6 +136,14 @@ void main() {
     float invertedSdfPx = length(max(abs(invertedLocal) - uRectHalfExtents, 0.0)) * scale;
     float invertedFill = smoothFill(invertedSdfPx, uRectFeatherPx);
 
+    vec2 rect2Local = rotationMatrix(-uRect2Rotation) * (worldPoint - uRect2Center);
+    float rect2SdfPx = length(max(abs(rect2Local) - uRect2HalfExtents, 0.0)) * scale;
+    float rect2Fill = smoothFill(rect2SdfPx, uRect2FeatherPx);
+
+    vec2 invertedLocal2 = rotationMatrix(-uRect2Rotation) * (invertedPoint - uRect2Center);
+    float invertedRect2SdfPx = length(max(abs(invertedLocal2) - uRect2HalfExtents, 0.0)) * scale;
+    float invertedRect2Fill = smoothFill(invertedRect2SdfPx, uRect2FeatherPx);
+
     float circlePxDistance = abs(length(worldPoint - uCircleCenter) - uCircleRadius) * scale;
     float circleStroke = lineStrokeMask(circlePxDistance, uCircleStrokeWidthPx, uCircleFeatherPx);
 
@@ -144,6 +160,18 @@ void main() {
         vec4 fillColor = sampleRectangleColor(invertedLocal, uInvertedColor);
         float alpha = invertedFill * fillColor.a;
         color.rgb = mix(color.rgb, fillColor.rgb, alpha);
+        color.a = max(color.a, alpha);
+    }
+
+    if (uShowSecondaryRectangle == 1 && rect2Fill > 0.0) {
+        float alpha = rect2Fill * uRect2Color.a;
+        color.rgb = mix(color.rgb, uRect2Color.rgb, alpha);
+        color.a = max(color.a, alpha);
+    }
+
+    if (uShowSecondaryInvertedRectangle == 1 && invertedRect2Fill > 0.0) {
+        float alpha = invertedRect2Fill * uRect2InvertedColor.a;
+        color.rgb = mix(color.rgb, uRect2InvertedColor.rgb, alpha);
         color.a = max(color.a, alpha);
     }
 

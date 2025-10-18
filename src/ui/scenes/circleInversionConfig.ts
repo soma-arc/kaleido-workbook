@@ -7,6 +7,8 @@ export interface CircleInversionDisplayOptions {
     showReferenceRectangle: boolean;
     showInvertedRectangle: boolean;
     textureEnabled: boolean;
+    showSecondaryRectangle: boolean;
+    showSecondaryInvertedRectangle: boolean;
 }
 
 export interface CircleInversionLineState {
@@ -27,6 +29,7 @@ export interface CircleInversionState {
     };
     line: CircleInversionLineState;
     rectangle: CircleInversionRectangleState;
+    secondaryRectangle: CircleInversionRectangleState;
     display: CircleInversionDisplayOptions;
 }
 
@@ -49,6 +52,14 @@ export function cloneCircleInversionState(state: CircleInversionState): CircleIn
                 y: state.rectangle.halfExtents.y,
             },
             rotation: state.rectangle.rotation,
+        },
+        secondaryRectangle: {
+            center: { x: state.secondaryRectangle.center.x, y: state.secondaryRectangle.center.y },
+            halfExtents: {
+                x: state.secondaryRectangle.halfExtents.x,
+                y: state.secondaryRectangle.halfExtents.y,
+            },
+            rotation: state.secondaryRectangle.rotation,
         },
         display: { ...state.display },
     };

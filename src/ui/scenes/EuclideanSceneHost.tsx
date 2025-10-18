@@ -196,6 +196,9 @@ export function EuclideanSceneHost({
         [circleInversionState, sceneCircleInitial],
     );
     const textureInput = useTextureInput({ presets: DEFAULT_TEXTURE_PRESETS });
+    const loadPresetTexture = textureInput.loadPreset;
+    const baseTextureSlot = textureInput.slots[TEXTURE_SLOTS.base];
+    const defaultCircleTextureApplied = useRef(false);
     const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
     const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
     const maxFrameRateRef = useRef<number>(60);
@@ -215,6 +218,32 @@ export function EuclideanSceneHost({
         () => textureInput.textures.some((layer) => layer.source?.dynamic === true),
         [textureInput.textures],
     );
+
+    const baseSlotLayer = baseTextureSlot?.layer ?? null;
+    const baseSlotStatus = baseTextureSlot?.status ?? "idle";
+
+    useEffect(() => {
+        if (scene.id !== SCENE_IDS.euclideanCircleInversion) {
+            defaultCircleTextureApplied.current = false;
+            return;
+        }
+        if (defaultCircleTextureApplied.current) {
+            return;
+        }
+        if (baseSlotLayer || baseSlotStatus === "loading" || baseSlotStatus === "ready") {
+            if (baseSlotLayer) {
+                defaultCircleTextureApplied.current = true;
+            }
+            return;
+        }
+        if (baseSlotStatus !== "idle") {
+            return;
+        }
+        defaultCircleTextureApplied.current = true;
+        loadPresetTexture(TEXTURE_SLOTS.base, "cat-fish-run").catch(() => {
+            defaultCircleTextureApplied.current = false;
+        });
+    }, [scene.id, baseSlotLayer, baseSlotStatus, loadPresetTexture]);
 
     // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
     const clampFrameRate = useCallback((value: number) => {
@@ -1047,6 +1076,22 @@ export function EuclideanSceneHost({
                         onChange={handleDisplayToggle("showInvertedRectangle")}
                     />
                     <span>反転矩形を表示</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                        type="checkbox"
+                        checked={display.showSecondaryRectangle}
+                        onChange={handleDisplayToggle("showSecondaryRectangle")}
+                    />
+                    <span>サブ矩形を表示</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                        type="checkbox"
+                        checked={display.showSecondaryInvertedRectangle}
+                        onChange={handleDisplayToggle("showSecondaryInvertedRectangle")}
+                    />
+                    <span>反転サブ矩形を表示</span>
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <input

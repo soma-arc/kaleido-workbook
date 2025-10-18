@@ -16,12 +16,19 @@ const BASE_STATE: CircleInversionState = {
         halfExtents: { x: 0.15, y: 0.1 },
         rotation: 0,
     },
+    secondaryRectangle: {
+        center: { x: -0.25, y: 0.15 },
+        halfExtents: { x: 0.12, y: 0.08 },
+        rotation: 0.35,
+    },
     display: {
         showReferenceLine: true,
         showInvertedLine: true,
         showReferenceRectangle: true,
         showInvertedRectangle: true,
         textureEnabled: true,
+        showSecondaryRectangle: true,
+        showSecondaryInvertedRectangle: true,
     },
 };
 

@@ -104,5 +104,19 @@ export const Default: Story = {
             const updated = JSON.parse(readout?.textContent ?? "{}");
             expect(updated.display?.textureEnabled).toBe(false);
         });
+
+        const secondaryToggle = await canvas.findByLabelText("サブ矩形を表示");
+        await userEvent.click(secondaryToggle);
+        await waitFor(() => {
+            const updated = JSON.parse(readout?.textContent ?? "{}");
+            expect(updated.display?.showSecondaryRectangle).toBe(false);
+        });
+
+        const secondaryInvertedToggle = await canvas.findByLabelText("反転サブ矩形を表示");
+        await userEvent.click(secondaryInvertedToggle);
+        await waitFor(() => {
+            const updated = JSON.parse(readout?.textContent ?? "{}");
+            expect(updated.display?.showSecondaryInvertedRectangle).toBe(false);
+        });
     },
 };

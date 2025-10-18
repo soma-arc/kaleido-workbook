@@ -17,12 +17,19 @@ const BASE_STATE = {
         halfExtents: { x: 0.15, y: 0.1 },
         rotation: 0,
     },
+    secondaryRectangle: {
+        center: { x: -0.25, y: 0.15 },
+        halfExtents: { x: 0.12, y: 0.08 },
+        rotation: 0.35,
+    },
     display: {
         showReferenceLine: true,
         showInvertedLine: true,
         showReferenceRectangle: true,
         showInvertedRectangle: true,
         textureEnabled: true,
+        showSecondaryRectangle: true,
+        showSecondaryInvertedRectangle: true,
     },
 } as const;
 
@@ -68,6 +75,7 @@ describe("circle inversion config helpers", () => {
         expect(next.display.showInvertedRectangle).toBe(false);
         expect(next.display.textureEnabled).toBe(false);
         expect(next.display.showReferenceLine).toBe(true);
+        expect(next.display.showSecondaryRectangle).toBe(true);
         expect(BASE_STATE.display.textureEnabled).toBe(true);
     });
 
