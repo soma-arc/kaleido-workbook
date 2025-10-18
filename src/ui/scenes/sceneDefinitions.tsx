@@ -3,9 +3,9 @@ import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primiti
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import { euclideanMultiPlaneScene } from "@/scenes/euclidean/multi-plane";
 import { hyperbolicTripleReflectionScene } from "@/scenes/hyperbolic/tiling-333";
 import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
-import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import type { TrianglePreset, TrianglePresetGroup } from "@/ui/trianglePresets";
 import { createRegularPolygonSceneConfig } from "./regularPolygons";
 import {
@@ -113,6 +113,10 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 const HYPERBOLIC_TRIPLE_REFLECTION_SCENE: SceneDefinitionEntry = {
     ...hyperbolicTripleReflectionScene,
+};
+
+const EUCLIDEAN_MULTI_PLANE_SCENE: SceneDefinitionEntry = {
+    ...euclideanMultiPlaneScene,
 };
 
 type SceneAlias =
@@ -284,44 +288,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
             textureAspect: null,
         },
     },
-    {
-        key: "euclideanMultiPlane",
-        label: "Multi-Plane Mirrors",
-        geometry: GEOMETRY_KIND.euclidean,
-        variant: "multi-plane",
-        description: "Displays a configurable number of mirrors arranged as a regular polygon.",
-        supportsHandles: false,
-        editable: false,
-        multiPlaneConfig: {
-            minSides: 3,
-            maxSides: 20,
-            initialSides: 4,
-            radius: 0.7,
-        },
-        embedOverlayFactory: ({ extras }) => {
-            const context =
-                (extras as {
-                    multiPlaneControls?: {
-                        minSides: number;
-                        maxSides: number;
-                        value: number;
-                        onChange: (next: number) => void;
-                    };
-                }) ?? {};
-            if (!context.multiPlaneControls) {
-                return null;
-            }
-            const { multiPlaneControls } = context;
-            return (
-                <MultiPlaneOverlayControls
-                    minSides={multiPlaneControls.minSides}
-                    maxSides={multiPlaneControls.maxSides}
-                    value={multiPlaneControls.value}
-                    onChange={multiPlaneControls.onChange}
-                />
-            );
-        },
-    },
+    EUCLIDEAN_MULTI_PLANE_SCENE,
     {
         key: "facingMirrorRoom",
         label: "Facing Mirrors",
