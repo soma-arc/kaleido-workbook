@@ -41,4 +41,38 @@ export const euclideanMultiPlaneScene = {
             />
         );
     },
+    controlsFactory: ({ defaultControls, extras }) => {
+        const context = extras as {
+            multiPlaneControls?: {
+                sliderId: string;
+                minSides: number;
+                maxSides: number;
+                value: number;
+                onChange: (next: number) => void;
+            };
+        };
+        if (!context?.multiPlaneControls) {
+            return defaultControls;
+        }
+        const { sliderId, minSides, maxSides, value, onChange } = context.multiPlaneControls;
+        return (
+            <>
+                {defaultControls}
+                <div style={{ display: "grid", gap: "4px" }}>
+                    <label htmlFor={sliderId} style={{ fontWeight: 600 }}>
+                        Mirrors: {value}
+                    </label>
+                    <input
+                        id={sliderId}
+                        type="range"
+                        min={minSides}
+                        max={maxSides}
+                        step={1}
+                        value={value}
+                        onChange={(event) => onChange(Number(event.target.value))}
+                    />
+                </div>
+            </>
+        );
+    },
 } satisfies SceneDefinitionInput;

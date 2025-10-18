@@ -62,7 +62,7 @@ export function HyperbolicSceneHost({
         });
     }, [scene, triangle, textureInput.textures]);
 
-    const controls: ReactNode = (
+    const defaultControls: ReactNode = (
         <>
             <ModeControls
                 scenes={scenes}
@@ -80,6 +80,18 @@ export function HyperbolicSceneHost({
             />
         </>
     );
+
+    const controls: ReactNode = scene.controlsFactory
+        ? scene.controlsFactory({
+              scene,
+              renderBackend: renderMode,
+              defaultControls,
+              extras: {
+                  triangle,
+                  textureInput,
+              },
+          })
+        : defaultControls;
 
     return (
         <SceneLayout

@@ -19,4 +19,5 @@ export const hyperbolicTripleReflectionScene = {
     editable: false,
     fixedHyperbolicParams: { p: 3, q: 3, r: 3, depth: 0 },
     showTriangleControls: false,
+    controlsFactory: ({ defaultControls }) => defaultControls,
 } satisfies SceneDefinitionInput;

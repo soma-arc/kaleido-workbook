@@ -67,6 +67,11 @@ export interface SceneDefinition {
      */
     embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
     multiPlaneConfig?: MultiPlaneSceneConfig;
+    /**
+     * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。
+     * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
+     */
+    controlsFactory?: (context: SceneControlsContext) => ReactNode;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
@@ -110,5 +115,12 @@ export type SceneEmbedOverlayContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
     controls: ReactNode;
+    extras?: unknown;
+};
+
+export type SceneControlsContext = {
+    scene: SceneDefinition;
+    renderBackend: "canvas" | "hybrid";
+    defaultControls: ReactNode;
     extras?: unknown;
 };

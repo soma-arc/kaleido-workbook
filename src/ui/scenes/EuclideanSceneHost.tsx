@@ -1251,7 +1251,7 @@ export function EuclideanSceneHost({
         );
     }, [effectiveCircleInversion, handleDisplayToggle, scene.inversionConfig]);
 
-    const controls = (
+    const defaultControls = (
         <>
             <ModeControls
                 scenes={scenes}
@@ -1259,24 +1259,6 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={renderMode}
             />
-            {multiPlaneConfig ? (
-                <div style={{ display: "grid", gap: "4px" }}>
-                    <label htmlFor={multiPlaneSliderId} style={{ fontWeight: 600 }}>
-                        Mirrors: {multiPlaneSides ?? multiPlaneConfig.initialSides}
-                    </label>
-                    <input
-                        id={multiPlaneSliderId}
-                        type="range"
-                        min={multiPlaneConfig.minSides}
-                        max={multiPlaneConfig.maxSides}
-                        step={1}
-                        value={multiPlaneSides ?? multiPlaneConfig.initialSides}
-                        onChange={(event) =>
-                            handleMultiPlaneSidesChange(Number(event.target.value))
-                        }
-                    />
-                </div>
-            ) : null}
             {showTriangleControls && (
                 <>
                     <PresetSelector
@@ -1362,6 +1344,27 @@ export function EuclideanSceneHost({
             )}
         </>
     );
+
+    const controlsExtras = {
+        multiPlaneControls: multiPlaneConfig
+            ? {
+                  sliderId: multiPlaneSliderId,
+                  minSides: multiPlaneConfig.minSides,
+                  maxSides: multiPlaneConfig.maxSides,
+                  value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                  onChange: handleMultiPlaneSidesChange,
+              }
+            : undefined,
+    } as const;
+
+    const controls = scene.controlsFactory
+        ? scene.controlsFactory({
+              scene,
+              renderBackend: renderMode,
+              defaultControls,
+              extras: controlsExtras,
+          })
+        : defaultControls;
 
     const handleOverlaySnapToggle = useCallback(
         (enabled: boolean) => {
