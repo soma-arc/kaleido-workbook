@@ -1,4 +1,6 @@
+import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { type InvertedLineImage, invertLineInCircle } from "@/geom/transforms/inversion";
 import { SCENE_IDS } from "@/ui/scenes";
 import type { CircleInversionState } from "@/ui/scenes/circleInversionConfig";
 import {
@@ -8,6 +10,7 @@ import {
 } from "../pipelineRegistry";
 import fragmentShaderSource from "../shaders/euclideanCircleInversion.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
+import { createTextureManager, type TextureManager } from "../textureManager";
 import { getUniformLocation } from "./uniformUtils";
 
 export const EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID = "webgl-euclidean-circle-inversion" as const;
@@ -15,10 +18,81 @@ export const EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID = "webgl-euclidean-circle-in
 const RECT_COLOR = [0.231, 0.514, 0.918, 0.75] as const;
 const INVERTED_COLOR = [0.976, 0.545, 0.259, 0.72] as const;
 const CIRCLE_COLOR = [0.95, 0.98, 1.0, 0.9] as const;
+const SECONDARY_RECT_COLOR = [0.184, 0.733, 0.647, 0.65] as const;
+const SECONDARY_INVERTED_COLOR = [0.992, 0.862, 0.098, 0.6] as const;
 
 const RECT_FEATHER_PX = 1.5;
 const CIRCLE_STROKE_WIDTH_PX = 2.0;
 const CIRCLE_FEATHER_PX = 1.2;
+const SECONDARY_RECT_FEATHER_PX = 1.5;
+const LINE_COLOR = [0.94, 0.94, 0.98, 0.85] as const;
+const INVERTED_LINE_COLOR = [0.18, 0.76, 0.86, 0.75] as const;
+const LINE_STROKE_WIDTH_PX = 2.0;
+const LINE_FEATHER_PX = 1.1;
+const DEFAULT_TEXTURE_ASPECT = 1;
+
+export type CircleInversionLineUniforms = {
+    start: Vec2;
+    end: Vec2;
+    inverted:
+        | { mode: "line"; line: { normal: Vec2; offset: number } }
+        | { mode: "circle"; circle: { center: Vec2; radius: number } };
+};
+
+function deriveLineCoefficients(start: Vec2, end: Vec2): { normal: Vec2; offset: number } {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    if (!(length > 0)) {
+        return { normal: { x: 0, y: 1 }, offset: 0 };
+    }
+    const normal = { x: -dy / length, y: dx / length };
+    const offset = normal.x * start.x + normal.y * start.y;
+    return { normal, offset };
+}
+
+function mapInvertedImage(image: InvertedLineImage) {
+    if (image.kind === "circle") {
+        return {
+            mode: "circle" as const,
+            circle: {
+                center: { x: image.center.x, y: image.center.y },
+                radius: image.radius,
+            },
+        };
+    }
+    return {
+        mode: "line" as const,
+        line: {
+            normal: { x: image.normal.x, y: image.normal.y },
+            offset: image.offset,
+        },
+    };
+}
+
+export function computeLineUniforms(state: CircleInversionState): CircleInversionLineUniforms {
+    const base = deriveLineCoefficients(state.line.start, state.line.end);
+    try {
+        const inverted = invertLineInCircle(
+            { start: state.line.start, end: state.line.end },
+            { c: state.fixedCircle.center, r: state.fixedCircle.radius },
+        );
+        return {
+            start: state.line.start,
+            end: state.line.end,
+            inverted: mapInvertedImage(inverted),
+        };
+    } catch {
+        return {
+            start: state.line.start,
+            end: state.line.end,
+            inverted: {
+                mode: "line",
+                line: base,
+            },
+        };
+    }
+}
 
 class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;
@@ -26,6 +100,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
     private readonly vao: WebGLVertexArrayObject;
     private readonly vertexBuffer: WebGLBuffer;
     private readonly uniforms: UniformLocations;
+    private readonly textureManager: TextureManager;
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -57,20 +132,49 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         this.uniforms = resolveUniformLocations(gl, this.program);
+        this.textureManager = createTextureManager(gl);
 
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
         gl.uniform4f(this.uniforms.rectColor, ...RECT_COLOR);
         gl.uniform4f(this.uniforms.invertedColor, ...INVERTED_COLOR);
         gl.uniform4f(this.uniforms.circleColor, ...CIRCLE_COLOR);
+        gl.uniform4f(this.uniforms.secondaryRectColor, ...SECONDARY_RECT_COLOR);
+        gl.uniform4f(this.uniforms.secondaryInvertedColor, ...SECONDARY_INVERTED_COLOR);
+        gl.uniform4f(this.uniforms.lineColor, ...LINE_COLOR);
+        gl.uniform4f(this.uniforms.invertedLineColor, ...INVERTED_LINE_COLOR);
         gl.uniform1f(this.uniforms.rectFeatherPx, RECT_FEATHER_PX);
         gl.uniform1f(this.uniforms.circleStrokeWidthPx, CIRCLE_STROKE_WIDTH_PX);
         gl.uniform1f(this.uniforms.circleFeatherPx, CIRCLE_FEATHER_PX);
+        gl.uniform1f(this.uniforms.secondaryRectFeatherPx, SECONDARY_RECT_FEATHER_PX);
+        gl.uniform1f(this.uniforms.lineStrokeWidthPx, LINE_STROKE_WIDTH_PX);
+        gl.uniform1f(this.uniforms.lineFeatherPx, LINE_FEATHER_PX);
+        gl.uniform1f(this.uniforms.invertedLineStrokeWidthPx, LINE_STROKE_WIDTH_PX);
+        gl.uniform1f(this.uniforms.invertedLineFeatherPx, LINE_FEATHER_PX);
+        gl.uniform1i(this.uniforms.textureEnabled, 0);
+        gl.uniform2f(this.uniforms.textureOffset, 0, 0);
+        gl.uniform2f(this.uniforms.textureScale, 1, 1);
+        gl.uniform1f(this.uniforms.textureRotation, 0);
+        gl.uniform1f(this.uniforms.textureOpacity, 1);
+        gl.uniform1f(this.uniforms.textureAspect, DEFAULT_TEXTURE_ASPECT);
+        gl.uniform1i(this.uniforms.showReferenceRectangle, 1);
+        gl.uniform1i(this.uniforms.showInvertedRectangle, 1);
+        gl.uniform1i(this.uniforms.showSecondaryRectangle, 1);
+        gl.uniform1i(this.uniforms.showSecondaryInvertedRectangle, 1);
+        gl.uniform1i(this.uniforms.showReferenceLine, 1);
+        gl.uniform1i(this.uniforms.showInvertedLine, 1);
+        gl.uniform1i(this.uniforms.invertedLineIsCircle, 0);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
 
-    render({ sceneDefinition, renderScene, viewport, canvas }: WebGLPipelineRenderContext): void {
+    render({
+        sceneDefinition,
+        renderScene,
+        viewport,
+        canvas,
+        textures,
+    }: WebGLPipelineRenderContext): void {
         if (renderScene.geometry !== GEOMETRY_KIND.euclidean) {
             return;
         }
@@ -84,6 +188,26 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
             gl.clear(gl.COLOR_BUFFER_BIT);
             return;
         }
+
+        const lineUniforms = computeLineUniforms(resolvedState);
+        const showReferenceRectangle = resolvedState.display.showReferenceRectangle ? 1 : 0;
+        const showInvertedRectangle = resolvedState.display.showInvertedRectangle ? 1 : 0;
+        const showSecondaryRectangle = resolvedState.display.showSecondaryRectangle ? 1 : 0;
+        const showSecondaryInvertedRectangle = resolvedState.display.showSecondaryInvertedRectangle
+            ? 1
+            : 0;
+        const showReferenceLine = resolvedState.display.showReferenceLine ? 1 : 0;
+        const showInvertedLine = resolvedState.display.showInvertedLine ? 1 : 0;
+
+        const textureData = this.textureManager.sync(textures ?? []);
+        let activeTextureSlot = -1;
+        for (let slot = 0; slot < textureData.enabled.length; slot += 1) {
+            if (textureData.enabled[slot] === 1) {
+                activeTextureSlot = slot;
+                break;
+            }
+        }
+        const textureEnabled = resolvedState.display.textureEnabled && activeTextureSlot >= 0;
 
         gl.viewport(0, 0, width, height);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
@@ -107,6 +231,84 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
             resolvedState.rectangle.halfExtents.y,
         );
         gl.uniform1f(this.uniforms.rectRotation, resolvedState.rectangle.rotation);
+        const textureAspect =
+            resolvedState.textureAspect && resolvedState.textureAspect > 0
+                ? resolvedState.textureAspect
+                : resolvedState.rectangle.halfExtents.x /
+                  Math.max(resolvedState.rectangle.halfExtents.y, 1e-6);
+        gl.uniform1f(this.uniforms.textureAspect, textureAspect);
+        gl.uniform2f(
+            this.uniforms.secondaryRectCenter,
+            resolvedState.secondaryRectangle.center.x,
+            resolvedState.secondaryRectangle.center.y,
+        );
+        gl.uniform2f(
+            this.uniforms.secondaryRectHalfExtents,
+            resolvedState.secondaryRectangle.halfExtents.x,
+            resolvedState.secondaryRectangle.halfExtents.y,
+        );
+        gl.uniform1f(
+            this.uniforms.secondaryRectRotation,
+            resolvedState.secondaryRectangle.rotation,
+        );
+        gl.uniform1i(this.uniforms.showReferenceRectangle, showReferenceRectangle);
+        gl.uniform1i(this.uniforms.showInvertedRectangle, showInvertedRectangle);
+        gl.uniform1i(this.uniforms.showSecondaryRectangle, showSecondaryRectangle);
+        gl.uniform1i(this.uniforms.showSecondaryInvertedRectangle, showSecondaryInvertedRectangle);
+        gl.uniform1i(this.uniforms.showReferenceLine, showReferenceLine);
+        gl.uniform1i(this.uniforms.showInvertedLine, showInvertedLine);
+        gl.uniform2f(this.uniforms.lineA, lineUniforms.start.x, lineUniforms.start.y);
+        gl.uniform2f(this.uniforms.lineB, lineUniforms.end.x, lineUniforms.end.y);
+
+        if (lineUniforms.inverted.mode === "circle") {
+            gl.uniform1i(this.uniforms.invertedLineIsCircle, 1);
+            gl.uniform2f(
+                this.uniforms.invertedLineCircleCenter,
+                lineUniforms.inverted.circle.center.x,
+                lineUniforms.inverted.circle.center.y,
+            );
+            gl.uniform1f(
+                this.uniforms.invertedLineCircleRadius,
+                lineUniforms.inverted.circle.radius,
+            );
+            gl.uniform2f(this.uniforms.invertedLineNormal, 0, 1);
+            gl.uniform1f(this.uniforms.invertedLineOffset, 0);
+        } else {
+            gl.uniform1i(this.uniforms.invertedLineIsCircle, 0);
+            gl.uniform2f(this.uniforms.invertedLineCircleCenter, 0, 0);
+            gl.uniform1f(this.uniforms.invertedLineCircleRadius, 0);
+            gl.uniform2f(
+                this.uniforms.invertedLineNormal,
+                lineUniforms.inverted.line.normal.x,
+                lineUniforms.inverted.line.normal.y,
+            );
+            gl.uniform1f(this.uniforms.invertedLineOffset, lineUniforms.inverted.line.offset);
+        }
+
+        if (textureEnabled) {
+            const baseIndex = activeTextureSlot * 2;
+            gl.uniform1i(this.uniforms.textureEnabled, 1);
+            gl.uniform1i(this.uniforms.textureSampler, activeTextureSlot);
+            gl.uniform2f(
+                this.uniforms.textureOffset,
+                textureData.offset[baseIndex],
+                textureData.offset[baseIndex + 1],
+            );
+            gl.uniform2f(
+                this.uniforms.textureScale,
+                textureData.scale[baseIndex],
+                textureData.scale[baseIndex + 1],
+            );
+            gl.uniform1f(this.uniforms.textureRotation, textureData.rotation[activeTextureSlot]);
+            gl.uniform1f(this.uniforms.textureOpacity, textureData.opacity[activeTextureSlot]);
+        } else {
+            gl.uniform1i(this.uniforms.textureEnabled, 0);
+            gl.uniform2f(this.uniforms.textureOffset, 0, 0);
+            gl.uniform2f(this.uniforms.textureScale, 1, 1);
+            gl.uniform1f(this.uniforms.textureRotation, 0);
+            gl.uniform1f(this.uniforms.textureOpacity, 1);
+            gl.uniform1f(this.uniforms.textureAspect, textureAspect);
+        }
 
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -119,6 +321,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
 
     dispose(): void {
         const gl = this.gl;
+        this.textureManager.dispose();
         gl.deleteBuffer(this.vertexBuffer);
         gl.deleteVertexArray(this.vao);
         gl.deleteProgram(this.program);
@@ -139,6 +342,38 @@ type UniformLocations = {
     rectFeatherPx: WebGLUniformLocation;
     circleStrokeWidthPx: WebGLUniformLocation;
     circleFeatherPx: WebGLUniformLocation;
+    secondaryRectCenter: WebGLUniformLocation;
+    secondaryRectHalfExtents: WebGLUniformLocation;
+    secondaryRectRotation: WebGLUniformLocation;
+    secondaryRectColor: WebGLUniformLocation;
+    secondaryInvertedColor: WebGLUniformLocation;
+    secondaryRectFeatherPx: WebGLUniformLocation;
+    textureAspect: WebGLUniformLocation;
+    showReferenceRectangle: WebGLUniformLocation;
+    showInvertedRectangle: WebGLUniformLocation;
+    showSecondaryRectangle: WebGLUniformLocation;
+    showSecondaryInvertedRectangle: WebGLUniformLocation;
+    showReferenceLine: WebGLUniformLocation;
+    showInvertedLine: WebGLUniformLocation;
+    lineA: WebGLUniformLocation;
+    lineB: WebGLUniformLocation;
+    lineColor: WebGLUniformLocation;
+    lineStrokeWidthPx: WebGLUniformLocation;
+    lineFeatherPx: WebGLUniformLocation;
+    invertedLineColor: WebGLUniformLocation;
+    invertedLineStrokeWidthPx: WebGLUniformLocation;
+    invertedLineFeatherPx: WebGLUniformLocation;
+    invertedLineCircleCenter: WebGLUniformLocation;
+    invertedLineCircleRadius: WebGLUniformLocation;
+    invertedLineNormal: WebGLUniformLocation;
+    invertedLineOffset: WebGLUniformLocation;
+    invertedLineIsCircle: WebGLUniformLocation;
+    textureEnabled: WebGLUniformLocation;
+    textureSampler: WebGLUniformLocation;
+    textureOffset: WebGLUniformLocation;
+    textureScale: WebGLUniformLocation;
+    textureRotation: WebGLUniformLocation;
+    textureOpacity: WebGLUniformLocation;
 };
 
 function resolveInversionState(
@@ -155,11 +390,22 @@ function resolveInversionState(
                 center: { ...runtimeState.fixedCircle.center },
                 radius: runtimeState.fixedCircle.radius,
             },
+            line: {
+                start: { ...runtimeState.line.start },
+                end: { ...runtimeState.line.end },
+            },
             rectangle: {
                 center: { ...runtimeState.rectangle.center },
                 halfExtents: { ...runtimeState.rectangle.halfExtents },
                 rotation: runtimeState.rectangle.rotation,
             },
+            secondaryRectangle: {
+                center: { ...runtimeState.secondaryRectangle.center },
+                halfExtents: { ...runtimeState.secondaryRectangle.halfExtents },
+                rotation: runtimeState.secondaryRectangle.rotation,
+            },
+            display: { ...runtimeState.display },
+            textureAspect: runtimeState.textureAspect ?? null,
         };
     }
     if (config) {
@@ -168,11 +414,22 @@ function resolveInversionState(
                 center: { ...config.fixedCircle.center },
                 radius: config.fixedCircle.radius,
             },
+            line: {
+                start: { ...config.line.start },
+                end: { ...config.line.end },
+            },
             rectangle: {
                 center: { ...config.rectangle.center },
                 halfExtents: { ...config.rectangle.halfExtents },
                 rotation: config.rectangle.rotation,
             },
+            secondaryRectangle: {
+                center: { ...config.secondaryRectangle.center },
+                halfExtents: { ...config.secondaryRectangle.halfExtents },
+                rotation: config.secondaryRectangle.rotation,
+            },
+            display: { ...config.display },
+            textureAspect: config.textureAspect ?? null,
         };
     }
     return null;
@@ -227,6 +484,42 @@ function resolveUniformLocations(
         rectFeatherPx: getUniformLocation(gl, program, "uRectFeatherPx"),
         circleStrokeWidthPx: getUniformLocation(gl, program, "uCircleStrokeWidthPx"),
         circleFeatherPx: getUniformLocation(gl, program, "uCircleFeatherPx"),
+        secondaryRectCenter: getUniformLocation(gl, program, "uRect2Center"),
+        secondaryRectHalfExtents: getUniformLocation(gl, program, "uRect2HalfExtents"),
+        secondaryRectRotation: getUniformLocation(gl, program, "uRect2Rotation"),
+        secondaryRectColor: getUniformLocation(gl, program, "uRect2Color"),
+        secondaryInvertedColor: getUniformLocation(gl, program, "uRect2InvertedColor"),
+        secondaryRectFeatherPx: getUniformLocation(gl, program, "uRect2FeatherPx"),
+        textureAspect: getUniformLocation(gl, program, "uTextureAspect"),
+        showReferenceRectangle: getUniformLocation(gl, program, "uShowReferenceRectangle"),
+        showInvertedRectangle: getUniformLocation(gl, program, "uShowInvertedRectangle"),
+        showSecondaryRectangle: getUniformLocation(gl, program, "uShowSecondaryRectangle"),
+        showSecondaryInvertedRectangle: getUniformLocation(
+            gl,
+            program,
+            "uShowSecondaryInvertedRectangle",
+        ),
+        showReferenceLine: getUniformLocation(gl, program, "uShowReferenceLine"),
+        showInvertedLine: getUniformLocation(gl, program, "uShowInvertedLine"),
+        lineA: getUniformLocation(gl, program, "uLineA"),
+        lineB: getUniformLocation(gl, program, "uLineB"),
+        lineColor: getUniformLocation(gl, program, "uLineColor"),
+        lineStrokeWidthPx: getUniformLocation(gl, program, "uLineStrokeWidthPx"),
+        lineFeatherPx: getUniformLocation(gl, program, "uLineFeatherPx"),
+        invertedLineColor: getUniformLocation(gl, program, "uInvertedLineColor"),
+        invertedLineStrokeWidthPx: getUniformLocation(gl, program, "uInvertedLineStrokeWidthPx"),
+        invertedLineFeatherPx: getUniformLocation(gl, program, "uInvertedLineFeatherPx"),
+        invertedLineCircleCenter: getUniformLocation(gl, program, "uInvertedLineCircleCenter"),
+        invertedLineCircleRadius: getUniformLocation(gl, program, "uInvertedLineCircleRadius"),
+        invertedLineNormal: getUniformLocation(gl, program, "uInvertedLineNormal"),
+        invertedLineOffset: getUniformLocation(gl, program, "uInvertedLineOffset"),
+        invertedLineIsCircle: getUniformLocation(gl, program, "uInvertedLineIsCircle"),
+        textureEnabled: getUniformLocation(gl, program, "uTextureEnabled"),
+        textureSampler: getUniformLocation(gl, program, "uRectTexture"),
+        textureOffset: getUniformLocation(gl, program, "uTextureOffset"),
+        textureScale: getUniformLocation(gl, program, "uTextureScale"),
+        textureRotation: getUniformLocation(gl, program, "uTextureRotation"),
+        textureOpacity: getUniformLocation(gl, program, "uTextureOpacity"),
     };
 }
 

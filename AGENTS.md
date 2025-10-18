@@ -7,7 +7,6 @@
 - ツール: TypeScript + React + Vite + pnpm / Canvas 2D / Biome(4スペース) / Vitest(coverage v8) / GitHub Actions
 
 ## 作業範囲（Scope）
-- 触ってよい: `src/geom/**`, `tests/unit/**`, `tests/property/**`, `README.md`, `AGENTS.md`, `TODO.md`
 - 読み取り専用: `tests/acceptance/**`（仕様ロック／人間が作成）
 - 触らない: ビルド/CI 設定やワークフロー変更（別PRで合意のうえ実施）
 
