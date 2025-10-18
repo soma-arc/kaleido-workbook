@@ -1,20 +1,20 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { SCENE_IDS } from "@/ui/scenes";
 import {
     createGeodesicUniformBuffers,
     MAX_UNIFORM_GEODESICS,
     packSceneGeodesics,
-} from "../geodesicUniforms";
+} from "@/render/webgl/geodesicUniforms";
 import {
     registerSceneWebGLPipeline,
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
-} from "../pipelineRegistry";
-import vertexShaderSource from "../shaders/geodesic.vert?raw";
-import fragmentShaderSourceTemplate from "../shaders/hyperbolicTripleReflection.frag?raw";
-import { createTextureManager, type TextureManager } from "../textureManager";
-import { MAX_TEXTURE_SLOTS } from "../textures";
-import { getUniformLocation } from "./uniformUtils";
+} from "@/render/webgl/pipelineRegistry";
+import { getUniformLocation } from "@/render/webgl/pipelines/uniformUtils";
+import vertexShaderSource from "@/render/webgl/shaders/geodesic.vert?raw";
+import fragmentShaderSourceTemplate from "@/render/webgl/shaders/hyperbolicTripleReflection.frag?raw";
+import { createTextureManager, type TextureManager } from "@/render/webgl/textureManager";
+import { MAX_TEXTURE_SLOTS } from "@/render/webgl/textures";
+import { HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID } from "./definition";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
@@ -229,7 +229,7 @@ function createPipeline(
 }
 
 registerSceneWebGLPipeline(
-    SCENE_IDS.hyperbolicTripleReflection,
+    HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID,
     HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
     createPipeline,
 );

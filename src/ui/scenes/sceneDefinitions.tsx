@@ -3,6 +3,7 @@ import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primiti
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
 import type { SphericalSceneState } from "@/geom/spherical/types";
+import { hyperbolicTripleReflectionScene } from "@/scenes/hyperbolic/tiling-333";
 import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
 import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import type { TrianglePreset, TrianglePresetGroup } from "@/ui/trianglePresets";
@@ -110,6 +111,10 @@ function cloneFacingMirrorConfig(config: FacingMirrorSceneConfig): FacingMirrorS
 
 type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
+const HYPERBOLIC_TRIPLE_REFLECTION_SCENE: SceneDefinitionEntry = {
+    ...hyperbolicTripleReflectionScene,
+};
+
 type SceneAlias =
     | "hyperbolicTiling"
     | "hyperbolicTripleReflection"
@@ -136,18 +141,7 @@ const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
         supportsHandles: false,
         editable: false,
     },
-    {
-        key: "hyperbolicTripleReflection",
-        label: "Hyperbolic Triple Reflection",
-        geometry: GEOMETRY_KIND.hyperbolic,
-        variant: "tiling-333",
-        description:
-            "Displays three mirrors with intersection angles (3,3,3) and colors regions by reflection parity.",
-        supportsHandles: false,
-        editable: false,
-        fixedHyperbolicParams: { p: 3, q: 3, r: 3, depth: 0 },
-        showTriangleControls: false,
-    },
+    HYPERBOLIC_TRIPLE_REFLECTION_SCENE,
     {
         key: "debugTexture",
         label: "Debug Texture",

@@ -12,7 +12,7 @@ import "./webgl/pipelines/euclideanHalfPlanePipeline";
 import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
-import "./webgl/pipelines/hyperbolicTripleReflectionPipeline";
+import "@/scenes/hyperbolic/tiling-333/pipeline";
 import "./webgl/pipelines/facingMirrorPipeline";
 
 type RenderOptions = {
