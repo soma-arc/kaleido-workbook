@@ -70,14 +70,14 @@ describe("App query parameters", () => {
     });
 
     it("selects scene and embed mode from query", () => {
-        setSearchParams({ scene: SCENE_IDS.euclideanRegularSquare, embed: "1" });
+        setSearchParams({ scene: SCENE_IDS.euclideanMultiPlane, embed: "1" });
         renderApp();
         const lastCall = hostSpy.mock.calls.at(-1);
         expect(lastCall).toBeTruthy();
         const props = lastCall?.[0];
         expect(props).toBeTruthy();
         if (!props) return;
-        expect(props.activeSceneId).toBe(SCENE_IDS.euclideanRegularSquare);
+        expect(props.activeSceneId).toBe(SCENE_IDS.euclideanMultiPlane);
         expect(props.embed).toBe(true);
         expect(document.body.classList.contains("embed-mode")).toBe(true);
     });

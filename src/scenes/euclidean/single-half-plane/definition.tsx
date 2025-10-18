@@ -1,0 +1,32 @@
+import { GEOMETRY_KIND } from "@/geom/core/types";
+import type { HalfPlane } from "@/geom/primitives/halfPlane";
+import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import type { SceneDefinitionInput } from "@/ui/scenes/types";
+
+export const EUCLIDEAN_SINGLE_HALF_PLANE_SCENE_KEY = "euclideanSingleHalfPlane" as const;
+
+const SINGLE_HALF_PLANE = [halfPlaneFromNormalAndOffset({ x: 1, y: 0 }, 0)] as const;
+
+function cloneHalfPlanes(
+    planes: readonly { anchor: { x: number; y: number }; normal: { x: number; y: number } }[],
+): HalfPlane[] {
+    return planes.map((plane) =>
+        normalizeHalfPlane({
+            anchor: { x: plane.anchor.x, y: plane.anchor.y },
+            normal: { x: plane.normal.x, y: plane.normal.y },
+        }),
+    );
+}
+
+export const euclideanSingleHalfPlaneScene = {
+    key: EUCLIDEAN_SINGLE_HALF_PLANE_SCENE_KEY,
+    label: "Single Half-Plane",
+    geometry: GEOMETRY_KIND.euclidean,
+    variant: "single-half-plane",
+    description: "One adjustable half-plane represented with draggable handles.",
+    supportsHandles: true,
+    editable: true,
+    defaultHandleSpacing: 0.75,
+    initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
+} satisfies SceneDefinitionInput;
