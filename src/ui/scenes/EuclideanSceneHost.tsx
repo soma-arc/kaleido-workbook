@@ -15,8 +15,10 @@ import {
     derivePointsFromHalfPlane,
     type HalfPlaneControlPoints,
 } from "@/geom/primitives/halfPlaneControls";
+import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolygon";
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
+import { cropToCenteredSquare } from "@/render/crop";
 import {
     type CaptureRequestKind,
     createRenderEngine,
@@ -36,6 +38,7 @@ import {
     type ImageExportStatus,
 } from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
+import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
@@ -73,6 +76,14 @@ const DEFAULT_EUCLIDEAN_PLANES: HalfPlane[] = [
     halfPlaneFromNormalAndOffset({ x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0),
 ];
 
+const MODE_TO_CAPTURE_KIND: Record<ImageExportMode, CaptureRequestKind> = {
+    composite: "composite",
+    webgl: "webgl",
+    "square-composite": "composite",
+    "square-webgl": "webgl",
+};
+
+const SQUARE_MODES: ReadonlySet<ImageExportMode> = new Set(["square-composite", "square-webgl"]);
 function findCircleLineControls(
     controls: HalfPlaneControlPoints[] | null,
 ): HalfPlaneControlPoints | null {
@@ -154,11 +165,11 @@ function pad(value: number): string {
     return value.toString().padStart(2, "0");
 }
 
-function buildFilename(kind: CaptureRequestKind): string {
+function buildFilename(mode: ImageExportMode): string {
     const now = new Date();
     const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    return `hp-capture-${kind}-${datePart}-${timePart}.png`;
+    return `hp-capture-${mode}-${datePart}-${timePart}.png`;
 }
 
 type PlaneDragState = {
@@ -247,6 +258,7 @@ export function EuclideanSceneHost({
     const frameRequestRef = useRef<number | null>(null);
     const lastFrameTimeRef = useRef<number>(0);
     const maxFrameRateInputId = useId();
+    const multiPlaneSliderId = useId();
     const [exportMode, setExportMode] = useState<ImageExportMode>("composite");
     const [exportStatus, setExportStatus] = useState<ImageExportStatus>(null);
 
@@ -382,6 +394,24 @@ export function EuclideanSceneHost({
 
     const controlAssignments = scene.controlAssignments;
 
+    const multiPlaneConfig = scene.multiPlaneConfig ?? null;
+    const [multiPlaneSides, setMultiPlaneSides] = useState<number | null>(
+        () => multiPlaneConfig?.initialSides ?? null,
+    );
+
+    useEffect(() => {
+        if (!multiPlaneConfig) {
+            return;
+        }
+        setMultiPlaneSides(multiPlaneConfig.initialSides);
+    }, [multiPlaneConfig]);
+
+    const handleMultiPlaneSidesChange = useCallback((nextSides: number) => {
+        setMultiPlaneSides(nextSides);
+        setEditableHalfPlanes(null);
+        setExportStatus(null);
+    }, []);
+
     const presetGroups = useMemo(
         () => getPresetGroupsForGeometry(scene.geometry),
         [scene.geometry],
@@ -411,6 +441,13 @@ export function EuclideanSceneHost({
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
             return null;
         }
+        if (multiPlaneConfig) {
+            const sides = multiPlaneSides ?? multiPlaneConfig.initialSides;
+            return generateRegularPolygonHalfplanes(sides, {
+                radius: multiPlaneConfig.radius,
+                initialAngle: multiPlaneConfig.initialAngle,
+            });
+        }
         if (scene.initialHalfPlanes) {
             return scene.initialHalfPlanes.map((plane) => normalizeHalfPlane(plane));
         }
@@ -423,7 +460,14 @@ export function EuclideanSceneHost({
         } catch {
             return null;
         }
-    }, [scene.geometry, scene.initialHalfPlanes, params, paramError]);
+    }, [
+        scene.geometry,
+        scene.initialHalfPlanes,
+        params,
+        paramError,
+        multiPlaneConfig,
+        multiPlaneSides,
+    ]);
 
     const normalizedHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
@@ -1042,13 +1086,15 @@ export function EuclideanSceneHost({
             });
             return;
         }
-        const primaryKind: CaptureRequestKind = exportMode === "webgl" ? "webgl" : "composite";
+        const primaryKind = MODE_TO_CAPTURE_KIND[exportMode];
+        let resolvedMode: ImageExportMode = exportMode;
         let canvasForExport = engine.capture(primaryKind);
         let usedKind: CaptureRequestKind = primaryKind;
         if (!canvasForExport && primaryKind === "webgl") {
             canvasForExport = engine.capture("composite");
             if (canvasForExport) {
                 usedKind = "composite";
+                resolvedMode = SQUARE_MODES.has(exportMode) ? "square-composite" : "composite";
             }
         }
         if (!canvasForExport) {
@@ -1058,8 +1104,11 @@ export function EuclideanSceneHost({
             });
             return;
         }
+        if (SQUARE_MODES.has(resolvedMode)) {
+            canvasForExport = cropToCenteredSquare(canvasForExport);
+        }
         const dataUrl = exportPNG(canvasForExport);
-        const filename = buildFilename(usedKind);
+        const filename = buildFilename(resolvedMode);
         const success = downloadDataUrl(filename, dataUrl);
         if (!success) {
             setExportStatus({
@@ -1175,6 +1224,24 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={renderMode}
             />
+            {multiPlaneConfig ? (
+                <div style={{ display: "grid", gap: "4px" }}>
+                    <label htmlFor={multiPlaneSliderId} style={{ fontWeight: 600 }}>
+                        Mirrors: {multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    </label>
+                    <input
+                        id={multiPlaneSliderId}
+                        type="range"
+                        min={multiPlaneConfig.minSides}
+                        max={multiPlaneConfig.maxSides}
+                        step={1}
+                        value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                        onChange={(event) =>
+                            handleMultiPlaneSidesChange(Number(event.target.value))
+                        }
+                    />
+                </div>
+            ) : null}
             {showTriangleControls && (
                 <>
                     <PresetSelector
@@ -1261,8 +1328,43 @@ export function EuclideanSceneHost({
         </>
     );
 
+    const handleOverlaySnapToggle = useCallback(
+        (enabled: boolean) => {
+            setSnapEnabled(enabled);
+        },
+        [setSnapEnabled],
+    );
+
     const overlay = useMemo(() => {
         if (!embed) return null;
+
+        if (multiPlaneConfig) {
+            const overlayContent = (
+                <MultiPlaneOverlayControls
+                    minSides={multiPlaneConfig.minSides}
+                    maxSides={multiPlaneConfig.maxSides}
+                    value={multiPlaneSides ?? multiPlaneConfig.initialSides}
+                    onChange={handleMultiPlaneSidesChange}
+                />
+            );
+            if (!scene.embedOverlayFactory) {
+                return overlayContent;
+            }
+            return scene.embedOverlayFactory({
+                scene,
+                renderBackend: renderMode,
+                controls: null,
+                extras: {
+                    multiPlaneControls: {
+                        minSides: multiPlaneConfig.minSides,
+                        maxSides: multiPlaneConfig.maxSides,
+                        value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                        onChange: handleMultiPlaneSidesChange,
+                    },
+                },
+            });
+        }
+
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
                 {scene.supportsHandles ? (
@@ -1285,6 +1387,20 @@ export function EuclideanSceneHost({
                 ) : null}
             </EmbedOverlayPanel>
         );
+        const overlayExtras = {
+            showHandles,
+            toggleHandles,
+            halfPlaneControls:
+                scene.key === "euclideanHalfPlanes"
+                    ? {
+                          presetGroups,
+                          activePresetId,
+                          selectPreset: setFromPreset,
+                          snapEnabled,
+                          setSnapEnabled: handleOverlaySnapToggle,
+                      }
+                    : undefined,
+        };
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
         }
@@ -1292,12 +1408,23 @@ export function EuclideanSceneHost({
             scene,
             renderBackend: renderMode,
             controls: defaultOverlay,
-            extras: {
-                showHandles,
-                toggleHandles,
-            },
+            extras: overlayExtras,
         });
-    }, [embed, renderMode, scene, showHandles, toggleHandles]);
+    }, [
+        embed,
+        renderMode,
+        scene,
+        showHandles,
+        toggleHandles,
+        presetGroups,
+        activePresetId,
+        setFromPreset,
+        snapEnabled,
+        handleOverlaySnapToggle,
+        multiPlaneConfig,
+        multiPlaneSides,
+        handleMultiPlaneSidesChange,
+    ]);
 
     const canvas = (
         <>

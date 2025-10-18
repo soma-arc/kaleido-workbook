@@ -13,6 +13,7 @@ import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
 import "./webgl/pipelines/hyperbolicTripleReflectionPipeline";
+import "./webgl/pipelines/facingMirrorPipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;
