@@ -25,21 +25,29 @@
 1. **状態モデル拡張**
    - `src/ui/scenes/circleInversionConfig.ts` の `CircleInversionState` を、基準直線（ハンドル ID 2 点）、表示トグル、テクスチャ設定を持てる構造へ拡張。
    - `sceneDefinitions.tsx` で `supportsHandles: true` とし、`controlAssignments` を設定して固定ハンドル ID（例: `line-fixed`, `line-free`）を共有。初期 state を更新。
-   - `EuclideanSceneHost.tsx` で新属性を受け取り、ハンドル変更時に `CircleInversionState` を更新できるようコールバックを追加。状態 readout（`data-testid="circle-inversion-state"`）も拡張。
+   - `EuclideanSceneHost.tsx` で新属性を受け取り、ハンドル変更時に `CircleInversionState` を更新できるようコールバックを追加。状態 readout（`data-testid="circle-inversion-state"`）も拡張。✅ 実装済み（ハンドル変化で `updateCircleInversionLineFromControls` を利用、トグルヘルパーも導入済み）
 2. **ジオメトリユーティリティ**
    - `src/geom/transforms/inversion.ts` に「直線を円反転した結果の円 or 直線」を返す関数や、ハンドル座標から法線・距離を導出する関数を追加。既存の `invertInCircle` を再利用し、退化ケース（直線が中心を通る等）も扱う。
-   - 新関数用のユニットテストを `tests/unit/geom/inversion.unit.test.ts` に追加し、対称性や involution を検証。必要に応じプロパティテストを `tests/property` に配置。
+   - 新関数用のユニットテストを `tests/unit/geom/inversion.unit.test.ts` に追加し、対称性や involution を検証。必要に応じプロパティテストを `tests/property` に配置。✅ `invertLineInCircle` の単体テスト追加済み。
 3. **WebGL パイプライン改修**
    - `render/scene.ts`／`render/engine.ts` の `CircleInversionState` 取り回しを更新し、拡張パラメータ（反転直線の円パラメータ、テクスチャ矩形、表示トグル等）を WebGL 層へ引き渡す。
-   - `render/webgl/pipelines/euclideanCircleInversionPipeline.ts` で新 uniform を解決し、シェーダに固定円・基準直線・テクスチャ矩形・テクスチャリソースを渡せるようにする。矩形自体の反転はシェーダに任せる。
-   - fragment シェーダ `euclideanCircleInversion.frag` にライン描画・テクスチャサンプリングの分岐を実装し、渡された矩形仕様とテクスチャから反転像を計算させる。
+   - `render/webgl/pipelines/euclideanCircleInversionPipeline.ts` で新 uniform を解決し、シェーダに固定円・基準直線・テクスチャ矩形・テクスチャリソースを渡せるようにする。矩形自体の反転はシェーダに任せる。✅ 実装済み（ライン描画・テクスチャON/OFF対応済み）。
+   - fragment シェーダ `euclideanCircleInversion.frag` にライン描画・テクスチャサンプリングの分岐を実装し、渡された矩形仕様とテクスチャから反転像を計算させる。✅ 実装済み。
+   - TODO: `render/scene.ts`／`render/engine.ts` の state 伝搬を拡張（まだランタイム状態は rectangle のみを送っているため要反映）。
 4. **UI/Storybook 更新**
-   - `EuclideanSceneHost` のサイドパネル or overlay に表示トグル（直線ハンドル、反転像、テクスチャ）を追加し、`HalfPlaneOverlayControls` と整合。
-   - Storybook (`CircleInversionScene.stories.tsx`) の Docs/Controls/Play を拡張し、ハンドル可動・固定時の挙動を Play テストで検証。
-   - `storybook.md` に沿って CSF3 の controls（トグル等）と accessibility 設定を更新。
+   - `EuclideanSceneHost` のサイドパネル or overlay に表示トグル（直線ハンドル、反転像、テクスチャ）を追加し、`HalfPlaneOverlayControls` と整合。🚧 未着手。UI 側で display オプション編集用のコントロール追加が必要。
+   - Storybook (`CircleInversionScene.stories.tsx`) の Docs/Controls/Play を拡張し、ハンドル可動・固定時の挙動を Play テストで検証。🚧 未着手。
+   - `storybook.md` に沿って CSF3 の controls（トグル等）と accessibility 設定を更新。🚧 未着手。
 5. **回帰と仕上げ**
-   - `pnpm biome:check` / `pnpm typecheck` / `pnpm test` を通し、結果を PR テンプレに記録。
-   - ドキュメントや README に追記が必要ならまとめ、残課題を Issue として起票（例: 複数オブジェクトへの拡張）。
+   - `pnpm biome:check` / `pnpm typecheck` / `pnpm test` を通し、結果を PR テンプレに記録。✅ `pnpm test` 実行済み（全テスト Green）。
+   - ドキュメントや README に追記が必要ならまとめ、残課題を Issue として起票（例: 複数オブジェクトへの拡張）。🚧 未確認。
+
+### 再開メモ（Next）
+- `render/scene.ts` / `render/engine.ts` に新しい `CircleInversionState` フィールド（line/display/texture）を渡す処理を追加し、レンダリング側が Storybook/ホストからの変更を受け取れるようにする。
+- `EuclideanSceneHost` の UI に display オプションのトグル（ライン表示・反転ライン表示・テクスチャ有効）を追加し、`updateCircleInversionDisplay` を用いて state を更新。その結果を `renderEuclideanScene` に反映する。
+- ハンドル操作時に `updateCircleInversionLineFromControls` で state を更新しつつ、render に渡す `overrideInversion` へ適用する（現在のドラッグ処理では rectangle のみ更新）。
+- Storybook `CircleInversionScene.stories.tsx` を修正し、新しい controls/play テストで表示トグルとハンドル固定挙動を検証。Docs 説明も更新。
+- 変更反映後に `pnpm test` / `pnpm biome:check` / `pnpm typecheck` を再実行し、PR 用メモに記録。
 
 ## テスト観点
 - **ユニット**: 直線→円／直線の反転結果、involution（2回反転で元に戻る）、中心通過の退化ケースを `tests/unit/geom/inversion.unit.test.ts` で網羅。

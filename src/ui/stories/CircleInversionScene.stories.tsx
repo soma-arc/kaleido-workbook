@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect, waitFor } from "@storybook/test";
+import { userEvent, within } from "@storybook/testing-library";
 import { useMemo } from "react";
 import { detectRenderMode } from "@/render/engine";
 import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
@@ -54,7 +55,7 @@ const meta: Meta<typeof CircleInversionSceneDemo> = {
         docs: {
             description: {
                 component:
-                    "固定円に対する図形の反転を WebGL シェーダーで描画するシーンです。矩形をドラッグして反転像との対応を確認できます。",
+                    "固定円に対する図形の反転を WebGL シェーダーで描画するシーンです。矩形や基準ラインの表示切替、反転像のテクスチャ有無をコントロールから操作できます。",
             },
         },
         accessibility: {
@@ -69,6 +70,7 @@ type Story = StoryObj<typeof CircleInversionSceneDemo>;
 
 export const Default: Story = {
     play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
         const readout = canvasElement.querySelector(
             '[data-testid="circle-inversion-state"]',
         ) as HTMLSpanElement | null;
@@ -79,5 +81,28 @@ export const Default: Story = {
         expect(parsed.fixedCircle.radius).toBeGreaterThan(0);
         expect(parsed.rectangle.halfExtents.x).toBeGreaterThan(0);
         expect(parsed.rectangle.halfExtents.y).toBeGreaterThan(0);
+        expect(parsed.display?.showInvertedLine).toBe(true);
+
+        const handleReadout = canvasElement.querySelector(
+            '[data-testid="handle-coordinates"]',
+        ) as HTMLSpanElement | null;
+        const handles = JSON.parse(handleReadout?.textContent ?? "[]");
+        expect(Array.isArray(handles)).toBe(true);
+        expect(handles[0]?.[0]?.id).toBe("circle-line-start");
+        expect(handles[0]?.[1]?.id).toBe("circle-line-end");
+
+        const invertedLineToggle = await canvas.findByLabelText("反転ラインを表示");
+        await userEvent.click(invertedLineToggle);
+        await waitFor(() => {
+            const updated = JSON.parse(readout?.textContent ?? "{}");
+            expect(updated.display?.showInvertedLine).toBe(false);
+        });
+
+        const textureToggle = await canvas.findByLabelText("テクスチャを有効化");
+        await userEvent.click(textureToggle);
+        await waitFor(() => {
+            const updated = JSON.parse(readout?.textContent ?? "{}");
+            expect(updated.display?.textureEnabled).toBe(false);
+        });
     },
 };
