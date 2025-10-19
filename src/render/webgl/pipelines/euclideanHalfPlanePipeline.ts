@@ -13,6 +13,7 @@ import fragmentShaderSourceTemplate from "../shaders/euclideanReflection.frag?ra
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "./pipelineIds";
 import { getOptionalUniformLocation, getUniformLocation } from "./uniformUtils";
 
 const LINE_WIDTH = 1.5;
@@ -20,8 +21,6 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
 const FILL_COLOR = [164 / 255, 208 / 255, 255 / 255] as const;
 const FILL_OPACITY = 0.55;
-
-export const EUCLIDEAN_HALF_PLANE_PIPELINE_ID = "webgl-euclidean-halfplane" as const;
 
 class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;

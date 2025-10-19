@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_DEBUG_CAMERA_SCENE_KEY = "euclideanCameraDebug" as const;
@@ -14,6 +15,7 @@ export const euclideanDebugCameraScene = {
     supportsHandles: false,
     editable: false,
     defaultTexturePresetId: "grid",
+    renderPipelineId: EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID,
     embedOverlayFactory: ({ controls }) => (
         <div style={{ display: "grid", gap: "12px" }}>
             {controls}

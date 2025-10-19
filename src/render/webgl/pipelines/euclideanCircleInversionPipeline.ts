@@ -11,9 +11,8 @@ import {
 import fragmentShaderSource from "../shaders/euclideanCircleInversion.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
+import { EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID } from "./pipelineIds";
 import { getUniformLocation } from "./uniformUtils";
-
-export const EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID = "webgl-euclidean-circle-inversion" as const;
 
 const RECT_COLOR = [0.231, 0.514, 0.918, 0.75] as const;
 const INVERTED_COLOR = [0.976, 0.545, 0.259, 0.72] as const;

@@ -1,4 +1,5 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
 import { HyperbolicTiling333Controls, type HyperbolicTiling333ControlsProps } from "./ui/Controls";
 
@@ -21,6 +22,7 @@ export const hyperbolicTripleReflectionScene = {
     fixedHyperbolicParams: { p: 3, q: 3, r: 3, depth: 0 },
     showTriangleControls: false,
     embedOverlayDefaultVisible: false,
+    renderPipelineId: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             reflectionControls?: HyperbolicTiling333ControlsProps;

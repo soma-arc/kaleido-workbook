@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import {
     createDefaultEmbedOverlay,
     resolveSceneControls,
@@ -74,6 +75,7 @@ describe("Scene overlay helpers", () => {
         variant: "test",
         supportsHandles: false,
         editable: false,
+        renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     };
 
     it("falls back to default overlay when factory is missing", () => {

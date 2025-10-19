@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
@@ -20,6 +21,7 @@ export const euclideanMultiPlaneScene = {
         initialSides: 4,
         radius: 0.7,
     },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     embedOverlayFactory: ({ extras }) => {
         const context =
             (extras as {

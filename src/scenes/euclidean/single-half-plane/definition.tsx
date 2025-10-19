@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_SINGLE_HALF_PLANE_SCENE_KEY = "euclideanSingleHalfPlane" as const;
@@ -31,6 +32,7 @@ export const euclideanSingleHalfPlaneScene = {
     defaultTexturePresetId: "grid",
     embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

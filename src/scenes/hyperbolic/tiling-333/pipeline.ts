@@ -9,6 +9,7 @@ import {
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "@/render/webgl/pipelineRegistry";
+import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import {
     getOptionalUniformLocation,
     getUniformLocation,
@@ -30,9 +31,6 @@ const LINE_FEATHER = 0.9;
 const LINE_COLOR = [0.92, 0.96, 0.99] as const;
 const FILL_COLOR = [0.18, 0.22, 0.35] as const;
 const REFLECTION_SLIDER_STEP = 1;
-
-export const HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID =
-    "webgl-hyperbolic-triple-reflection" as const;
 
 class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;

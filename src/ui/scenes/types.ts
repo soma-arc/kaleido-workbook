@@ -38,6 +38,11 @@ export interface SceneDefinition {
     label: string;
     geometry: GeometryKind;
     variant: SceneVariant;
+    /**
+     * レンダリングに利用する WebGL パイプラインの識別子。
+     * `registerSceneWebGLPipeline` で登録された ID と一致する必要がある。
+     */
+    renderPipelineId: string;
     description?: string;
     supportsHandles: boolean;
     editable: boolean;

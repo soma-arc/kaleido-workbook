@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import { SPHERICAL_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinition } from "@/ui/scenes";
 import { SphericalSceneHost } from "@/ui/scenes/SphericalSceneHost";
 
@@ -23,6 +24,7 @@ describe("SphericalSceneHost", () => {
             triangle: createRegularTetrahedronTriangle(),
             handles: {},
         },
+        renderPipelineId: SPHERICAL_PIPELINE_ID,
     } as const;
 
     it("renders vertex controls and updates summary when azimuth changes", async () => {

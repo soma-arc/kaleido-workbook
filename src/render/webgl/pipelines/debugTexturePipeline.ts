@@ -6,10 +6,12 @@ import {
 import fragmentShaderSource from "../shaders/debugTexture.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { TEXTURE_SLOTS, type TextureSlot } from "../textures";
+import {
+    EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID,
+    EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID,
+} from "./pipelineIds";
 import { getOptionalUniformLocation, getUniformLocation } from "./uniformUtils";
 
-const BASE_PIPELINE_ID = "webgl-debug-texture";
-const CAMERA_PIPELINE_ID = "webgl-debug-camera";
 const EUCLIDEAN_DEBUG_TEXTURE_SCENE_ID = "euclidean-debug-texture";
 const EUCLIDEAN_CAMERA_SCENE_ID = "euclidean-debug-camera";
 
@@ -220,12 +222,12 @@ function createDebugTexturePipeline(slot: TextureSlot) {
 
 registerSceneWebGLPipeline(
     EUCLIDEAN_DEBUG_TEXTURE_SCENE_ID,
-    BASE_PIPELINE_ID,
+    EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID,
     createDebugTexturePipeline(TEXTURE_SLOTS.base),
 );
 
 registerSceneWebGLPipeline(
     EUCLIDEAN_CAMERA_SCENE_ID,
-    CAMERA_PIPELINE_ID,
+    EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID,
     createDebugTexturePipeline(TEXTURE_SLOTS.camera),
 );
