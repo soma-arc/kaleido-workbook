@@ -34,6 +34,10 @@ pnpm ci             # biome ci + typecheck + test
 - 「Texture」セクションで Poincaré 円板の背面テクスチャを切り替えられます。
   - `Choose image` からローカルファイル（PNG/JPEG/SVG 等）を選ぶと、WebGL テクスチャに即時反映されます。
   - `Preset` のプルダウンでは `src/assets/textures` に用意したサンプルを選択できます（Storybook: `Controls/Texture Input`）。
+- Euclidean シーンでは `SceneDefinition.defaultTexturePresetId` に設定されたプリセットが、自動的に base スロットへ読み込まれます。
+  - `circle-inversion` は `cat-fish-run`、それ以外の Euclidean シーンは `grid` が既定値です。
+  - 自動適用でセットされたテクスチャは内部状態で `origin: "auto"` として扱われ、シーンを切り替えると新しいプリセットで上書きされます。
+  - ユーザーが `Choose image` やカメラ入力で手動設定すると `origin: "manual"` になり、以降は自動プリセットで上書きされません（`Disable` を押して元の idle 状態に戻すと、次回のシーン切り替え時に自動適用が再び有効になります）。
 - 「カメラを有効化」ボタンは `navigator.mediaDevices.getUserMedia` で取得したフレームを毎フレーム `texImage2D` へ転送します。
   - ブラウザのセキュリティ要件により HTTPS（または `localhost`）が必須です。開発環境で試す場合は `pnpm dev -- --host --https` を利用するか、自己署名証明書を設定してください。
   - 許可ダイアログで拒否した場合はステータスにエラーメッセージが表示され、再度ボタンを押すと再リクエストします。
