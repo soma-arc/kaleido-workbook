@@ -94,6 +94,7 @@ describe("useTextureInput canvas sources", () => {
         expect(handle.canvas.width).toBe(256);
         expect(handle.canvas.height).toBe(128);
         expect(harness.current.slots[TEXTURE_SLOTS.base].status).toBe("ready");
+        expect(harness.current.slots[TEXTURE_SLOTS.base].origin).toBe("manual");
         const layer = harness.current.slots[TEXTURE_SLOTS.base].layer;
         expect(layer?.kind).toBe("canvas");
         expect(layer?.source).not.toBeNull();
@@ -117,6 +118,7 @@ describe("useTextureInput canvas sources", () => {
         });
         expect(harness.current.slots[TEXTURE_SLOTS.base].layer).toBeNull();
         expect(harness.current.slots[TEXTURE_SLOTS.base].status).toBe("idle");
+        expect(harness.current.slots[TEXTURE_SLOTS.base].origin).toBeNull();
         harness.cleanup();
     });
 });

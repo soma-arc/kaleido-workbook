@@ -293,7 +293,7 @@ export function EuclideanSceneHost({
             return;
         }
         appliedDefaultPresetId.current = presetId;
-        loadPresetTexture(TEXTURE_SLOTS.base, presetId).catch(() => {
+        loadPresetTexture(TEXTURE_SLOTS.base, presetId, { origin: "auto" }).catch(() => {
             if (appliedDefaultPresetId.current === presetId) {
                 appliedDefaultPresetId.current = null;
             }

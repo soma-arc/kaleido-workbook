@@ -44,7 +44,7 @@ describe("TexturePicker", () => {
             transform: IDENTITY_UV_TRANSFORM,
             source,
         };
-        const state: TextureSlotState = { layer, status: "ready", error: null };
+        const state: TextureSlotState = { layer, status: "ready", error: null, origin: "manual" };
         const presets: TexturePreset[] = [{ id: "grid", label: "Grid", url: "mock" }];
 
         act(() => {
@@ -104,7 +104,12 @@ describe("CameraInput", () => {
         const onDisable = vi.fn();
         const container = document.createElement("div");
         const root = createRoot(container);
-        const idleState: TextureSlotState = { layer: null, status: "idle", error: null };
+        const idleState: TextureSlotState = {
+            layer: null,
+            status: "idle",
+            error: null,
+            origin: null,
+        };
 
         act(() => {
             root.render(
@@ -142,7 +147,12 @@ describe("CameraInput", () => {
             transform: IDENTITY_UV_TRANSFORM,
             source,
         };
-        const readyState: TextureSlotState = { layer: readyLayer, status: "ready", error: null };
+        const readyState: TextureSlotState = {
+            layer: readyLayer,
+            status: "ready",
+            error: null,
+            origin: "manual",
+        };
 
         act(() => {
             root.render(
@@ -229,12 +239,14 @@ describe("useTextureInput", () => {
 
         const baseState = hookRef.current?.slots[TEXTURE_SLOTS.base];
         expect(baseState?.status).toBe("ready");
+        expect(baseState?.origin).toBe("manual");
         expect(hookRef.current?.textures).toHaveLength(1);
 
         act(() => {
             hookRef.current?.disable(TEXTURE_SLOTS.base);
         });
         expect(hookRef.current?.slots[TEXTURE_SLOTS.base].status).toBe("idle");
+        expect(hookRef.current?.slots[TEXTURE_SLOTS.base].origin).toBeNull();
         expect(hookRef.current?.textures).toHaveLength(0);
 
         act(() => {
