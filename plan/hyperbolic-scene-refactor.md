@@ -91,6 +91,10 @@
 - `useRenderEngineWithCanvas` フックを追加し、Euclidean/Hyperbolic ホストが共通で利用する。
 - `controlsFactory`/`embedOverlayFactory` を利用するシーンを順次拡張し、ホスト側の `scene.key` 依存を解消。
 
+## 進捗ログ（2025-10-19）
+- [done] タスク1: ドキュメント整備の方針を本計画（v1.1）へ反映し、`sceneUniforms` 導入の目的・ステップを確定。
+- [done] タスク2: `sceneUniforms` をレンダーコンテキストへ導入し、`uMaxReflections` をホストから更新・伝搬できるようにした。
+
 ## フェーズC 設計メモ（2025-10-19）
 - **ホスト分割方針**
   - `HyperbolicSceneHost` を新設し、既存 `EuclideanSceneHost` から双曲描画 (`renderHyperbolicScene`) とテクスチャピッカー程度の共通処理のみを抽出。Euclidean 専用ハンドル/円反転ロジックを排除する。

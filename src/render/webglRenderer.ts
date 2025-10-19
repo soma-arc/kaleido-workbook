@@ -19,6 +19,7 @@ type RenderOptions = {
     clipToDisk?: boolean;
     textures?: TextureLayer[];
     scene?: SceneDefinition;
+    sceneUniforms?: Record<string, unknown>;
 };
 
 export interface WebGLRenderer {
@@ -106,6 +107,7 @@ function createRealRenderer(
                 clipToDisk: options?.clipToDisk !== false,
                 textures: options?.textures ?? [],
                 canvas,
+                sceneUniforms: options?.sceneUniforms,
             };
             pipeline.render(context);
         },
