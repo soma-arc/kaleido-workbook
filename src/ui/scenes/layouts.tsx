@@ -1,5 +1,7 @@
 import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
+import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { STANDARD_CANVAS_HEIGHT, STANDARD_CANVAS_WIDTH } from "./canvasLayout";
+import type { SceneContextExtras, SceneDefinition, SceneEmbedOverlayContext } from "./types";
 
 export type SceneLayoutProps = {
     controls: ReactNode;
@@ -67,6 +69,12 @@ const EMBED_OVERLAY_STYLE: CSSProperties = {
     pointerEvents: "auto",
 };
 
+export const STAGE_CANVAS_BASE_STYLE: CSSProperties = {
+    border: "none",
+    width: "100%",
+    height: "100%",
+};
+
 export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutProps): JSX.Element {
     const overlayNode = overlay ? <div style={EMBED_OVERLAY_STYLE}>{overlay}</div> : null;
     if (embed) {
@@ -116,4 +124,74 @@ export function CanvasSlot({ children, embed, borderColor }: CanvasSlotProps): J
               border: `1px solid ${borderColor ?? "#ccd0dc"}`,
           };
     return <div style={style}>{children}</div>;
+}
+
+export type SceneControlsResolverOptions = {
+    scene: SceneDefinition;
+    renderBackend: SceneEmbedOverlayContext["renderBackend"];
+    defaultControls: ReactNode;
+    extras?: SceneContextExtras;
+};
+
+export function resolveSceneControls({
+    scene,
+    renderBackend,
+    defaultControls,
+    extras,
+}: SceneControlsResolverOptions): ReactNode {
+    if (!scene.controlsFactory) {
+        return defaultControls;
+    }
+    return scene.controlsFactory({
+        scene,
+        renderBackend,
+        defaultControls,
+        extras,
+    });
+}
+
+export type SceneOverlayResolverOptions = {
+    scene: SceneDefinition;
+    renderBackend: SceneEmbedOverlayContext["renderBackend"];
+    defaultOverlay?: ReactNode;
+    extras?: SceneContextExtras;
+};
+
+export function createDefaultEmbedOverlay(options: {
+    scene: SceneDefinition;
+    children?: ReactNode;
+    subtitle?: string;
+    footer?: ReactNode;
+}): ReactNode {
+    const { scene, children, subtitle = "Scene", footer } = options;
+    return (
+        <EmbedOverlayPanel title={scene.label} subtitle={subtitle} footer={footer}>
+            {children}
+        </EmbedOverlayPanel>
+    );
+}
+
+export function resolveSceneEmbedOverlay({
+    scene,
+    renderBackend,
+    defaultOverlay,
+    extras,
+}: SceneOverlayResolverOptions): ReactNode | undefined {
+    if (scene.embedOverlayDefaultVisible === false) {
+        return undefined;
+    }
+    const factory = scene.embedOverlayFactory;
+    if (!factory) {
+        return defaultOverlay ?? undefined;
+    }
+    const resolved = factory({
+        scene,
+        renderBackend,
+        controls: defaultOverlay ?? null,
+        extras,
+    });
+    if (resolved === null || resolved === undefined) {
+        return defaultOverlay ?? undefined;
+    }
+    return resolved;
 }

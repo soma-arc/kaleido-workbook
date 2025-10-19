@@ -127,16 +127,18 @@ function isGeometryKind(value: string): value is GeometryKind {
     );
 }
 
+export type SceneContextExtras = Record<string, unknown>;
+
 export type SceneEmbedOverlayContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
-    controls: ReactNode;
-    extras?: unknown;
+    controls: ReactNode | null;
+    extras?: SceneContextExtras;
 };
 
 export type SceneControlsContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
     defaultControls: ReactNode;
-    extras?: unknown;
+    extras?: SceneContextExtras;
 };

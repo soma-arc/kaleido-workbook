@@ -25,7 +25,6 @@ import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { DepthControls } from "@/ui/components/DepthControls";
-import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import {
     ImageExportControls,
@@ -56,9 +55,15 @@ import {
     updateCircleInversionLineFromControls,
     updateCircleInversionRectangleCenter,
 } from "./circleInversionConfig";
-import { SceneLayout } from "./layouts";
+import {
+    createDefaultEmbedOverlay,
+    resolveSceneControls,
+    resolveSceneEmbedOverlay,
+    SceneLayout,
+    STAGE_CANVAS_BASE_STYLE,
+} from "./layouts";
 import { SCENE_IDS } from "./sceneDefinitions";
-import type { SceneDefinition, SceneId } from "./types";
+import type { SceneContextExtras, SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
 const HANDLE_HIT_TOLERANCE_PX = 10;
@@ -1350,7 +1355,7 @@ export function EuclideanSceneHost({
 
     const defaultControls = baseControls;
 
-    const controlsExtras = {
+    const controlsExtras: SceneContextExtras = {
         multiPlaneControls: multiPlaneConfig
             ? {
                   sliderId: multiPlaneSliderId,
@@ -1372,16 +1377,14 @@ export function EuclideanSceneHost({
             snapEnabled,
             setSnapEnabled,
         },
-    } as const;
+    };
 
-    const controls = scene.controlsFactory
-        ? scene.controlsFactory({
-              scene,
-              renderBackend: resolvedRenderMode,
-              defaultControls,
-              extras: controlsExtras,
-          })
-        : defaultControls;
+    const controls = resolveSceneControls({
+        scene,
+        renderBackend: resolvedRenderMode,
+        defaultControls,
+        extras: controlsExtras,
+    });
 
     const handleOverlaySnapToggle = useCallback(
         (enabled: boolean) => {
@@ -1390,13 +1393,36 @@ export function EuclideanSceneHost({
         [setSnapEnabled],
     );
 
-    const overlay = useMemo(() => {
-        if (scene.embedOverlayDefaultVisible === false || !scene.embedOverlayFactory) {
-            return undefined;
-        }
-        const defaultOverlay = (
-            <EmbedOverlayPanel title={scene.label} subtitle="Scene">
-                {scene.supportsHandles ? (
+    const overlayExtras: SceneContextExtras = useMemo(
+        () => ({
+            showHandles,
+            toggleHandles,
+            halfPlaneControls: {
+                presetGroups,
+                activePresetId,
+                selectPreset: setFromPreset,
+                snapEnabled,
+                setSnapEnabled: handleOverlaySnapToggle,
+            },
+            multiPlaneControls: controlsExtras.multiPlaneControls,
+        }),
+        [
+            showHandles,
+            toggleHandles,
+            presetGroups,
+            activePresetId,
+            setFromPreset,
+            snapEnabled,
+            handleOverlaySnapToggle,
+            controlsExtras.multiPlaneControls,
+        ],
+    );
+
+    const defaultOverlay = useMemo(
+        () =>
+            createDefaultEmbedOverlay({
+                scene,
+                children: scene.supportsHandles ? (
                     <button
                         type="button"
                         onClick={toggleHandles}
@@ -1413,40 +1439,21 @@ export function EuclideanSceneHost({
                     >
                         {showHandles ? "ハンドルを隠す" : "ハンドルを表示"}
                     </button>
-                ) : null}
-            </EmbedOverlayPanel>
-        );
-        const overlayExtras = {
-            showHandles,
-            toggleHandles,
-            halfPlaneControls: {
-                presetGroups,
-                activePresetId,
-                selectPreset: setFromPreset,
-                snapEnabled,
-                setSnapEnabled: handleOverlaySnapToggle,
-            },
-            multiPlaneControls: controlsExtras.multiPlaneControls,
-        };
-        const node = scene.embedOverlayFactory({
-            scene,
-            renderBackend: resolvedRenderMode,
-            controls: defaultOverlay,
-            extras: overlayExtras,
-        });
-        return node ?? defaultOverlay;
-    }, [
-        scene,
-        resolvedRenderMode,
-        showHandles,
-        toggleHandles,
-        presetGroups,
-        activePresetId,
-        setFromPreset,
-        snapEnabled,
-        handleOverlaySnapToggle,
-        controlsExtras.multiPlaneControls,
-    ]);
+                ) : null,
+            }),
+        [scene, showHandles, toggleHandles],
+    );
+
+    const overlay = useMemo(
+        () =>
+            resolveSceneEmbedOverlay({
+                scene,
+                renderBackend: resolvedRenderMode,
+                defaultOverlay,
+                extras: overlayExtras,
+            }),
+        [scene, resolvedRenderMode, defaultOverlay, overlayExtras],
+    );
 
     const canvas = (
         <>
@@ -1470,7 +1477,7 @@ export function EuclideanSceneHost({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUpOrCancel}
                 onPointerCancel={handlePointerUpOrCancel}
-                style={{ border: "none", width: "100%", height: "100%" }}
+                style={STAGE_CANVAS_BASE_STYLE}
             />
         </>
     );
