@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { GeometryRenderRequest } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
@@ -136,15 +136,19 @@ export function HyperbolicSceneHost({
           })
         : defaultControls;
 
-    const overlay: ReactNode | undefined =
-        embed && scene.embedOverlayDefaultVisible !== false
-            ? (scene.embedOverlayFactory?.({
-                  scene,
-                  renderBackend: renderMode,
-                  controls: null,
-                  extras: reflectionControls ? { reflectionControls } : undefined,
-              }) ?? undefined)
-            : undefined;
+    const overlay: ReactNode | undefined = useMemo(() => {
+        if (scene.embedOverlayDefaultVisible === false || !scene.embedOverlayFactory) {
+            return undefined;
+        }
+        return (
+            scene.embedOverlayFactory({
+                scene,
+                renderBackend: renderMode,
+                controls: null,
+                extras: reflectionControls ? { reflectionControls } : undefined,
+            }) ?? undefined
+        );
+    }, [scene, renderMode, reflectionControls]);
 
     return (
         <SceneLayout

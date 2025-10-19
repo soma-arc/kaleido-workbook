@@ -1391,9 +1391,9 @@ export function EuclideanSceneHost({
     );
 
     const overlay = useMemo(() => {
-        const overlayEnabled = scene.embedOverlayDefaultVisible !== false;
-        if (!embed || !overlayEnabled) return null;
-
+        if (scene.embedOverlayDefaultVisible === false || !scene.embedOverlayFactory) {
+            return undefined;
+        }
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
                 {scene.supportsHandles ? (
@@ -1428,19 +1428,16 @@ export function EuclideanSceneHost({
             },
             multiPlaneControls: controlsExtras.multiPlaneControls,
         };
-        if (!scene.embedOverlayFactory) {
-            return defaultOverlay;
-        }
-        return scene.embedOverlayFactory({
+        const node = scene.embedOverlayFactory({
             scene,
             renderBackend: resolvedRenderMode,
             controls: defaultOverlay,
             extras: overlayExtras,
         });
+        return node ?? defaultOverlay;
     }, [
-        embed,
-        resolvedRenderMode,
         scene,
+        resolvedRenderMode,
         showHandles,
         toggleHandles,
         presetGroups,
@@ -1449,7 +1446,6 @@ export function EuclideanSceneHost({
         snapEnabled,
         handleOverlaySnapToggle,
         controlsExtras.multiPlaneControls,
-        scene.embedOverlayDefaultVisible,
     ]);
 
     const canvas = (

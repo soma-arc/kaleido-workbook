@@ -431,18 +431,18 @@ export function SphericalSceneHost({
     ) : null;
 
     const overlay = useMemo(() => {
-        const overlayEnabled = scene.embedOverlayDefaultVisible !== false;
-        if (!embed || !overlayEnabled) return null;
-        const defaultOverlay = <EmbedOverlayPanel title={scene.label} subtitle="Scene" />;
-        if (!scene.embedOverlayFactory) {
-            return defaultOverlay;
+        if (scene.embedOverlayDefaultVisible === false || !scene.embedOverlayFactory) {
+            return undefined;
         }
-        return scene.embedOverlayFactory({
-            scene,
-            renderBackend: "hybrid",
-            controls: defaultOverlay,
-        });
-    }, [embed, scene]);
+        const defaultOverlay = <EmbedOverlayPanel title={scene.label} subtitle="Scene" />;
+        return (
+            scene.embedOverlayFactory({
+                scene,
+                renderBackend: "hybrid",
+                controls: defaultOverlay,
+            }) ?? defaultOverlay
+        );
+    }, [scene]);
 
     const canvas = (
         <StageCanvas

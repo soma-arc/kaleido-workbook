@@ -40,7 +40,7 @@ describe("SceneLayout (embed overlays)", () => {
         cleanup();
     });
 
-    it("omits overlay when embed flag is disabled", () => {
+    it("renders overlay beside canvas when embed flag is disabled", () => {
         const { container, cleanup } = renderSceneLayout({
             controls: <div data-testid="controls" />,
             canvas: <div data-testid="canvas" />,
@@ -48,7 +48,12 @@ describe("SceneLayout (embed overlays)", () => {
             embed: false,
         });
         const overlay = container.querySelector('[data-testid="overlay"]');
-        expect(overlay).toBeNull();
+        expect(overlay).toBeTruthy();
+        const canvasWrapper = container.querySelector('[data-testid="canvas"]')?.parentElement;
+        expect(canvasWrapper?.style.position).toBe("relative");
+        const overlayWrapper = overlay?.parentElement;
+        expect(overlayWrapper?.style.position).toBe("absolute");
+        expect(overlayWrapper?.style.top).toBe("16px");
         cleanup();
     });
 });

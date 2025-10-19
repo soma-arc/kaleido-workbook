@@ -68,12 +68,13 @@ const EMBED_OVERLAY_STYLE: CSSProperties = {
 };
 
 export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutProps): JSX.Element {
+    const overlayNode = overlay ? <div style={EMBED_OVERLAY_STYLE}>{overlay}</div> : null;
     if (embed) {
         return (
             <div style={EMBED_CONTAINER_STYLE}>
                 <div style={{ position: "relative" }}>
                     <div style={CANVAS_FRAME_EMBED_STYLE}>{canvas}</div>
-                    {overlay ? <div style={EMBED_OVERLAY_STYLE}>{overlay}</div> : null}
+                    {overlayNode}
                 </div>
             </div>
         );
@@ -97,7 +98,10 @@ export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutPro
             >
                 {controls}
             </div>
-            <div style={CANVAS_FRAME_STYLE}>{canvas}</div>
+            <div style={CANVAS_FRAME_STYLE}>
+                {canvas}
+                {overlayNode}
+            </div>
         </div>
     );
 }
