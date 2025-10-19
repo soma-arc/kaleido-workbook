@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -28,4 +29,23 @@ export const euclideanSingleHalfPlaneScene = {
     editable: true,
     defaultHandleSpacing: 0.75,
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
+    controlsFactory: ({ defaultControls, extras }) => {
+        const context = extras as {
+            presetControls?: ReactNode;
+            triangleControls?: ReactNode;
+            handleControls?: ReactNode;
+            circleInversionControls?: ReactNode;
+            cameraDebugControls?: ReactNode;
+        };
+        return (
+            <>
+                {defaultControls}
+                {context.presetControls}
+                {context.triangleControls}
+                {context.handleControls}
+                {context.circleInversionControls}
+                {context.cameraDebugControls}
+            </>
+        );
+    },
 } satisfies SceneDefinitionInput;

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
@@ -48,4 +49,23 @@ export const euclideanHingeScene = {
         { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },
     ],
     initialControlPoints: cloneControlPointsList(HINGE_INITIAL_CONTROL_POINTS),
+    controlsFactory: ({ defaultControls, extras }) => {
+        const context = extras as {
+            presetControls?: ReactNode;
+            triangleControls?: ReactNode;
+            handleControls?: ReactNode;
+            circleInversionControls?: ReactNode;
+            cameraDebugControls?: ReactNode;
+        };
+        return (
+            <>
+                {defaultControls}
+                {context.presetControls}
+                {context.triangleControls}
+                {context.handleControls}
+                {context.circleInversionControls}
+                {context.cameraDebugControls}
+            </>
+        );
+    },
 } satisfies SceneDefinitionInput;

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
@@ -50,6 +51,11 @@ export const euclideanMultiPlaneScene = {
                 value: number;
                 onChange: (next: number) => void;
             };
+            presetControls?: ReactNode;
+            triangleControls?: ReactNode;
+            circleInversionControls?: ReactNode;
+            cameraDebugControls?: ReactNode;
+            handleControls?: ReactNode;
         };
         if (!context?.multiPlaneControls) {
             return defaultControls;
@@ -58,6 +64,11 @@ export const euclideanMultiPlaneScene = {
         return (
             <>
                 {defaultControls}
+                {context.presetControls}
+                {context.triangleControls}
+                {context.circleInversionControls}
+                {context.cameraDebugControls}
+                {context.handleControls}
                 <div style={{ display: "grid", gap: "4px" }}>
                     <label htmlFor={sliderId} style={{ fontWeight: 600 }}>
                         Mirrors: {value}

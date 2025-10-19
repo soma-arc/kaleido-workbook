@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
@@ -40,6 +41,25 @@ export const euclideanHalfPlanesScene = {
                 showHandles={context.showHandles ?? false}
                 onToggleHandles={toggleHandles}
             />
+        );
+    },
+    controlsFactory: ({ defaultControls, extras }) => {
+        const context = extras as {
+            presetControls?: ReactNode;
+            triangleControls?: ReactNode;
+            handleControls?: ReactNode;
+            circleInversionControls?: ReactNode;
+            cameraDebugControls?: ReactNode;
+        };
+        return (
+            <>
+                {defaultControls}
+                {context.presetControls}
+                {context.triangleControls}
+                {context.handleControls}
+                {context.circleInversionControls}
+                {context.cameraDebugControls}
+            </>
         );
     },
 } satisfies SceneDefinitionInput;

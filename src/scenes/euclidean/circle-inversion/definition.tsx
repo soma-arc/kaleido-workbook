@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -88,4 +89,23 @@ export const euclideanCircleInversionScene = {
     ],
     initialControlPoints: cloneControlPointsList(CIRCLE_INVERSION_LINE_CONTROL_POINTS),
     inversionConfig: CIRCLE_INVERSION_CONFIG,
+    controlsFactory: ({ defaultControls, extras }) => {
+        const context = extras as {
+            presetControls?: ReactNode;
+            triangleControls?: ReactNode;
+            handleControls?: ReactNode;
+            circleInversionControls?: ReactNode;
+            cameraDebugControls?: ReactNode;
+        };
+        return (
+            <>
+                {defaultControls}
+                {context.presetControls}
+                {context.triangleControls}
+                {context.handleControls}
+                {context.circleInversionControls}
+                {context.cameraDebugControls}
+            </>
+        );
+    },
 } satisfies SceneDefinitionInput;

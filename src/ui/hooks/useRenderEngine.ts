@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { RenderEngine, RenderMode } from "@/render/engine";
+import type { RenderEngine, RenderEngineOptions, RenderMode } from "@/render/engine";
 
 export type UseRenderEngineOptions = {
     mode?: RenderMode;
+    autoDetect?: boolean;
+    enabled?: boolean;
+    factory?: (canvas: HTMLCanvasElement, options: RenderEngineOptions) => RenderEngine;
+    detect?: () => RenderMode;
 };
 
 function createFallbackEngine(mode: RenderMode): RenderEngine {
@@ -18,7 +22,13 @@ function createFallbackEngine(mode: RenderMode): RenderEngine {
     };
 }
 
-export function useRenderEngineWithCanvas({ mode }: UseRenderEngineOptions = {}) {
+export function useRenderEngineWithCanvas({
+    mode,
+    autoDetect = true,
+    enabled = true,
+    factory,
+    detect,
+}: UseRenderEngineOptions = {}) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const renderEngineRef = useRef<RenderEngine | null>(null);
     const [renderMode, setRenderMode] = useState<RenderMode>(() => mode ?? "hybrid");
@@ -29,33 +39,50 @@ export function useRenderEngineWithCanvas({ mode }: UseRenderEngineOptions = {})
             setRenderMode(mode);
             return;
         }
+        if (!autoDetect) {
+            return;
+        }
         let cancelled = false;
-        import("@/render/engine")
-            .then((module) => {
-                if (cancelled) return;
-                setRenderMode(module.detectRenderMode());
-            })
-            .catch((error) => {
+        const resolveRenderMode = async () => {
+            try {
+                const resolvedMode = detect
+                    ? detect()
+                    : (await import("@/render/engine")).detectRenderMode();
+                if (!cancelled) {
+                    setRenderMode(resolvedMode);
+                }
+            } catch (error) {
                 console.warn("[useRenderEngineWithCanvas] detectRenderMode failed", error);
                 if (!cancelled) {
                     setRenderMode("hybrid");
                 }
-            });
+            }
+        };
+        resolveRenderMode();
         return () => {
             cancelled = true;
         };
-    }, [mode]);
+    }, [mode, autoDetect, detect]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!enabled) {
+            renderEngineRef.current = null;
+            setReady(false);
+            return;
+        }
+        if (!canvas) {
+            return;
+        }
         let disposed = false;
         let cleanup: (() => void) | undefined;
         const initialise = async () => {
             try {
-                const { createRenderEngine } = await import("@/render/engine");
+                const createEngine = factory
+                    ? factory
+                    : (await import("@/render/engine")).createRenderEngine;
                 if (disposed) return;
-                const engine = createRenderEngine(canvas, { mode: renderMode });
+                const engine = createEngine(canvas, { mode: renderMode });
                 renderEngineRef.current = engine;
                 setReady(true);
                 cleanup = () => {
@@ -83,7 +110,7 @@ export function useRenderEngineWithCanvas({ mode }: UseRenderEngineOptions = {})
             disposed = true;
             cleanup?.();
         };
-    }, [renderMode]);
+    }, [renderMode, enabled, factory]);
 
     return { canvasRef, renderEngineRef, renderMode, ready } as const;
 }

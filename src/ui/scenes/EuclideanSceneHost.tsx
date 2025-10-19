@@ -1237,7 +1237,7 @@ export function EuclideanSceneHost({
         );
     }, [effectiveCircleInversion, handleDisplayToggle, scene.inversionConfig]);
 
-    const defaultControls = (
+    const baseControls = (
         <>
             <ModeControls
                 scenes={scenes}
@@ -1245,18 +1245,6 @@ export function EuclideanSceneHost({
                 onSceneChange={onSceneChange}
                 renderBackend={resolvedRenderMode}
             />
-            {showTriangleControls && (
-                <>
-                    <PresetSelector
-                        groups={presetGroups}
-                        activePresetId={activePresetId}
-                        onSelect={setFromPreset}
-                        onClear={clearAnchor}
-                        summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
-                    />
-                    <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
-                </>
-            )}
             <TexturePicker
                 slot={TEXTURE_SLOTS.base}
                 state={textureInput.slots[TEXTURE_SLOTS.base]}
@@ -1278,58 +1266,77 @@ export function EuclideanSceneHost({
                 disabled={!engineReady}
                 status={exportStatus}
             />
-            {circleInversionDisplayControls}
-            {isCameraDebugScene && (
-                <label
-                    htmlFor={maxFrameRateInputId}
-                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
-                >
-                    <span>カメラ最大FPS</span>
-                    <input
-                        id={maxFrameRateInputId}
-                        type="number"
-                        min={1}
-                        max={240}
-                        step={1}
-                        value={maxFrameRateInput}
-                        onChange={handleMaxFrameRateChange}
-                        onBlur={handleMaxFrameRateBlur}
-                    />
-                </label>
-            )}
-            {scene.supportsHandles && (
-                <HalfPlaneHandleControls
-                    showHandles={showHandles}
-                    onToggle={setShowHandles}
-                    spacing={handleSpacing}
-                    onSpacingChange={setHandleSpacing}
-                    disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
-                />
-            )}
-            {showTriangleControls && (
-                <>
-                    <TriangleParamForm
-                        formInputs={formInputs}
-                        params={params}
-                        anchor={anchor}
-                        paramError={paramError}
-                        paramWarning={paramWarning}
-                        geometryMode={scene.geometry}
-                        rRange={rRange}
-                        rStep={rStep}
-                        rSliderValue={rSliderValue}
-                        onParamChange={setParamInput}
-                        onRSliderChange={setRFromSlider}
-                    />
-                    <DepthControls
-                        depth={params.depth}
-                        depthRange={depthRange}
-                        onDepthChange={updateDepth}
-                    />
-                </>
-            )}
         </>
     );
+
+    const presetControls = showTriangleControls ? (
+        <>
+            <PresetSelector
+                groups={presetGroups}
+                activePresetId={activePresetId}
+                onSelect={setFromPreset}
+                onClear={clearAnchor}
+                summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
+            />
+            <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+        </>
+    ) : null;
+
+    const triangleControlsNode = showTriangleControls ? (
+        <>
+            <TriangleParamForm
+                formInputs={formInputs}
+                params={params}
+                anchor={anchor}
+                paramError={paramError}
+                paramWarning={paramWarning}
+                geometryMode={scene.geometry}
+                rRange={rRange}
+                rStep={rStep}
+                rSliderValue={rSliderValue}
+                onParamChange={setParamInput}
+                onRSliderChange={setRFromSlider}
+            />
+            <DepthControls
+                depth={params.depth}
+                depthRange={depthRange}
+                onDepthChange={updateDepth}
+            />
+        </>
+    ) : null;
+
+    const handleControlsNode = scene.supportsHandles ? (
+        <HalfPlaneHandleControls
+            showHandles={showHandles}
+            onToggle={setShowHandles}
+            spacing={handleSpacing}
+            onSpacingChange={setHandleSpacing}
+            disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
+        />
+    ) : null;
+
+    const cameraDebugControlsNode = isCameraDebugScene ? (
+        <label
+            htmlFor={maxFrameRateInputId}
+            style={{ display: "flex", flexDirection: "column", gap: 4 }}
+        >
+            <span>カメラ最大FPS</span>
+            <input
+                id={maxFrameRateInputId}
+                type="number"
+                min={1}
+                max={240}
+                step={1}
+                value={maxFrameRateInput}
+                onChange={handleMaxFrameRateChange}
+                onBlur={handleMaxFrameRateBlur}
+            />
+        </label>
+    ) : null;
+
+    const circleInversionControlsNode = circleInversionDisplayControls;
+
+    const defaultControls = baseControls;
 
     const controlsExtras = {
         multiPlaneControls: multiPlaneConfig
@@ -1341,6 +1348,11 @@ export function EuclideanSceneHost({
                   onChange: handleMultiPlaneSidesChange,
               }
             : undefined,
+        presetControls,
+        triangleControls: triangleControlsNode,
+        handleControls: handleControlsNode,
+        circleInversionControls: circleInversionControlsNode,
+        cameraDebugControls: cameraDebugControlsNode,
         halfPlaneControls: {
             presetGroups,
             activePresetId,
