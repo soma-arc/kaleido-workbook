@@ -71,6 +71,11 @@ export interface SceneDefinition {
      * 実装しない場合はホスト側が用意した既定 UI が利用される。
      */
     embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
+    /**
+     * embed モードでオーバーレイを初期表示するかどうか。未指定時は true。
+     * ラベルのみのオーバーレイを抑制したいシーンで false を指定する。
+     */
+    embedOverlayDefaultVisible?: boolean;
     multiPlaneConfig?: MultiPlaneSceneConfig;
     /**
      * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。

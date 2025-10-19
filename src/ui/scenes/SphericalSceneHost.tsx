@@ -431,7 +431,8 @@ export function SphericalSceneHost({
     ) : null;
 
     const overlay = useMemo(() => {
-        if (!embed) return null;
+        const overlayEnabled = scene.embedOverlayDefaultVisible !== false;
+        if (!embed || !overlayEnabled) return null;
         const defaultOverlay = <EmbedOverlayPanel title={scene.label} subtitle="Scene" />;
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;

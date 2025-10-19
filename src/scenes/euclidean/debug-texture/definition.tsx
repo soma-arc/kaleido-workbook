@@ -13,6 +13,7 @@ export const euclideanDebugTextureScene = {
     supportsHandles: false,
     editable: false,
     defaultTexturePresetId: "grid",
+    embedOverlayDefaultVisible: false,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

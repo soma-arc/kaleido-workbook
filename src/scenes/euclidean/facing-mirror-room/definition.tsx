@@ -37,6 +37,7 @@ export const euclideanFacingMirrorScene = {
     initialHalfPlanes: FACING_MIRROR_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),
     defaultTexturePresetId: "grid",
+    embedOverlayDefaultVisible: false,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

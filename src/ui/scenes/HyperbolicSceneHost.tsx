@@ -136,14 +136,15 @@ export function HyperbolicSceneHost({
           })
         : defaultControls;
 
-    const overlay: ReactNode | undefined = embed
-        ? (scene.embedOverlayFactory?.({
-              scene,
-              renderBackend: renderMode,
-              controls: null,
-              extras: reflectionControls ? { reflectionControls } : undefined,
-          }) ?? undefined)
-        : undefined;
+    const overlay: ReactNode | undefined =
+        embed && scene.embedOverlayDefaultVisible !== false
+            ? (scene.embedOverlayFactory?.({
+                  scene,
+                  renderBackend: renderMode,
+                  controls: null,
+                  extras: reflectionControls ? { reflectionControls } : undefined,
+              }) ?? undefined)
+            : undefined;
 
     return (
         <SceneLayout

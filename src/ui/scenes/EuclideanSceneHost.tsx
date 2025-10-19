@@ -1391,7 +1391,8 @@ export function EuclideanSceneHost({
     );
 
     const overlay = useMemo(() => {
-        if (!embed) return null;
+        const overlayEnabled = scene.embedOverlayDefaultVisible !== false;
+        if (!embed || !overlayEnabled) return null;
 
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
@@ -1448,6 +1449,7 @@ export function EuclideanSceneHost({
         snapEnabled,
         handleOverlaySnapToggle,
         controlsExtras.multiPlaneControls,
+        scene.embedOverlayDefaultVisible,
     ]);
 
     const canvas = (

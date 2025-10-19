@@ -16,4 +16,5 @@ export const sphericalTetrahedronScene = {
         triangle: createRegularTetrahedronTriangle(0),
         handles: {},
     },
+    embedOverlayDefaultVisible: false,
 } satisfies SceneDefinitionInput;
