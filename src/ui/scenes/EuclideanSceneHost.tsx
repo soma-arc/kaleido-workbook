@@ -283,13 +283,14 @@ export function EuclideanSceneHost({
             return;
         }
         if (baseSlotLayer) {
-            appliedDefaultPresetId.current = presetId;
-            return;
-        }
-        if (baseSlotStatus !== "idle") {
-            return;
-        }
-        if (appliedDefaultPresetId.current === presetId) {
+            if (baseTextureSlot?.origin === "manual") {
+                appliedDefaultPresetId.current = presetId;
+                return;
+            }
+            if (baseTextureSlot?.origin === "auto" && appliedDefaultPresetId.current === presetId) {
+                return;
+            }
+        } else if (baseSlotStatus !== "idle") {
             return;
         }
         appliedDefaultPresetId.current = presetId;
@@ -298,7 +299,13 @@ export function EuclideanSceneHost({
                 appliedDefaultPresetId.current = null;
             }
         });
-    }, [scene.defaultTexturePresetId, baseSlotLayer, baseSlotStatus, loadPresetTexture]);
+    }, [
+        scene.defaultTexturePresetId,
+        baseSlotLayer,
+        baseSlotStatus,
+        baseTextureSlot?.origin,
+        loadPresetTexture,
+    ]);
 
     // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
     const clampFrameRate = useCallback((value: number) => {
