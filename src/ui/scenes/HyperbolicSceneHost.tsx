@@ -76,10 +76,10 @@ export function HyperbolicSceneHost({
             textures: textureInput.textures,
         };
         if (isReflectionScene) {
-            const uniformPayload = {
+            const uniformPayload: HyperbolicTripleReflectionUniforms = {
                 uMaxReflections: maxReflections,
-            } satisfies HyperbolicTripleReflectionUniforms;
-            request.sceneUniforms = uniformPayload as Record<string, unknown>;
+            };
+            request.sceneUniforms = uniformPayload;
         }
         engine.render(request);
     }, [

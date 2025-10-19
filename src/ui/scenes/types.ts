@@ -79,7 +79,9 @@ export interface SceneDefinition {
     controlsFactory?: (context: SceneControlsContext) => ReactNode;
 }
 
-export interface HyperbolicTripleReflectionUniforms {
+export type SceneUniforms = Record<string, unknown>;
+
+export interface HyperbolicTripleReflectionUniforms extends SceneUniforms {
     uMaxReflections: number;
 }
 

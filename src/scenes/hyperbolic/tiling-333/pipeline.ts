@@ -9,7 +9,10 @@ import {
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "@/render/webgl/pipelineRegistry";
-import { getUniformLocation } from "@/render/webgl/pipelines/uniformUtils";
+import {
+    getOptionalUniformLocation,
+    getUniformLocation,
+} from "@/render/webgl/pipelines/uniformUtils";
 import vertexShaderSource from "@/render/webgl/shaders/geodesic.vert?raw";
 import fragmentShaderSourceTemplate from "@/render/webgl/shaders/hyperbolicTripleReflection.frag?raw";
 import { createTextureManager, type TextureManager } from "@/render/webgl/textureManager";
@@ -79,10 +82,9 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
         gl.uniform1f(getUniformLocation(gl, this.program, "uFeather"), LINE_FEATHER);
         gl.uniform3f(getUniformLocation(gl, this.program, "uLineColor"), ...LINE_COLOR);
         gl.uniform3f(getUniformLocation(gl, this.program, "uFillColor"), ...FILL_COLOR);
-        gl.uniform1i(
-            getUniformLocation(gl, this.program, "uMaxReflections"),
-            HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
-        );
+        if (this.uniforms.maxReflections) {
+            gl.uniform1i(this.uniforms.maxReflections, HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
+        }
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
         gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
@@ -115,7 +117,9 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
             this.maxReflections,
         );
         if (requestedReflections !== this.maxReflections) {
-            gl.uniform1i(this.uniforms.maxReflections, requestedReflections);
+            if (this.uniforms.maxReflections) {
+                gl.uniform1i(this.uniforms.maxReflections, requestedReflections);
+            }
             this.maxReflections = requestedReflections;
         }
 
@@ -163,7 +167,7 @@ type UniformLocations = {
     textureOpacity: WebGLUniformLocation;
     textureCount: WebGLUniformLocation;
     textureSamplers: WebGLUniformLocation;
-    maxReflections: WebGLUniformLocation;
+    maxReflections: WebGLUniformLocation | null;
 };
 
 function buildFragmentShaderSource(): string {
@@ -225,7 +229,9 @@ function resolveUniformLocations(
     const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
     const textureCount = getUniformLocation(gl, program, "uTextureCount");
     const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
-    const maxReflections = getUniformLocation(gl, program, "uMaxReflections");
+    const maxReflections = getOptionalUniformLocation(gl, program, "uMaxReflections", {
+        label: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    });
     return {
         resolution,
         viewport,
