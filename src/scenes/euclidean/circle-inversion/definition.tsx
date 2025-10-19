@@ -83,6 +83,7 @@ export const euclideanCircleInversionScene = {
     editable: true,
     defaultHandleSpacing: 1.2,
     defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(CIRCLE_INVERSION_LINE_HALF_PLANE),
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "circle-line-start" },

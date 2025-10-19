@@ -44,6 +44,7 @@ export const euclideanHingeScene = {
     editable: true,
     allowPlaneDrag: false,
     defaultTexturePresetId: "grid",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
