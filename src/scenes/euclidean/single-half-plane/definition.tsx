@@ -32,6 +32,12 @@ export const euclideanSingleHalfPlaneScene = {
     defaultTexturePresetId: "grid",
     embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.75, y: 0.75 },
+        rotation: 0,
+    },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {

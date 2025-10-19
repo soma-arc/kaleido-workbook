@@ -16,6 +16,12 @@ export const euclideanHalfPlanesScene = {
     supportsHandles: true,
     editable: true,
     defaultTexturePresetId: "grid",
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.7, y: 0.7 },
+        rotation: 0,
+    },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     embedOverlayFactory: ({ controls, extras }) => {
         const context = (extras as {

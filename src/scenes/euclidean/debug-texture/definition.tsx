@@ -16,6 +16,12 @@ export const euclideanDebugTextureScene = {
     defaultTexturePresetId: "grid",
     embedOverlayDefaultVisible: false,
     renderPipelineId: EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID,
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 5, y: 5 },
+        rotation: 0,
+    },
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

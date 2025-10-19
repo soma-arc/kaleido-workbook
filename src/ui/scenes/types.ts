@@ -32,6 +32,13 @@ export type SceneKey = {
 
 export type SceneId = `${GeometryKind}-${SceneVariant}`;
 
+export type TextureRectangleConfig = {
+    enabled?: boolean;
+    center: { x: number; y: number };
+    halfExtents: { x: number; y: number };
+    rotation?: number;
+};
+
 export interface SceneDefinition {
     id: SceneId;
     key: string;
@@ -82,6 +89,7 @@ export interface SceneDefinition {
      */
     embedOverlayDefaultVisible?: boolean;
     multiPlaneConfig?: MultiPlaneSceneConfig;
+    textureRectangle?: TextureRectangleConfig;
     /**
      * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。

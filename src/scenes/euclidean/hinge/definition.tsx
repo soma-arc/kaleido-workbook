@@ -47,6 +47,12 @@ export const euclideanHingeScene = {
     defaultTexturePresetId: "grid",
     embedOverlayDefaultVisible: false,
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.75, y: 0.75 },
+        rotation: 0,
+    },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },

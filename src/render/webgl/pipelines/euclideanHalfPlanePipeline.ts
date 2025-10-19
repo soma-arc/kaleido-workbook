@@ -85,7 +85,13 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.useProgram(null);
     }
 
-    render({ renderScene, viewport, textures, canvas }: WebGLPipelineRenderContext): void {
+    render({
+        renderScene,
+        viewport,
+        textures,
+        canvas,
+        sceneDefinition,
+    }: WebGLPipelineRenderContext): void {
         const gl = this.gl;
         const width = canvas.width || gl.drawingBufferWidth || 1;
         const height = canvas.height || gl.drawingBufferHeight || 1;
@@ -103,6 +109,16 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.uniform2fv(this.uniforms.textureScale, textureUniforms.scale);
         gl.uniform1fv(this.uniforms.textureRotation, textureUniforms.rotation);
         gl.uniform1fv(this.uniforms.textureOpacity, textureUniforms.opacity);
+
+        const rectConfig = sceneDefinition?.textureRectangle;
+        const rectEnabled = rectConfig?.enabled ?? false;
+        gl.uniform1i(this.uniforms.textureRectEnabled, rectEnabled ? 1 : 0);
+        const center = rectConfig?.center ?? { x: 0, y: 0 };
+        const halfExtents = rectConfig?.halfExtents ?? { x: 1, y: 1 };
+        const rotation = rectConfig?.rotation ?? 0;
+        gl.uniform2f(this.uniforms.textureRectCenter, center.x, center.y);
+        gl.uniform2f(this.uniforms.textureRectHalfExtents, halfExtents.x, halfExtents.y);
+        gl.uniform1f(this.uniforms.textureRectRotation, rotation);
 
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -133,6 +149,10 @@ type UniformLocations = {
     textureOpacity: WebGLUniformLocation;
     textureCount: WebGLUniformLocation;
     textureSamplers: WebGLUniformLocation;
+    textureRectEnabled: WebGLUniformLocation;
+    textureRectCenter: WebGLUniformLocation;
+    textureRectHalfExtents: WebGLUniformLocation;
+    textureRectRotation: WebGLUniformLocation;
 };
 
 function buildFragmentShaderSource(): string {
@@ -192,6 +212,10 @@ function resolveUniformLocations(
     const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
     const textureCount = getUniformLocation(gl, program, "uTextureCount");
     const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
+    const textureRectEnabled = getUniformLocation(gl, program, "uTextureRectEnabled");
+    const textureRectCenter = getUniformLocation(gl, program, "uTextureRectCenter");
+    const textureRectHalfExtents = getUniformLocation(gl, program, "uTextureRectHalfExtents");
+    const textureRectRotation = getUniformLocation(gl, program, "uTextureRectRotation");
     return {
         resolution,
         viewport,
@@ -204,6 +228,10 @@ function resolveUniformLocations(
         textureOpacity,
         textureCount,
         textureSamplers,
+        textureRectEnabled,
+        textureRectCenter,
+        textureRectHalfExtents,
+        textureRectRotation,
     };
 }
 

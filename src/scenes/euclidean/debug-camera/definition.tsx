@@ -16,6 +16,12 @@ export const euclideanDebugCameraScene = {
     editable: false,
     defaultTexturePresetId: "grid",
     renderPipelineId: EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID,
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 5, y: 5 },
+        rotation: 0,
+    },
     embedOverlayFactory: ({ controls }) => (
         <div style={{ display: "grid", gap: "12px" }}>
             {controls}

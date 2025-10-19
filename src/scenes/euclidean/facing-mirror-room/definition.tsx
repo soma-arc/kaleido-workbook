@@ -40,6 +40,12 @@ export const euclideanFacingMirrorScene = {
     defaultTexturePresetId: "grid",
     embedOverlayDefaultVisible: false,
     renderPipelineId: FACING_MIRROR_PIPELINE_ID,
+    textureRectangle: {
+        enabled: true,
+        center: { ...FACING_MIRROR_CONFIG.rectangleCenter },
+        halfExtents: { ...FACING_MIRROR_CONFIG.rectangleHalfExtents },
+        rotation: 0,
+    },
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

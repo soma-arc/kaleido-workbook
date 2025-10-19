@@ -21,6 +21,12 @@ export const euclideanMultiPlaneScene = {
         initialSides: 4,
         radius: 0.7,
     },
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.75, y: 0.75 },
+        rotation: 0,
+    },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     embedOverlayFactory: ({ extras }) => {
         const context =
