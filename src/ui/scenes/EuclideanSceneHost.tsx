@@ -33,7 +33,6 @@ import {
     type ImageExportStatus,
 } from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
-import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
@@ -1342,6 +1341,13 @@ export function EuclideanSceneHost({
                   onChange: handleMultiPlaneSidesChange,
               }
             : undefined,
+        halfPlaneControls: {
+            presetGroups,
+            activePresetId,
+            selectPreset: setFromPreset,
+            snapEnabled,
+            setSnapEnabled,
+        },
     } as const;
 
     const controls = scene.controlsFactory
@@ -1362,33 +1368,6 @@ export function EuclideanSceneHost({
 
     const overlay = useMemo(() => {
         if (!embed) return null;
-
-        if (multiPlaneConfig) {
-            const overlayContent = (
-                <MultiPlaneOverlayControls
-                    minSides={multiPlaneConfig.minSides}
-                    maxSides={multiPlaneConfig.maxSides}
-                    value={multiPlaneSides ?? multiPlaneConfig.initialSides}
-                    onChange={handleMultiPlaneSidesChange}
-                />
-            );
-            if (!scene.embedOverlayFactory) {
-                return overlayContent;
-            }
-            return scene.embedOverlayFactory({
-                scene,
-                renderBackend: resolvedRenderMode,
-                controls: null,
-                extras: {
-                    multiPlaneControls: {
-                        minSides: multiPlaneConfig.minSides,
-                        maxSides: multiPlaneConfig.maxSides,
-                        value: multiPlaneSides ?? multiPlaneConfig.initialSides,
-                        onChange: handleMultiPlaneSidesChange,
-                    },
-                },
-            });
-        }
 
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
@@ -1415,16 +1394,14 @@ export function EuclideanSceneHost({
         const overlayExtras = {
             showHandles,
             toggleHandles,
-            halfPlaneControls:
-                scene.key === "euclideanHalfPlanes"
-                    ? {
-                          presetGroups,
-                          activePresetId,
-                          selectPreset: setFromPreset,
-                          snapEnabled,
-                          setSnapEnabled: handleOverlaySnapToggle,
-                      }
-                    : undefined,
+            halfPlaneControls: {
+                presetGroups,
+                activePresetId,
+                selectPreset: setFromPreset,
+                snapEnabled,
+                setSnapEnabled: handleOverlaySnapToggle,
+            },
+            multiPlaneControls: controlsExtras.multiPlaneControls,
         };
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
@@ -1446,9 +1423,7 @@ export function EuclideanSceneHost({
         setFromPreset,
         snapEnabled,
         handleOverlaySnapToggle,
-        multiPlaneConfig,
-        multiPlaneSides,
-        handleMultiPlaneSidesChange,
+        controlsExtras.multiPlaneControls,
     ]);
 
     const canvas = (
