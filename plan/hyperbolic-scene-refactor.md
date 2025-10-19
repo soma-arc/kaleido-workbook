@@ -88,6 +88,8 @@
 - 将来的に `sceneUniforms` を型安全にするため `SceneRuntimeConfig` ジェネリクスを導入。
 - SceneHost 間で共有する UI コンポーネント群を `src/ui/scenes/components/` 配下に整理。
 - Hyperbolic シーンの追加（共役操作など）に備えた state machine 設計を検討。
+- `useRenderEngineWithCanvas` フックを追加し、Euclidean/Hyperbolic ホストが共通で利用する。
+- `controlsFactory`/`embedOverlayFactory` を利用するシーンを順次拡張し、ホスト側の `scene.key` 依存を解消。
 
 ## フェーズC 設計メモ（2025-10-19）
 - **ホスト分割方針**
