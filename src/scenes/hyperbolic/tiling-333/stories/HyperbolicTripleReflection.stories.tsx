@@ -6,7 +6,7 @@ import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
 import { SCENE_IDS } from "@/ui/scenes";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
-import { expectCanvasFill } from "./canvasAssertions";
+import { expectCanvasFill } from "@/ui/stories/canvasAssertions";
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;

@@ -19,12 +19,7 @@ import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolyg
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import { cropToCenteredSquare } from "@/render/crop";
-import {
-    type CaptureRequestKind,
-    createRenderEngine,
-    type RenderEngine,
-    type RenderMode,
-} from "@/render/engine";
+import type { CaptureRequestKind, RenderMode } from "@/render/engine";
 import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
@@ -38,13 +33,13 @@ import {
     type ImageExportStatus,
 } from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
-import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { SnapControls } from "@/ui/components/SnapControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TriangleParamForm } from "@/ui/components/TriangleParamForm";
 import { CameraInput } from "@/ui/components/texture/CameraInput";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
 import { hitTestControlPoints, updateControlPoint } from "@/ui/interactions/halfPlaneControlPoints";
@@ -228,15 +223,18 @@ export function EuclideanSceneHost({
     triangle,
     embed = false,
 }: EuclideanSceneHostProps): JSX.Element {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const renderEngineRef = useRef<RenderEngine | null>(null);
+    const {
+        canvasRef,
+        renderEngineRef,
+        renderMode: resolvedRenderMode,
+        ready: engineReady,
+    } = useRenderEngineWithCanvas({ mode: renderMode });
     const latestEuclideanPlanesRef = useRef<HalfPlane[] | null>(null);
     const [editableHalfPlanes, setEditableHalfPlanes] = useState<HalfPlane[] | null>(null);
     const [drag, setDrag] = useState<DragState | null>(null);
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
-    const [engineReady, setEngineReady] = useState(false);
     const [circleInversionState, setCircleInversionState] = useState<CircleInversionState | null>(
         () => (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null),
     );
@@ -253,7 +251,7 @@ export function EuclideanSceneHost({
     const baseTextureSlot = textureInput.slots[TEXTURE_SLOTS.base];
     const baseTextureLayer = baseTextureSlot?.layer ?? null;
     const baseTextureSource = baseTextureLayer?.source ?? null;
-    const defaultCircleTextureApplied = useRef(false);
+    const appliedDefaultPresetId = useRef<string | null>(null);
     const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
     const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
     const maxFrameRateRef = useRef<number>(60);
@@ -279,27 +277,35 @@ export function EuclideanSceneHost({
     const baseSlotStatus = baseTextureSlot?.status ?? "idle";
 
     useEffect(() => {
-        if (scene.id !== SCENE_IDS.euclideanCircleInversion) {
-            defaultCircleTextureApplied.current = false;
+        const presetId = scene.defaultTexturePresetId;
+        if (!presetId) {
+            appliedDefaultPresetId.current = null;
             return;
         }
-        if (defaultCircleTextureApplied.current) {
-            return;
-        }
-        if (baseSlotLayer || baseSlotStatus === "loading" || baseSlotStatus === "ready") {
-            if (baseSlotLayer) {
-                defaultCircleTextureApplied.current = true;
+        if (baseSlotLayer) {
+            if (baseTextureSlot?.origin === "manual") {
+                appliedDefaultPresetId.current = presetId;
+                return;
             }
+            if (baseTextureSlot?.origin === "auto" && appliedDefaultPresetId.current === presetId) {
+                return;
+            }
+        } else if (baseSlotStatus !== "idle") {
             return;
         }
-        if (baseSlotStatus !== "idle") {
-            return;
-        }
-        defaultCircleTextureApplied.current = true;
-        loadPresetTexture(TEXTURE_SLOTS.base, "cat-fish-run").catch(() => {
-            defaultCircleTextureApplied.current = false;
+        appliedDefaultPresetId.current = presetId;
+        loadPresetTexture(TEXTURE_SLOTS.base, presetId, { origin: "auto" }).catch(() => {
+            if (appliedDefaultPresetId.current === presetId) {
+                appliedDefaultPresetId.current = null;
+            }
         });
-    }, [scene.id, baseSlotLayer, baseSlotStatus, loadPresetTexture]);
+    }, [
+        scene.defaultTexturePresetId,
+        baseSlotLayer,
+        baseSlotStatus,
+        baseTextureSlot?.origin,
+        loadPresetTexture,
+    ]);
 
     // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
     const clampFrameRate = useCallback((value: number) => {
@@ -425,19 +431,6 @@ export function EuclideanSceneHost({
         );
         return match?.id;
     }, [flatPresets, params]);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const engine = createRenderEngine(canvas, { mode: renderMode });
-        renderEngineRef.current = engine;
-        setEngineReady(true);
-        return () => {
-            renderEngineRef.current = null;
-            engine.dispose();
-            setEngineReady(false);
-        };
-    }, [renderMode]);
 
     const baseHalfPlanes = useMemo(() => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
@@ -646,6 +639,7 @@ export function EuclideanSceneHost({
             scene.supportsHandles,
             showHandles,
             textureInput.textures,
+            renderEngineRef,
         ],
     );
 
@@ -747,7 +741,7 @@ export function EuclideanSceneHost({
             params: targetParams,
             textures: textureInput.textures,
         });
-    }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures]);
+    }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures, renderEngineRef]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
@@ -1047,6 +1041,9 @@ export function EuclideanSceneHost({
     };
 
     useEffect(() => {
+        if (!engineReady) {
+            return;
+        }
         if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
             latestEuclideanPlanesRef.current = null;
             renderHyperbolicScene();
@@ -1055,6 +1052,7 @@ export function EuclideanSceneHost({
         if (!normalizedHalfPlanes) return;
         renderEuclideanScene(normalizedHalfPlanes, currentControlPoints, null);
     }, [
+        engineReady,
         scene.geometry,
         normalizedHalfPlanes,
         currentControlPoints,
@@ -1163,7 +1161,7 @@ export function EuclideanSceneHost({
                 message: `${filename} を保存しました。`,
             });
         }
-    }, [exportMode]);
+    }, [exportMode, renderEngineRef]);
 
     const handleExportModeChange = useCallback((mode: ImageExportMode) => {
         setExportMode(mode);
@@ -1251,44 +1249,14 @@ export function EuclideanSceneHost({
         );
     }, [effectiveCircleInversion, handleDisplayToggle, scene.inversionConfig]);
 
-    const controls = (
+    const baseControls = (
         <>
             <ModeControls
                 scenes={scenes}
                 activeSceneId={activeSceneId}
                 onSceneChange={onSceneChange}
-                renderBackend={renderMode}
+                renderBackend={resolvedRenderMode}
             />
-            {multiPlaneConfig ? (
-                <div style={{ display: "grid", gap: "4px" }}>
-                    <label htmlFor={multiPlaneSliderId} style={{ fontWeight: 600 }}>
-                        Mirrors: {multiPlaneSides ?? multiPlaneConfig.initialSides}
-                    </label>
-                    <input
-                        id={multiPlaneSliderId}
-                        type="range"
-                        min={multiPlaneConfig.minSides}
-                        max={multiPlaneConfig.maxSides}
-                        step={1}
-                        value={multiPlaneSides ?? multiPlaneConfig.initialSides}
-                        onChange={(event) =>
-                            handleMultiPlaneSidesChange(Number(event.target.value))
-                        }
-                    />
-                </div>
-            ) : null}
-            {showTriangleControls && (
-                <>
-                    <PresetSelector
-                        groups={presetGroups}
-                        activePresetId={activePresetId}
-                        onSelect={setFromPreset}
-                        onClear={clearAnchor}
-                        summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
-                    />
-                    <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
-                </>
-            )}
             <TexturePicker
                 slot={TEXTURE_SLOTS.base}
                 state={textureInput.slots[TEXTURE_SLOTS.base]}
@@ -1310,58 +1278,110 @@ export function EuclideanSceneHost({
                 disabled={!engineReady}
                 status={exportStatus}
             />
-            {circleInversionDisplayControls}
-            {isCameraDebugScene && (
-                <label
-                    htmlFor={maxFrameRateInputId}
-                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
-                >
-                    <span>カメラ最大FPS</span>
-                    <input
-                        id={maxFrameRateInputId}
-                        type="number"
-                        min={1}
-                        max={240}
-                        step={1}
-                        value={maxFrameRateInput}
-                        onChange={handleMaxFrameRateChange}
-                        onBlur={handleMaxFrameRateBlur}
-                    />
-                </label>
-            )}
-            {scene.supportsHandles && (
-                <HalfPlaneHandleControls
-                    showHandles={showHandles}
-                    onToggle={setShowHandles}
-                    spacing={handleSpacing}
-                    onSpacingChange={setHandleSpacing}
-                    disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
-                />
-            )}
-            {showTriangleControls && (
-                <>
-                    <TriangleParamForm
-                        formInputs={formInputs}
-                        params={params}
-                        anchor={anchor}
-                        paramError={paramError}
-                        paramWarning={paramWarning}
-                        geometryMode={scene.geometry}
-                        rRange={rRange}
-                        rStep={rStep}
-                        rSliderValue={rSliderValue}
-                        onParamChange={setParamInput}
-                        onRSliderChange={setRFromSlider}
-                    />
-                    <DepthControls
-                        depth={params.depth}
-                        depthRange={depthRange}
-                        onDepthChange={updateDepth}
-                    />
-                </>
-            )}
         </>
     );
+
+    const presetControls = showTriangleControls ? (
+        <>
+            <PresetSelector
+                groups={presetGroups}
+                activePresetId={activePresetId}
+                onSelect={setFromPreset}
+                onClear={clearAnchor}
+                summary={`Anchor: ${anchor ? `p=${anchor.p}, q=${anchor.q}` : "none"}`}
+            />
+            <SnapControls snapEnabled={snapEnabled} onToggle={setSnapEnabled} />
+        </>
+    ) : null;
+
+    const triangleControlsNode = showTriangleControls ? (
+        <>
+            <TriangleParamForm
+                formInputs={formInputs}
+                params={params}
+                anchor={anchor}
+                paramError={paramError}
+                paramWarning={paramWarning}
+                geometryMode={scene.geometry}
+                rRange={rRange}
+                rStep={rStep}
+                rSliderValue={rSliderValue}
+                onParamChange={setParamInput}
+                onRSliderChange={setRFromSlider}
+            />
+            <DepthControls
+                depth={params.depth}
+                depthRange={depthRange}
+                onDepthChange={updateDepth}
+            />
+        </>
+    ) : null;
+
+    const handleControlsNode = scene.supportsHandles ? (
+        <HalfPlaneHandleControls
+            showHandles={showHandles}
+            onToggle={setShowHandles}
+            spacing={handleSpacing}
+            onSpacingChange={setHandleSpacing}
+            disabled={scene.geometry !== GEOMETRY_KIND.euclidean}
+        />
+    ) : null;
+
+    const cameraDebugControlsNode = isCameraDebugScene ? (
+        <label
+            htmlFor={maxFrameRateInputId}
+            style={{ display: "flex", flexDirection: "column", gap: 4 }}
+        >
+            <span>カメラ最大FPS</span>
+            <input
+                id={maxFrameRateInputId}
+                type="number"
+                min={1}
+                max={240}
+                step={1}
+                value={maxFrameRateInput}
+                onChange={handleMaxFrameRateChange}
+                onBlur={handleMaxFrameRateBlur}
+            />
+        </label>
+    ) : null;
+
+    const circleInversionControlsNode = circleInversionDisplayControls;
+
+    const defaultControls = baseControls;
+
+    const controlsExtras = {
+        multiPlaneControls: multiPlaneConfig
+            ? {
+                  sliderId: multiPlaneSliderId,
+                  minSides: multiPlaneConfig.minSides,
+                  maxSides: multiPlaneConfig.maxSides,
+                  value: multiPlaneSides ?? multiPlaneConfig.initialSides,
+                  onChange: handleMultiPlaneSidesChange,
+              }
+            : undefined,
+        presetControls,
+        triangleControls: triangleControlsNode,
+        handleControls: handleControlsNode,
+        circleInversionControls: circleInversionControlsNode,
+        cameraDebugControls: cameraDebugControlsNode,
+        halfPlaneControls: {
+            presetGroups,
+            activePresetId,
+            selectPreset: setFromPreset,
+            snapEnabled,
+            setSnapEnabled,
+        },
+    } as const;
+
+    const controls = scene.controlsFactory
+        ? scene.controlsFactory({
+              scene,
+              renderBackend: resolvedRenderMode,
+              defaultControls,
+              extras: controlsExtras,
+          })
+        : defaultControls;
 
     const handleOverlaySnapToggle = useCallback(
         (enabled: boolean) => {
@@ -1372,33 +1392,6 @@ export function EuclideanSceneHost({
 
     const overlay = useMemo(() => {
         if (!embed) return null;
-
-        if (multiPlaneConfig) {
-            const overlayContent = (
-                <MultiPlaneOverlayControls
-                    minSides={multiPlaneConfig.minSides}
-                    maxSides={multiPlaneConfig.maxSides}
-                    value={multiPlaneSides ?? multiPlaneConfig.initialSides}
-                    onChange={handleMultiPlaneSidesChange}
-                />
-            );
-            if (!scene.embedOverlayFactory) {
-                return overlayContent;
-            }
-            return scene.embedOverlayFactory({
-                scene,
-                renderBackend: renderMode,
-                controls: null,
-                extras: {
-                    multiPlaneControls: {
-                        minSides: multiPlaneConfig.minSides,
-                        maxSides: multiPlaneConfig.maxSides,
-                        value: multiPlaneSides ?? multiPlaneConfig.initialSides,
-                        onChange: handleMultiPlaneSidesChange,
-                    },
-                },
-            });
-        }
 
         const defaultOverlay = (
             <EmbedOverlayPanel title={scene.label} subtitle="Scene">
@@ -1425,29 +1418,27 @@ export function EuclideanSceneHost({
         const overlayExtras = {
             showHandles,
             toggleHandles,
-            halfPlaneControls:
-                scene.key === "euclideanHalfPlanes"
-                    ? {
-                          presetGroups,
-                          activePresetId,
-                          selectPreset: setFromPreset,
-                          snapEnabled,
-                          setSnapEnabled: handleOverlaySnapToggle,
-                      }
-                    : undefined,
+            halfPlaneControls: {
+                presetGroups,
+                activePresetId,
+                selectPreset: setFromPreset,
+                snapEnabled,
+                setSnapEnabled: handleOverlaySnapToggle,
+            },
+            multiPlaneControls: controlsExtras.multiPlaneControls,
         };
         if (!scene.embedOverlayFactory) {
             return defaultOverlay;
         }
         return scene.embedOverlayFactory({
             scene,
-            renderBackend: renderMode,
+            renderBackend: resolvedRenderMode,
             controls: defaultOverlay,
             extras: overlayExtras,
         });
     }, [
         embed,
-        renderMode,
+        resolvedRenderMode,
         scene,
         showHandles,
         toggleHandles,
@@ -1456,9 +1447,7 @@ export function EuclideanSceneHost({
         setFromPreset,
         snapEnabled,
         handleOverlaySnapToggle,
-        multiPlaneConfig,
-        multiPlaneSides,
-        handleMultiPlaneSidesChange,
+        controlsExtras.multiPlaneControls,
     ]);
 
     const canvas = (

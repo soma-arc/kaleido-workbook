@@ -11,10 +11,13 @@ import {
 } from "@/render/webgl/textures";
 import type { TexturePreset } from "@/ui/texture/types";
 
+export type TextureSourceOrigin = "auto" | "manual";
+
 export type TextureSlotState = {
     layer: TextureLayer | null;
     status: "idle" | "loading" | "ready" | "error";
     error: string | null;
+    origin: TextureSourceOrigin | null;
 };
 
 type SlotStateMap = Record<TextureSlot, TextureSlotState>;
@@ -45,7 +48,11 @@ export type UseTextureInputResult = {
     sceneTextures: SceneTextureLayer[];
     slots: SlotStateMap;
     loadFile(slot: TextureSlot, file: File): Promise<void>;
-    loadPreset(slot: TextureSlot, presetId: string): Promise<void>;
+    loadPreset(
+        slot: TextureSlot,
+        presetId: string,
+        options?: { origin?: TextureSourceOrigin },
+    ): Promise<void>;
     enableCamera(slot?: TextureSlot): Promise<void>;
     enableCanvas(slot?: TextureSlot, options?: CanvasTextureOptions): CanvasTextureHandle;
     disable(slot: TextureSlot): void;
@@ -57,6 +64,7 @@ const DEFAULT_SLOT_STATE: TextureSlotState = {
     layer: null,
     status: "idle",
     error: null,
+    origin: null,
 };
 
 const ALL_SLOTS: TextureSlot[] = Object.values(TEXTURE_SLOTS);
@@ -154,25 +162,32 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
                     },
                 };
                 const layer = createTextureLayer(slot, source, "image");
-                setSlot(slot, () => ({ layer, status: "ready", error: null }));
+                setSlot(slot, () => ({ layer, status: "ready", error: null, origin: "manual" }));
             } catch (error) {
                 URL.revokeObjectURL(objectUrl);
                 const message =
                     error instanceof Error ? error.message : "画像の読み込みに失敗しました";
-                setSlot(slot, () => ({ layer: null, status: "error", error: message }));
+                setSlot(slot, () => ({
+                    layer: null,
+                    status: "error",
+                    error: message,
+                    origin: null,
+                }));
             }
         },
         [createTextureLayer, loadImageElement, setSlot],
     );
 
     const loadPreset = useCallback(
-        async (slot: TextureSlot, presetId: string) => {
+        async (slot: TextureSlot, presetId: string, options?: { origin?: TextureSourceOrigin }) => {
+            const origin = options?.origin ?? "manual";
             const preset = presets.find((item) => item.id === presetId);
             if (!preset) {
                 setSlot(slot, () => ({
                     layer: null,
                     status: "error",
                     error: "プリセットが見つかりません",
+                    origin: null,
                 }));
                 return;
             }
@@ -194,11 +209,16 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
                 };
                 const transform = preset.transform ?? IDENTITY_UV_TRANSFORM;
                 const layer = createTextureLayer(slot, source, kind, transform);
-                setSlot(slot, () => ({ layer, status: "ready", error: null }));
+                setSlot(slot, () => ({ layer, status: "ready", error: null, origin }));
             } catch (error) {
                 const message =
                     error instanceof Error ? error.message : "プリセットの読み込みに失敗しました";
-                setSlot(slot, () => ({ layer: null, status: "error", error: message }));
+                setSlot(slot, () => ({
+                    layer: null,
+                    status: "error",
+                    error: message,
+                    origin: null,
+                }));
             }
         },
         [createTextureLayer, loadImageElement, presets, setSlot],
@@ -211,6 +231,7 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
                     layer: null,
                     status: "error",
                     error: "カメラを利用できません",
+                    origin: null,
                 }));
                 return;
             }
@@ -275,14 +296,19 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
                     onDispose: dispose,
                 };
                 const layer = createTextureLayer(slot, source, "camera");
-                setSlot(slot, () => ({ layer, status: "ready", error: null }));
+                setSlot(slot, () => ({ layer, status: "ready", error: null, origin: "manual" }));
             } catch (error) {
                 stream?.getTracks().forEach((track) => {
                     track.stop();
                 });
                 const message =
                     error instanceof Error ? error.message : "カメラの初期化に失敗しました";
-                setSlot(slot, () => ({ layer: null, status: "error", error: message }));
+                setSlot(slot, () => ({
+                    layer: null,
+                    status: "error",
+                    error: message,
+                    origin: null,
+                }));
             }
         },
         [createTextureLayer, setSlot],
@@ -317,7 +343,7 @@ export function useTextureInput(options: UseTextureInputOptions = {}): UseTextur
             activeCanvasSources.current.set(slot, source);
             const transform = options.transform ?? IDENTITY_UV_TRANSFORM;
             const layer = createTextureLayer(slot, source, "canvas", transform);
-            setSlot(slot, () => ({ layer, status: "ready", error: null }));
+            setSlot(slot, () => ({ layer, status: "ready", error: null, origin: "manual" }));
             options.onCreate?.(canvas);
             const handle: CanvasTextureHandle = {
                 canvas,

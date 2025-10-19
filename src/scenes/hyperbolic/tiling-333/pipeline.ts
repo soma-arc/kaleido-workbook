@@ -1,26 +1,35 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { SCENE_IDS } from "@/ui/scenes";
 import {
     createGeodesicUniformBuffers,
     MAX_UNIFORM_GEODESICS,
     packSceneGeodesics,
-} from "../geodesicUniforms";
+} from "@/render/webgl/geodesicUniforms";
 import {
     registerSceneWebGLPipeline,
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
-} from "../pipelineRegistry";
-import vertexShaderSource from "../shaders/geodesic.vert?raw";
-import fragmentShaderSourceTemplate from "../shaders/hyperbolicTripleReflection.frag?raw";
-import { createTextureManager, type TextureManager } from "../textureManager";
-import { MAX_TEXTURE_SLOTS } from "../textures";
-import { getUniformLocation } from "./uniformUtils";
+} from "@/render/webgl/pipelineRegistry";
+import {
+    getOptionalUniformLocation,
+    getUniformLocation,
+} from "@/render/webgl/pipelines/uniformUtils";
+import vertexShaderSource from "@/render/webgl/shaders/geodesic.vert?raw";
+import fragmentShaderSourceTemplate from "@/render/webgl/shaders/hyperbolicTripleReflection.frag?raw";
+import { createTextureManager, type TextureManager } from "@/render/webgl/textureManager";
+import { MAX_TEXTURE_SLOTS } from "@/render/webgl/textures";
+import type { HyperbolicTripleReflectionUniforms } from "@/ui/scenes/types";
+import {
+    HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
+    HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
+    HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
+} from "./constants";
+import { HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID } from "./definition";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [0.92, 0.96, 0.99] as const;
 const FILL_COLOR = [0.18, 0.22, 0.35] as const;
-const MAX_REFLECTION_STEPS = 10;
+const REFLECTION_SLIDER_STEP = 1;
 
 export const HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID =
     "webgl-hyperbolic-triple-reflection" as const;
@@ -33,6 +42,7 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
     private readonly textureManager: TextureManager;
     private readonly geodesicBuffers = createGeodesicUniformBuffers(MAX_UNIFORM_GEODESICS);
     private readonly uniforms: UniformLocations;
+    private maxReflections = HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS;
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
@@ -72,7 +82,9 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
         gl.uniform1f(getUniformLocation(gl, this.program, "uFeather"), LINE_FEATHER);
         gl.uniform3f(getUniformLocation(gl, this.program, "uLineColor"), ...LINE_COLOR);
         gl.uniform3f(getUniformLocation(gl, this.program, "uFillColor"), ...FILL_COLOR);
-        gl.uniform1i(getUniformLocation(gl, this.program, "uMaxReflections"), MAX_REFLECTION_STEPS);
+        if (this.uniforms.maxReflections) {
+            gl.uniform1i(this.uniforms.maxReflections, HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
+        }
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
         gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
@@ -85,6 +97,7 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
         clipToDisk,
         textures,
         canvas,
+        sceneUniforms,
     }: WebGLPipelineRenderContext): void {
         if (renderScene.geometry !== GEOMETRY_KIND.hyperbolic) {
             return;
@@ -98,6 +111,17 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
         gl.uniform2f(this.uniforms.resolution, width, height);
         gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
         gl.uniform1i(this.uniforms.clipToDisk, clipToDisk ? 1 : 0);
+
+        const requestedReflections = resolveMaxReflections(
+            sceneUniforms as HyperbolicTripleReflectionUniforms | undefined,
+            this.maxReflections,
+        );
+        if (requestedReflections !== this.maxReflections) {
+            if (this.uniforms.maxReflections) {
+                gl.uniform1i(this.uniforms.maxReflections, requestedReflections);
+            }
+            this.maxReflections = requestedReflections;
+        }
 
         const count = packSceneGeodesics(renderScene, this.geodesicBuffers, MAX_UNIFORM_GEODESICS);
         gl.uniform1i(this.uniforms.geodesicCount, count);
@@ -143,6 +167,7 @@ type UniformLocations = {
     textureOpacity: WebGLUniformLocation;
     textureCount: WebGLUniformLocation;
     textureSamplers: WebGLUniformLocation;
+    maxReflections: WebGLUniformLocation | null;
 };
 
 function buildFragmentShaderSource(): string {
@@ -204,6 +229,9 @@ function resolveUniformLocations(
     const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
     const textureCount = getUniformLocation(gl, program, "uTextureCount");
     const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
+    const maxReflections = getOptionalUniformLocation(gl, program, "uMaxReflections", {
+        label: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    });
     return {
         resolution,
         viewport,
@@ -218,6 +246,7 @@ function resolveUniformLocations(
         textureOpacity,
         textureCount,
         textureSamplers,
+        maxReflections,
     };
 }
 
@@ -229,7 +258,27 @@ function createPipeline(
 }
 
 registerSceneWebGLPipeline(
-    SCENE_IDS.hyperbolicTripleReflection,
+    HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID,
     HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
     createPipeline,
 );
+
+function resolveMaxReflections(
+    payload: HyperbolicTripleReflectionUniforms | undefined,
+    fallback: number,
+): number {
+    const raw = payload?.uMaxReflections;
+    if (raw === undefined || raw === null) {
+        return clampReflections(fallback);
+    }
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+        return clampReflections(raw);
+    }
+    return clampReflections(fallback);
+}
+
+function clampReflections(value: number): number {
+    const rounded = Math.round(value / REFLECTION_SLIDER_STEP) * REFLECTION_SLIDER_STEP;
+    const upper = Math.max(HYPERBOLIC_TILING_333_MIN_REFLECTIONS, rounded);
+    return Math.min(upper, HYPERBOLIC_TILING_333_MAX_REFLECTIONS);
+}

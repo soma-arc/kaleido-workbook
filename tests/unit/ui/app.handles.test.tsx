@@ -3,18 +3,25 @@ import { act } from "react-dom/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { App } from "@/ui/App";
 
-const renderMock = vi.fn();
-const disposeMock = vi.fn();
+const renderMock = vi.hoisted(() => vi.fn());
+const disposeMock = vi.hoisted(() => vi.fn());
+const captureMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/render/engine", async () => {
-    const actual = await vi.importActual<typeof import("@/render/engine")>("@/render/engine");
+vi.mock("@/ui/hooks/useRenderEngine", () => {
+    const canvasRef = { current: null as HTMLCanvasElement | null };
+    const engine = {
+        render: renderMock,
+        dispose: disposeMock,
+        capture: captureMock,
+        getMode: () => "canvas" as const,
+    };
     return {
-        ...actual,
-        createRenderEngine: vi.fn(() => ({
-            render: renderMock,
-            dispose: disposeMock,
-            getMode: () => "canvas",
-        })),
+        useRenderEngineWithCanvas: () => ({
+            canvasRef,
+            renderEngineRef: { current: engine },
+            renderMode: "canvas" as const,
+            ready: true,
+        }),
     };
 });
 
@@ -50,8 +57,15 @@ describe("App handle rendering", () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
-        const calls = renderMock.mock.calls.map((call) => call[0]);
-        const finalCall = calls.at(-1);
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+        const finalCall = renderMock.mock.calls.at(-1)?.[0];
         expect(finalCall?.geometry).toBe("euclidean");
         expect(finalCall?.handles?.visible).toBe(true);
         const points = finalCall?.handles?.items?.[0]?.points;

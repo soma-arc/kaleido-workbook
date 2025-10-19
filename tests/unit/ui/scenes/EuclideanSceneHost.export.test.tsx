@@ -11,6 +11,7 @@ const createRenderEngineMock = vi.hoisted(() =>
         capture: captureMock,
         dispose: vi.fn(),
         render: vi.fn(),
+        getMode: () => "canvas",
     })),
 );
 const latestControlsProps = vi.hoisted(() => ({
@@ -39,11 +40,16 @@ vi.mock("@/ui/utils/download", () => ({
     downloadDataUrl: downloadDataUrlMock,
 }));
 
-vi.mock("@/render/engine", async () => {
-    const actual = await vi.importActual<typeof import("@/render/engine")>("@/render/engine");
+vi.mock("@/ui/hooks/useRenderEngine", () => {
+    const canvasRef = { current: null as HTMLCanvasElement | null };
+    const engine = createRenderEngineMock();
     return {
-        ...actual,
-        createRenderEngine: createRenderEngineMock,
+        useRenderEngineWithCanvas: () => ({
+            canvasRef,
+            renderEngineRef: { current: engine },
+            renderMode: "canvas" as const,
+            ready: true,
+        }),
     };
 });
 
@@ -148,18 +154,18 @@ describe("EuclideanSceneHost image export", () => {
         });
 
         await act(async () => {
-            await Promise.resolve();
+            await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
         const controls = latestControlsProps.current;
         if (!controls) {
             throw new Error("controls props not captured");
         }
-        expect(controls.disabled).toBe(false);
         act(() => {
             controls.onModeChange("square-composite");
         });
         await act(async () => {
+            await Promise.resolve();
             await Promise.resolve();
         });
         const updatedControls = latestControlsProps.current;

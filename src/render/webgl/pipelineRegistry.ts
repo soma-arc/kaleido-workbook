@@ -14,6 +14,7 @@ export interface WebGLPipelineRenderContext {
     clipToDisk: boolean;
     textures: readonly TextureLayer[];
     canvas: HTMLCanvasElement;
+    sceneUniforms?: Record<string, unknown>;
 }
 
 /**

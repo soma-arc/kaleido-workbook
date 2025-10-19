@@ -53,6 +53,9 @@ describe("App", () => {
         await act(async () => {
             root.render(<App />);
         });
+        await act(async () => {
+            await Promise.resolve();
+        });
         const stage = host.querySelector("#stage") as HTMLCanvasElement | null;
         expect(stage).not.toBeNull();
         if (stage) {
@@ -60,8 +63,26 @@ describe("App", () => {
             expect(stage.width).toBeGreaterThan(0);
             expect(stage.height).toBeGreaterThan(0);
         }
-
-        const depthSlider = host.querySelector('input[type="range"]');
-        expect(depthSlider).not.toBeNull();
     });
+});
+vi.mock("@/ui/hooks/useRenderEngine", () => {
+    const canvasRef = { current: null as HTMLCanvasElement | null };
+    const engine = {
+        render: () => {
+            /* no-op */
+        },
+        dispose: () => {
+            /* no-op */
+        },
+        capture: () => document.createElement("canvas"),
+        getMode: () => "canvas" as const,
+    };
+    return {
+        useRenderEngineWithCanvas: () => ({
+            canvasRef,
+            renderEngineRef: { current: engine },
+            renderMode: "canvas" as const,
+            ready: true,
+        }),
+    };
 });

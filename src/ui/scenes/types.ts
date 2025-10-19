@@ -41,6 +41,11 @@ export interface SceneDefinition {
     description?: string;
     supportsHandles: boolean;
     editable: boolean;
+    /**
+     * シーン初期化時に自動適用したいテクスチャプリセットの ID。
+     * base スロットが空で idle の場合に適用される。
+     */
+    defaultTexturePresetId?: string;
     allowPlaneDrag?: boolean;
     initialHalfPlanes?: HalfPlane[];
     controlAssignments?: ControlPointAssignment[];
@@ -67,6 +72,17 @@ export interface SceneDefinition {
      */
     embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
     multiPlaneConfig?: MultiPlaneSceneConfig;
+    /**
+     * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。
+     * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
+     */
+    controlsFactory?: (context: SceneControlsContext) => ReactNode;
+}
+
+export type SceneUniforms = Record<string, unknown>;
+
+export interface HyperbolicTripleReflectionUniforms extends SceneUniforms {
+    uMaxReflections: number;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;
@@ -110,5 +126,12 @@ export type SceneEmbedOverlayContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
     controls: ReactNode;
+    extras?: unknown;
+};
+
+export type SceneControlsContext = {
+    scene: SceneDefinition;
+    renderBackend: "canvas" | "hybrid";
+    defaultControls: ReactNode;
     extras?: unknown;
 };

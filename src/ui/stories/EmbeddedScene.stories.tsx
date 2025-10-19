@@ -167,7 +167,7 @@ const meta: Meta<typeof EmbeddedSceneIframe> = {
         },
     },
     args: {
-        sceneId: SCENE_ORDER[0] ?? SCENE_IDS.euclideanRegularSquare,
+        sceneId: SCENE_ORDER[0] ?? SCENE_IDS.euclideanMultiPlane,
     },
 };
 

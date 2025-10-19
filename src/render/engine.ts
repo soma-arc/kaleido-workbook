@@ -28,6 +28,7 @@ export type HalfPlaneHandleRequest = {
 type RenderRequestBase = {
     scene?: SceneDefinition;
     textures?: TextureLayer[];
+    sceneUniforms?: Record<string, unknown>;
 };
 
 export type GeometryRenderRequest =
@@ -147,7 +148,12 @@ export function createRenderEngine(
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
-            const renderOptions = { clipToDisk, textures, scene: request.scene } as const;
+            const renderOptions = {
+                clipToDisk,
+                textures,
+                scene: request.scene,
+                sceneUniforms: request.sceneUniforms,
+            } as const;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);
                 webgl.renderer.render(scene, viewport, renderOptions);

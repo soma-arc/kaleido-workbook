@@ -12,13 +12,14 @@ import "./webgl/pipelines/euclideanHalfPlanePipeline";
 import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
-import "./webgl/pipelines/hyperbolicTripleReflectionPipeline";
+import "@/scenes/hyperbolic/tiling-333/pipeline";
 import "./webgl/pipelines/facingMirrorPipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;
     textures?: TextureLayer[];
     scene?: SceneDefinition;
+    sceneUniforms?: Record<string, unknown>;
 };
 
 export interface WebGLRenderer {
@@ -106,6 +107,7 @@ function createRealRenderer(
                 clipToDisk: options?.clipToDisk !== false,
                 textures: options?.textures ?? [],
                 canvas,
+                sceneUniforms: options?.sceneUniforms,
             };
             pipeline.render(context);
         },
