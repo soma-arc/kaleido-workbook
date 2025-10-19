@@ -251,7 +251,7 @@ export function EuclideanSceneHost({
     const baseTextureSlot = textureInput.slots[TEXTURE_SLOTS.base];
     const baseTextureLayer = baseTextureSlot?.layer ?? null;
     const baseTextureSource = baseTextureLayer?.source ?? null;
-    const defaultCircleTextureApplied = useRef(false);
+    const appliedDefaultPresetId = useRef<string | null>(null);
     const [maxFrameRate, setMaxFrameRate] = useState<number>(60);
     const [maxFrameRateInput, setMaxFrameRateInput] = useState<string>("60");
     const maxFrameRateRef = useRef<number>(60);
@@ -277,27 +277,28 @@ export function EuclideanSceneHost({
     const baseSlotStatus = baseTextureSlot?.status ?? "idle";
 
     useEffect(() => {
-        if (scene.id !== SCENE_IDS.euclideanCircleInversion) {
-            defaultCircleTextureApplied.current = false;
+        const presetId = scene.defaultTexturePresetId;
+        if (!presetId) {
+            appliedDefaultPresetId.current = null;
             return;
         }
-        if (defaultCircleTextureApplied.current) {
-            return;
-        }
-        if (baseSlotLayer || baseSlotStatus === "loading" || baseSlotStatus === "ready") {
-            if (baseSlotLayer) {
-                defaultCircleTextureApplied.current = true;
-            }
+        if (baseSlotLayer) {
+            appliedDefaultPresetId.current = presetId;
             return;
         }
         if (baseSlotStatus !== "idle") {
             return;
         }
-        defaultCircleTextureApplied.current = true;
-        loadPresetTexture(TEXTURE_SLOTS.base, "cat-fish-run").catch(() => {
-            defaultCircleTextureApplied.current = false;
+        if (appliedDefaultPresetId.current === presetId) {
+            return;
+        }
+        appliedDefaultPresetId.current = presetId;
+        loadPresetTexture(TEXTURE_SLOTS.base, presetId).catch(() => {
+            if (appliedDefaultPresetId.current === presetId) {
+                appliedDefaultPresetId.current = null;
+            }
         });
-    }, [scene.id, baseSlotLayer, baseSlotStatus, loadPresetTexture]);
+    }, [scene.defaultTexturePresetId, baseSlotLayer, baseSlotStatus, loadPresetTexture]);
 
     // FPS 入力値を安全な整数レンジへ丸め込むヘルパー。
     const clampFrameRate = useCallback((value: number) => {
@@ -1033,6 +1034,9 @@ export function EuclideanSceneHost({
     };
 
     useEffect(() => {
+        if (!engineReady) {
+            return;
+        }
         if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
             latestEuclideanPlanesRef.current = null;
             renderHyperbolicScene();
@@ -1041,6 +1045,7 @@ export function EuclideanSceneHost({
         if (!normalizedHalfPlanes) return;
         renderEuclideanScene(normalizedHalfPlanes, currentControlPoints, null);
     }, [
+        engineReady,
         scene.geometry,
         normalizedHalfPlanes,
         currentControlPoints,

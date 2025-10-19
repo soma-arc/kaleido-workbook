@@ -15,7 +15,11 @@ import { TexturePicker } from "@/ui/components/texture/TexturePicker";
 import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import type { UseTriangleParamsResult } from "@/ui/hooks/useTriangleParams";
-import type { SceneDefinition, SceneId } from "@/ui/scenes/types";
+import type {
+    HyperbolicTripleReflectionUniforms,
+    SceneDefinition,
+    SceneId,
+} from "@/ui/scenes/types";
 import { SceneLayout } from "./layouts";
 
 export type HyperbolicSceneHostProps = {
@@ -72,7 +76,10 @@ export function HyperbolicSceneHost({
             textures: textureInput.textures,
         };
         if (isReflectionScene) {
-            request.sceneUniforms = { uMaxReflections: maxReflections };
+            const uniformPayload = {
+                uMaxReflections: maxReflections,
+            } satisfies HyperbolicTripleReflectionUniforms;
+            request.sceneUniforms = uniformPayload as Record<string, unknown>;
         }
         engine.render(request);
     }, [

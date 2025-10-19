@@ -28,6 +28,7 @@ export const euclideanSingleHalfPlaneScene = {
     supportsHandles: true,
     editable: true,
     defaultHandleSpacing: 0.75,
+    defaultTexturePresetId: "grid",
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {

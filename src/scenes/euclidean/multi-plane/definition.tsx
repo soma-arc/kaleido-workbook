@@ -13,6 +13,7 @@ export const euclideanMultiPlaneScene = {
     description: "Displays a configurable number of mirrors arranged as a regular polygon.",
     supportsHandles: false,
     editable: false,
+    defaultTexturePresetId: "grid",
     multiPlaneConfig: {
         minSides: 3,
         maxSides: 20,

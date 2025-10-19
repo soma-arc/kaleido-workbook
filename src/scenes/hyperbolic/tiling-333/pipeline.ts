@@ -14,6 +14,7 @@ import vertexShaderSource from "@/render/webgl/shaders/geodesic.vert?raw";
 import fragmentShaderSourceTemplate from "@/render/webgl/shaders/hyperbolicTripleReflection.frag?raw";
 import { createTextureManager, type TextureManager } from "@/render/webgl/textureManager";
 import { MAX_TEXTURE_SLOTS } from "@/render/webgl/textures";
+import type { HyperbolicTripleReflectionUniforms } from "@/ui/scenes/types";
 import {
     HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
     HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
@@ -109,7 +110,10 @@ class HyperbolicTripleReflectionPipeline implements WebGLPipelineInstance {
         gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
         gl.uniform1i(this.uniforms.clipToDisk, clipToDisk ? 1 : 0);
 
-        const requestedReflections = resolveMaxReflections(sceneUniforms, this.maxReflections);
+        const requestedReflections = resolveMaxReflections(
+            sceneUniforms as HyperbolicTripleReflectionUniforms | undefined,
+            this.maxReflections,
+        );
         if (requestedReflections !== this.maxReflections) {
             gl.uniform1i(this.uniforms.maxReflections, requestedReflections);
             this.maxReflections = requestedReflections;
@@ -254,21 +258,15 @@ registerSceneWebGLPipeline(
 );
 
 function resolveMaxReflections(
-    payload: Record<string, unknown> | undefined,
+    payload: HyperbolicTripleReflectionUniforms | undefined,
     fallback: number,
 ): number {
-    const raw = payload ? (payload as { uMaxReflections?: unknown }).uMaxReflections : undefined;
+    const raw = payload?.uMaxReflections;
     if (raw === undefined || raw === null) {
         return clampReflections(fallback);
     }
     if (typeof raw === "number" && Number.isFinite(raw)) {
         return clampReflections(raw);
-    }
-    if (typeof raw === "string" && raw.trim().length > 0) {
-        const parsed = Number(raw);
-        if (Number.isFinite(parsed)) {
-            return clampReflections(parsed);
-        }
     }
     return clampReflections(fallback);
 }

@@ -14,6 +14,7 @@ export const euclideanHalfPlanesScene = {
     description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
     supportsHandles: true,
     editable: true,
+    defaultTexturePresetId: "grid",
     embedOverlayFactory: ({ controls, extras }) => {
         const context = (extras as {
             showHandles?: boolean;

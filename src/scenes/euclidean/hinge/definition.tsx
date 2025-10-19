@@ -43,6 +43,7 @@ export const euclideanHingeScene = {
     supportsHandles: true,
     editable: true,
     allowPlaneDrag: false,
+    defaultTexturePresetId: "grid",
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },

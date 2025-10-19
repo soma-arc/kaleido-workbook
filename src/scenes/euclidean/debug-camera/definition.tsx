@@ -13,6 +13,7 @@ export const euclideanDebugCameraScene = {
         "Displays the live camera texture (enable from the Camera input panel) for pipeline debugging.",
     supportsHandles: false,
     editable: false,
+    defaultTexturePresetId: "grid",
     embedOverlayFactory: ({ controls }) => (
         <div style={{ display: "grid", gap: "12px" }}>
             {controls}

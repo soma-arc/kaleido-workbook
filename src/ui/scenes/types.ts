@@ -41,6 +41,11 @@ export interface SceneDefinition {
     description?: string;
     supportsHandles: boolean;
     editable: boolean;
+    /**
+     * シーン初期化時に自動適用したいテクスチャプリセットの ID。
+     * base スロットが空で idle の場合に適用される。
+     */
+    defaultTexturePresetId?: string;
     allowPlaneDrag?: boolean;
     initialHalfPlanes?: HalfPlane[];
     controlAssignments?: ControlPointAssignment[];
@@ -72,6 +77,10 @@ export interface SceneDefinition {
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
      */
     controlsFactory?: (context: SceneControlsContext) => ReactNode;
+}
+
+export interface HyperbolicTripleReflectionUniforms {
+    uMaxReflections: number;
 }
 
 export type SceneDefinitionInput = Omit<SceneDefinition, "id">;

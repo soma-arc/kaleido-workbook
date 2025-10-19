@@ -12,6 +12,7 @@ export const euclideanDebugTextureScene = {
     description: "Renders the base texture in the viewport center for shader debugging.",
     supportsHandles: false,
     editable: false,
+    defaultTexturePresetId: "grid",
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;
