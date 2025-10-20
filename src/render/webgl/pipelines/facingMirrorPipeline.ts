@@ -15,9 +15,8 @@ import fragmentShaderSourceTemplate from "../shaders/facingMirror.frag?raw";
 import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
+import { FACING_MIRROR_PIPELINE_ID } from "./pipelineIds";
 import { getUniformLocation } from "./uniformUtils";
-
-export const FACING_MIRROR_PIPELINE_ID = "webgl-facing-mirror" as const;
 
 const MIRROR_LINE_WIDTH_PX = 2.2;
 const MIRROR_FEATHER_PX = 1.4;

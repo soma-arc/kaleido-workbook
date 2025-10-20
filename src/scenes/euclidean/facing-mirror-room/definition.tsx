@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { FACING_MIRROR_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { FacingMirrorSceneConfig, SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_FACING_MIRROR_SCENE_KEY = "facingMirrorRoom" as const;
@@ -36,7 +37,15 @@ export const euclideanFacingMirrorScene = {
     allowPlaneDrag: false,
     initialHalfPlanes: FACING_MIRROR_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
+    renderPipelineId: FACING_MIRROR_PIPELINE_ID,
+    textureRectangle: {
+        enabled: true,
+        center: { ...FACING_MIRROR_CONFIG.rectangleCenter },
+        halfExtents: { ...FACING_MIRROR_CONFIG.rectangleHalfExtents },
+        rotation: 0,
+    },
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

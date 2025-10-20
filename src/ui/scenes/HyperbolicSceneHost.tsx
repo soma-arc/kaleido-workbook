@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { GeometryRenderRequest } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
@@ -9,6 +9,10 @@ import {
     HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
     HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
 } from "@/scenes/hyperbolic/tiling-333/constants";
+import {
+    HyperbolicTiling333Controls,
+    type HyperbolicTiling333ControlsProps,
+} from "@/scenes/hyperbolic/tiling-333/ui/Controls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
@@ -20,7 +24,14 @@ import type {
     SceneDefinition,
     SceneId,
 } from "@/ui/scenes/types";
-import { SceneLayout } from "./layouts";
+import {
+    createDefaultEmbedOverlay,
+    resolveSceneControls,
+    resolveSceneEmbedOverlay,
+    SceneLayout,
+    STAGE_CANVAS_BASE_STYLE,
+} from "./layouts";
+import type { SceneContextExtras } from "./types";
 
 export type HyperbolicSceneHostProps = {
     scene: SceneDefinition;
@@ -112,48 +123,61 @@ export function HyperbolicSceneHost({
         </>
     );
 
-    const reflectionControls = isReflectionScene
-        ? {
-              sliderId,
-              min: HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
-              max: HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-              step: 1,
-              value: maxReflections,
-              onChange: handleMaxReflectionsChange,
-          }
+    const reflectionControls = useMemo<HyperbolicTiling333ControlsProps | undefined>(() => {
+        if (!isReflectionScene) {
+            return undefined;
+        }
+        return {
+            sliderId,
+            min: HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
+            max: HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
+            step: 1,
+            value: maxReflections,
+            onChange: handleMaxReflectionsChange,
+        };
+    }, [isReflectionScene, sliderId, maxReflections, handleMaxReflectionsChange]);
+
+    const controls = resolveSceneControls({
+        scene,
+        renderBackend: renderMode,
+        defaultControls,
+        extras: {
+            triangle,
+            textureInput,
+            reflectionControls,
+        } as SceneContextExtras,
+    });
+
+    const overlayExtras: SceneContextExtras | undefined = reflectionControls
+        ? { reflectionControls }
         : undefined;
 
-    const controls: ReactNode = scene.controlsFactory
-        ? scene.controlsFactory({
-              scene,
-              renderBackend: renderMode,
-              defaultControls,
-              extras: {
-                  triangle,
-                  textureInput,
-                  reflectionControls,
-              },
-          })
-        : defaultControls;
+    const defaultOverlay = useMemo(
+        () =>
+            createDefaultEmbedOverlay({
+                scene,
+                children: reflectionControls ? (
+                    <HyperbolicTiling333Controls {...reflectionControls} variant="overlay" />
+                ) : undefined,
+            }),
+        [scene, reflectionControls],
+    );
 
-    const overlay: ReactNode | undefined = embed
-        ? (scene.embedOverlayFactory?.({
-              scene,
-              renderBackend: renderMode,
-              controls: null,
-              extras: reflectionControls ? { reflectionControls } : undefined,
-          }) ?? undefined)
-        : undefined;
+    const overlay = useMemo(
+        () =>
+            resolveSceneEmbedOverlay({
+                scene,
+                renderBackend: renderMode,
+                defaultOverlay,
+                extras: overlayExtras,
+            }),
+        [scene, renderMode, defaultOverlay, overlayExtras],
+    );
 
     return (
         <SceneLayout
             controls={controls}
-            canvas={
-                <StageCanvas
-                    ref={canvasRef}
-                    style={{ border: "none", width: "100%", height: "100%" }}
-                />
-            }
+            canvas={<StageCanvas ref={canvasRef} style={STAGE_CANVAS_BASE_STYLE} />}
             embed={embed}
             overlay={overlay}
         />

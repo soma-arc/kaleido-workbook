@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_HINGE_SCENE_KEY = "euclideanHinge" as const;
@@ -43,8 +44,16 @@ export const euclideanHingeScene = {
     supportsHandles: true,
     editable: true,
     allowPlaneDrag: false,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.75, y: 0.75 },
+        rotation: 0,
+    },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
         { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },

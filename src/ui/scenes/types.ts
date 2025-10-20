@@ -32,12 +32,24 @@ export type SceneKey = {
 
 export type SceneId = `${GeometryKind}-${SceneVariant}`;
 
+export type TextureRectangleConfig = {
+    enabled?: boolean;
+    center: { x: number; y: number };
+    halfExtents: { x: number; y: number };
+    rotation?: number;
+};
+
 export interface SceneDefinition {
     id: SceneId;
     key: string;
     label: string;
     geometry: GeometryKind;
     variant: SceneVariant;
+    /**
+     * レンダリングに利用する WebGL パイプラインの識別子。
+     * `registerSceneWebGLPipeline` で登録された ID と一致する必要がある。
+     */
+    renderPipelineId: string;
     description?: string;
     supportsHandles: boolean;
     editable: boolean;
@@ -71,7 +83,13 @@ export interface SceneDefinition {
      * 実装しない場合はホスト側が用意した既定 UI が利用される。
      */
     embedOverlayFactory?: (context: SceneEmbedOverlayContext) => ReactNode;
+    /**
+     * embed モードでオーバーレイを初期表示するかどうか。未指定時は true。
+     * ラベルのみのオーバーレイを抑制したいシーンで false を指定する。
+     */
+    embedOverlayDefaultVisible?: boolean;
     multiPlaneConfig?: MultiPlaneSceneConfig;
+    textureRectangle?: TextureRectangleConfig;
     /**
      * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
@@ -122,16 +140,18 @@ function isGeometryKind(value: string): value is GeometryKind {
     );
 }
 
+export type SceneContextExtras = Record<string, unknown>;
+
 export type SceneEmbedOverlayContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
-    controls: ReactNode;
-    extras?: unknown;
+    controls: ReactNode | null;
+    extras?: SceneContextExtras;
 };
 
 export type SceneControlsContext = {
     scene: SceneDefinition;
     renderBackend: "canvas" | "hybrid";
     defaultControls: ReactNode;
-    extras?: unknown;
+    extras?: SceneContextExtras;
 };
