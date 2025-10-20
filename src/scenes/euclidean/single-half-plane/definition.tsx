@@ -34,7 +34,7 @@ export const euclideanSingleHalfPlaneScene = {
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
     textureRectangle: {
         enabled: true,
-        center: { x: 0, y: 0 },
+        center: { x: 1, y: 0 },
         halfExtents: { x: 0.75, y: 0.75 },
         rotation: 0,
     },
