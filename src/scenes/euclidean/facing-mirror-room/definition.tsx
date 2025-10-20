@@ -37,7 +37,7 @@ export const euclideanFacingMirrorScene = {
     allowPlaneDrag: false,
     initialHalfPlanes: FACING_MIRROR_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,
     renderPipelineId: FACING_MIRROR_PIPELINE_ID,
     textureRectangle: {

@@ -29,7 +29,7 @@ export const euclideanSingleHalfPlaneScene = {
     supportsHandles: true,
     editable: true,
     defaultHandleSpacing: 0.75,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
     textureRectangle: {

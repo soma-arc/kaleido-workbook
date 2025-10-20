@@ -13,7 +13,7 @@ export const euclideanDebugTextureScene = {
     description: "Renders the base texture in the viewport center for shader debugging.",
     supportsHandles: false,
     editable: false,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,
     renderPipelineId: EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID,
     textureRectangle: {

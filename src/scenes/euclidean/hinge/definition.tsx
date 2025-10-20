@@ -44,7 +44,7 @@ export const euclideanHingeScene = {
     supportsHandles: true,
     editable: true,
     allowPlaneDrag: false,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     textureRectangle: {

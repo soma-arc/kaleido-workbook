@@ -14,7 +14,7 @@ export const euclideanDebugCameraScene = {
         "Displays the live camera texture (enable from the Camera input panel) for pipeline debugging.",
     supportsHandles: false,
     editable: false,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
     renderPipelineId: EUCLIDEAN_DEBUG_CAMERA_PIPELINE_ID,
     textureRectangle: {
         enabled: true,

@@ -63,6 +63,7 @@ import {
     STAGE_CANVAS_BASE_STYLE,
 } from "./layouts";
 import { SCENE_IDS } from "./sceneDefinitions";
+import { type TextureRectangleState, useTextureRectangleInteraction } from "./textureRectangle";
 import type { SceneContextExtras, SceneDefinition, SceneId } from "./types";
 
 const HANDLE_DEFAULT_SPACING = 0.6;
@@ -508,7 +509,7 @@ export function EuclideanSceneHost({
         scene.initialControlPoints,
     ]);
 
-    const computeViewport = (canvas: HTMLCanvasElement): Viewport => {
+    const computeViewport = useCallback((canvas: HTMLCanvasElement): Viewport => {
         const rect = canvas.getBoundingClientRect();
         const ratio = getCanvasPixelRatio(canvas);
         const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
@@ -517,7 +518,7 @@ export function EuclideanSceneHost({
         const size = Math.min(width, height);
         const scale = Math.max(1, size / 2 - margin);
         return { scale, tx: width / 2, ty: height / 2 };
-    };
+    }, []);
 
     useEffect(() => {
         if (!scene.supportsHandles || !showHandles) {
@@ -564,7 +565,7 @@ export function EuclideanSceneHost({
         scene.initialControlPoints,
     ]);
 
-    const getPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const getPointer = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = e.currentTarget;
         const rect = canvas.getBoundingClientRect();
         const ratio = getCanvasPixelRatio(canvas);
@@ -572,7 +573,24 @@ export function EuclideanSceneHost({
             x: (e.clientX - rect.left) * ratio,
             y: (e.clientY - rect.top) * ratio,
         };
-    };
+    }, []);
+
+    const projectPointerToWorld = useCallback(
+        (event: React.PointerEvent<HTMLCanvasElement>) => {
+            const canvas = event.currentTarget;
+            const viewport = computeViewport(canvas);
+            const pointer = getPointer(event);
+            return screenToWorld(viewport, pointer);
+        },
+        [computeViewport, getPointer],
+    );
+
+    const textureRectangleInteraction = useTextureRectangleInteraction({
+        initial: scene.textureRectangle,
+        enabled: scene.textureRectangle?.enabled ?? false,
+        getWorldPoint: projectPointerToWorld,
+    });
+    const textureRectangle = textureRectangleInteraction.rect;
 
     const currentControlPoints = handleControls?.points ?? null;
     const allowPlaneDrag = scene.allowPlaneDrag !== false;
@@ -610,6 +628,7 @@ export function EuclideanSceneHost({
             overridePoints?: HalfPlaneControlPoints[] | null,
             overrideActive?: { planeIndex: number; pointIndex: 0 | 1 } | null,
             overrideInversion?: CircleInversionState | null,
+            overrideTextureRect?: TextureRectangleState,
         ) => {
             const handlePoints = overridePoints ?? currentControlPoints;
             const active = overrideActive ?? activeHandle;
@@ -627,8 +646,13 @@ export function EuclideanSceneHost({
                 circleInversionState ??
                 (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null);
             const halfPlanesForRender = scene.inversionConfig ? [] : planes;
+            const rectForRender = overrideTextureRect ?? textureRectangle;
+            const sceneForRender =
+                rectForRender !== scene.textureRectangle
+                    ? { ...scene, textureRectangle: rectForRender }
+                    : scene;
             renderEngineRef.current?.render({
-                scene,
+                scene: sceneForRender,
                 geometry: GEOMETRY_KIND.euclidean,
                 halfPlanes: halfPlanesForRender,
                 handles,
@@ -640,6 +664,7 @@ export function EuclideanSceneHost({
             activeHandle,
             currentControlPoints,
             circleInversionState,
+            textureRectangle,
             scene,
             scene.supportsHandles,
             showHandles,
@@ -749,6 +774,9 @@ export function EuclideanSceneHost({
     }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures, renderEngineRef]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (textureRectangleInteraction.onPointerDown(e)) {
+            return;
+        }
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
         const canvas = e.currentTarget;
         const viewport = computeViewport(canvas);
@@ -887,6 +915,9 @@ export function EuclideanSceneHost({
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (textureRectangleInteraction.onPointerMove(e)) {
+            return;
+        }
         if (!drag || scene.geometry !== GEOMETRY_KIND.euclidean) return;
         const canvas = e.currentTarget;
         const viewport = computeViewport(canvas);
@@ -1029,6 +1060,15 @@ export function EuclideanSceneHost({
     };
 
     const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        const wasDraggingTextureRect = textureRectangleInteraction.isDragging;
+        if (e.type === "pointercancel") {
+            textureRectangleInteraction.onPointerCancel(e);
+            if (wasDraggingTextureRect) {
+                return;
+            }
+        } else if (textureRectangleInteraction.onPointerUp(e)) {
+            return;
+        }
         if (drag) {
             try {
                 e.currentTarget.releasePointerCapture(drag.pointerId);
@@ -1055,12 +1095,19 @@ export function EuclideanSceneHost({
             return;
         }
         if (!normalizedHalfPlanes) return;
-        renderEuclideanScene(normalizedHalfPlanes, currentControlPoints, null);
+        renderEuclideanScene(
+            normalizedHalfPlanes,
+            currentControlPoints,
+            null,
+            null,
+            textureRectangle,
+        );
     }, [
         engineReady,
         scene.geometry,
         normalizedHalfPlanes,
         currentControlPoints,
+        textureRectangle,
         renderEuclideanScene,
         renderHyperbolicScene,
     ]);
@@ -1477,7 +1524,14 @@ export function EuclideanSceneHost({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUpOrCancel}
                 onPointerCancel={handlePointerUpOrCancel}
-                style={STAGE_CANVAS_BASE_STYLE}
+                onPointerLeave={textureRectangleInteraction.onPointerLeave}
+                style={{
+                    ...STAGE_CANVAS_BASE_STYLE,
+                    cursor:
+                        textureRectangleInteraction.cursor ??
+                        STAGE_CANVAS_BASE_STYLE.cursor ??
+                        "default",
+                }}
             />
         </>
     );
