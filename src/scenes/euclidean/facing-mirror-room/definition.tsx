@@ -34,6 +34,7 @@ export const euclideanFacingMirrorScene = {
         "Displays two opposing mirrors with a central square panel that can display textures.",
     supportsHandles: false,
     editable: false,
+    supportsPanZoom: true,
     allowPlaneDrag: false,
     initialHalfPlanes: FACING_MIRROR_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),

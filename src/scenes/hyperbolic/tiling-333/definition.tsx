@@ -19,6 +19,7 @@ export const hyperbolicTripleReflectionScene = {
         "Displays three mirrors with intersection angles (3,3,3) and colors regions by reflection parity.",
     supportsHandles: false,
     editable: false,
+    supportsPanZoom: true,
     fixedHyperbolicParams: { p: 3, q: 3, r: 3, depth: 0 },
     showTriangleControls: false,
     embedOverlayDefaultVisible: false,

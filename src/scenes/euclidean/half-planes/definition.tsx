@@ -15,6 +15,7 @@ export const euclideanHalfPlanesScene = {
     description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     defaultTexturePresetId: "cat-fish-run",
     textureRectangle: {
         enabled: true,

@@ -14,6 +14,7 @@ export const euclideanMultiPlaneScene = {
     description: "Displays a configurable number of mirrors arranged as a regular polygon.",
     supportsHandles: false,
     editable: false,
+    supportsPanZoom: true,
     defaultTexturePresetId: "cat-fish-run",
     multiPlaneConfig: {
         minSides: 3,

@@ -43,6 +43,7 @@ export const euclideanHingeScene = {
     description: "Two mirrors share a fixed hinge; drag the free endpoints to rotate them.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     allowPlaneDrag: false,
     defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,

@@ -28,6 +28,7 @@ export const euclideanSingleHalfPlaneScene = {
     description: "One adjustable half-plane represented with draggable handles.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     defaultHandleSpacing: 0.75,
     defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,

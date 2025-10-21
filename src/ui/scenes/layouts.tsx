@@ -8,6 +8,7 @@ export type SceneLayoutProps = {
     canvas: ReactNode;
     embed?: boolean;
     overlay?: ReactNode;
+    onCanvasWheelCapture?: (event: React.WheelEvent<HTMLDivElement>) => void;
 };
 
 const BASE_CONTAINER_STYLE: CSSProperties = {
@@ -75,12 +76,18 @@ export const STAGE_CANVAS_BASE_STYLE: CSSProperties = {
     height: "100%",
 };
 
-export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutProps): JSX.Element {
+export function SceneLayout({
+    controls,
+    canvas,
+    embed,
+    overlay,
+    onCanvasWheelCapture,
+}: SceneLayoutProps): JSX.Element {
     const overlayNode = overlay ? <div style={EMBED_OVERLAY_STYLE}>{overlay}</div> : null;
     if (embed) {
         return (
             <div style={EMBED_CONTAINER_STYLE}>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative" }} onWheelCapture={onCanvasWheelCapture}>
                     <div style={CANVAS_FRAME_EMBED_STYLE}>{canvas}</div>
                     {overlayNode}
                 </div>
@@ -106,7 +113,7 @@ export function SceneLayout({ controls, canvas, embed, overlay }: SceneLayoutPro
             >
                 {controls}
             </div>
-            <div style={CANVAS_FRAME_STYLE}>
+            <div style={CANVAS_FRAME_STYLE} onWheelCapture={onCanvasWheelCapture}>
                 {canvas}
                 {overlayNode}
             </div>

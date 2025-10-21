@@ -25,14 +25,24 @@ export type HalfPlaneHandleRequest = {
     radius?: number;
 };
 
+export type ViewportModifier = {
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+};
+
 type RenderRequestBase = {
     scene?: SceneDefinition;
     textures?: TextureLayer[];
     sceneUniforms?: Record<string, unknown>;
+    viewportModifier?: ViewportModifier;
 };
 
 export type GeometryRenderRequest =
-    | ({ geometry: typeof GEOMETRY_KIND.hyperbolic; params: TilingParams } & RenderRequestBase)
+    | ({
+          geometry: typeof GEOMETRY_KIND.hyperbolic;
+          params: TilingParams;
+      } & RenderRequestBase)
     | ({
           geometry: typeof GEOMETRY_KIND.euclidean;
           halfPlanes: HalfPlane[];
@@ -106,7 +116,10 @@ export function createRenderEngine(
         lastRequest = request;
         const pixelRatio = setCanvasDPR(canvas);
         const rect = canvas.getBoundingClientRect();
-        const viewport = computeViewport(rect, canvas, pixelRatio);
+        const baseViewport = computeViewport(rect, canvas, pixelRatio);
+        const viewport = request.viewportModifier
+            ? applyViewportModifier(baseViewport, request.viewportModifier)
+            : baseViewport;
         const textures = request.textures ?? [];
         const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
@@ -219,6 +232,14 @@ function computeViewport(rect: DOMRect, canvas: HTMLCanvasElement, pixelRatio: n
     const sizePx = Math.min(widthPx, heightPx);
     const scale = Math.max(1, sizePx / 2 - marginPx);
     return { scale, tx: widthPx / 2, ty: heightPx / 2 };
+}
+
+function applyViewportModifier(base: Viewport, modifier: ViewportModifier): Viewport {
+    return {
+        scale: base.scale * modifier.scale,
+        tx: base.tx + modifier.offsetX,
+        ty: base.ty + modifier.offsetY,
+    };
 }
 
 function syncWebGLCanvas(webgl: WebGLInitResult, uiCanvas: HTMLCanvasElement) {
