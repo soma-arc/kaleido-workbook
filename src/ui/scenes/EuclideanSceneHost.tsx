@@ -1182,55 +1182,90 @@ export function EuclideanSceneHost({
         }
     };
 
-    const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-        if (!scene.supportsPanZoom || scene.geometry !== GEOMETRY_KIND.euclidean) {
-            return;
-        }
+    const handleWheelCore = useCallback(
+        (event: WheelEvent) => {
+            if (!scene.supportsPanZoom || scene.geometry !== GEOMETRY_KIND.euclidean) {
+                return;
+            }
+            const canvasElement = canvasRef.current;
+            if (!canvasElement) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === "function") {
+                event.stopImmediatePropagation();
+            }
+            const currentViewport = computeViewport(canvasElement);
+            const focus = getCanvasPoint(canvasElement, event.clientX, event.clientY);
+            const factor = Math.exp(-event.deltaY * 0.001);
+            if (!Number.isFinite(factor) || factor === 1) {
+                return;
+            }
+            const currentModifier = panZoomModifierRef.current;
+            const unclampedScale = currentModifier.scale * factor;
+            const nextScale = Math.min(
+                panZoomLimits.maxScale,
+                Math.max(panZoomLimits.minScale, unclampedScale),
+            );
+            const appliedFactor = nextScale / currentModifier.scale;
+            if (!Number.isFinite(appliedFactor) || appliedFactor === 1) {
+                return;
+            }
+            const nextTx = focus.x - (focus.x - currentViewport.tx) * appliedFactor;
+            const nextTy = focus.y + (currentViewport.ty - focus.y) * appliedFactor;
+            const baseViewport = computeBaseViewport(canvasElement);
+            const modifierOverride: ViewportModifier = {
+                scale: nextScale,
+                offsetX: nextTx - baseViewport.tx,
+                offsetY: nextTy - baseViewport.ty,
+            };
+            zoomCanvasAt(focus, appliedFactor);
+            const planesForRender =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(
+                planesForRender,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                modifierOverride,
+            );
+        },
+        [
+            scene.supportsPanZoom,
+            scene.geometry,
+            panZoomLimits.maxScale,
+            panZoomLimits.minScale,
+            computeViewport,
+            getCanvasPoint,
+            computeBaseViewport,
+            zoomCanvasAt,
+            renderEuclideanScene,
+            normalizedHalfPlanes,
+            canvasRef,
+            panZoomModifierRef,
+        ],
+    );
+
+    useEffect(() => {
         const canvasElement = canvasRef.current;
         if (!canvasElement) {
             return;
         }
-        event.preventDefault();
-        event.stopPropagation();
-        if (typeof event.nativeEvent.stopImmediatePropagation === "function") {
-            event.nativeEvent.stopImmediatePropagation();
-        }
-        const currentViewport = computeViewport(canvasElement);
-        const focus = getCanvasPoint(canvasElement, event.clientX, event.clientY);
-        const factor = Math.exp(-event.deltaY * 0.001);
-        if (!Number.isFinite(factor) || factor === 1) {
+        if (!scene.supportsPanZoom || scene.geometry !== GEOMETRY_KIND.euclidean) {
             return;
         }
-        const currentModifier = panZoomModifierRef.current;
-        const unclampedScale = currentModifier.scale * factor;
-        const nextScale = Math.min(
-            panZoomLimits.maxScale,
-            Math.max(panZoomLimits.minScale, unclampedScale),
-        );
-        const appliedFactor = nextScale / currentModifier.scale;
-        if (!Number.isFinite(appliedFactor) || appliedFactor === 1) {
-            return;
-        }
-        const nextTx = focus.x - (focus.x - currentViewport.tx) * appliedFactor;
-        const nextTy = focus.y + (currentViewport.ty - focus.y) * appliedFactor;
-        const baseViewport = computeBaseViewport(canvasElement);
-        const modifierOverride: ViewportModifier = {
-            scale: nextScale,
-            offsetX: nextTx - baseViewport.tx,
-            offsetY: nextTy - baseViewport.ty,
+        const listener = (event: WheelEvent) => {
+            handleWheelCore(event);
         };
-        zoomCanvasAt(focus, appliedFactor);
-        const planesForRender =
-            latestEuclideanPlanesRef.current ?? normalizedHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
-        renderEuclideanScene(
-            planesForRender,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            modifierOverride,
-        );
-    };
+        canvasElement.addEventListener("wheel", listener, { passive: false });
+        return () => {
+            canvasElement.removeEventListener("wheel", listener);
+        };
+    }, [handleWheelCore, scene.supportsPanZoom, scene.geometry, canvasRef]);
 
     useEffect(() => {
         if (!engineReady) {
@@ -1690,7 +1725,7 @@ export function EuclideanSceneHost({
             canvas={canvas}
             embed={embed}
             overlay={overlay ?? undefined}
-            onCanvasWheelCapture={scene.supportsPanZoom ? handleWheel : undefined}
+            onCanvasWheelCapture={undefined}
         />
     );
 }
