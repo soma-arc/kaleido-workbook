@@ -486,6 +486,29 @@ export function EuclideanSceneHost({
         return base.map((plane) => normalizeHalfPlane(plane));
     }, [scene.geometry, editableHalfPlanes, baseHalfPlanes]);
 
+    const recomputePlanesFromControls = useCallback(
+        (
+            sourcePlanes: HalfPlane[],
+            points: HalfPlaneControlPoints[],
+            controlPointId: string | null,
+            primaryIndex: number,
+        ): HalfPlane[] => {
+            return sourcePlanes.map((plane, idx) => {
+                const pair = points[idx];
+                if (!pair) return plane;
+                const shouldUpdate = controlPointId
+                    ? pair.some((point) => point.id === controlPointId)
+                    : idx === primaryIndex;
+                if (!shouldUpdate) {
+                    return plane;
+                }
+                const derived = deriveHalfPlaneFromPoints(pair);
+                return alignHalfPlaneOrientation(plane, derived);
+            });
+        },
+        [],
+    );
+
     useEffect(() => {
         setEditableHalfPlanes(null);
         setDrag(null);
@@ -497,7 +520,9 @@ export function EuclideanSceneHost({
         const source = baseHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
         const normalized = source.map((plane) => normalizeHalfPlane(plane));
         let nextPoints: HalfPlaneControlPoints[];
-        if (scene.initialControlPoints && scene.initialControlPoints.length === normalized.length) {
+        const initializedFromControlPoints =
+            scene.initialControlPoints && scene.initialControlPoints.length === normalized.length;
+        if (initializedFromControlPoints) {
             nextPoints = scene.initialControlPoints.map((pair) => [
                 { ...pair[0] },
                 { ...pair[1] },
@@ -506,7 +531,13 @@ export function EuclideanSceneHost({
             nextPoints = controlPointsFromHalfPlanes(normalized, handleSpacing, controlAssignments);
         }
         setHandleControls({ spacing: handleSpacing, points: nextPoints });
-        latestEuclideanPlanesRef.current = normalized;
+        const initialPlanes = initializedFromControlPoints
+            ? recomputePlanesFromControls(normalized, nextPoints, null, 0)
+            : normalized;
+        latestEuclideanPlanesRef.current = initialPlanes;
+        if (initializedFromControlPoints) {
+            setEditableHalfPlanes(initialPlanes);
+        }
         setExportStatus(null);
     }, [
         baseHalfPlanes,
@@ -514,6 +545,7 @@ export function EuclideanSceneHost({
         handleSpacing,
         scene.geometry,
         scene.initialControlPoints,
+        recomputePlanesFromControls,
     ]);
 
     const computeBaseViewport = useCallback((canvas: HTMLCanvasElement): Viewport => {
@@ -638,29 +670,6 @@ export function EuclideanSceneHost({
         drag?.type === "handle"
             ? { planeIndex: drag.planeIndex, pointIndex: drag.pointIndex }
             : null;
-
-    const recomputePlanesFromControls = useCallback(
-        (
-            sourcePlanes: HalfPlane[],
-            points: HalfPlaneControlPoints[],
-            controlPointId: string | null,
-            primaryIndex: number,
-        ): HalfPlane[] => {
-            return sourcePlanes.map((plane, idx) => {
-                const pair = points[idx];
-                if (!pair) return plane;
-                const shouldUpdate = controlPointId
-                    ? pair.some((point) => point.id === controlPointId)
-                    : idx === primaryIndex;
-                if (!shouldUpdate) {
-                    return plane;
-                }
-                const derived = deriveHalfPlaneFromPoints(pair);
-                return alignHalfPlaneOrientation(plane, derived);
-            });
-        },
-        [],
-    );
 
     const renderEuclideanScene = useCallback(
         (
