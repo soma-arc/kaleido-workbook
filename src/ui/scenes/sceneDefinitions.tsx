@@ -2,7 +2,7 @@ import { GEOMETRY_KIND, type GeometryKind } from "@/geom/core/types";
 import { euclideanCircleInversionScene } from "@/scenes/euclidean/circle-inversion";
 import { euclideanDebugCameraScene } from "@/scenes/euclidean/debug-camera";
 import { euclideanDebugTextureScene } from "@/scenes/euclidean/debug-texture";
-import { euclideanFacingMirrorScene } from "@/scenes/euclidean/facing-mirror-room";
+import { euclideanFacingMirrorScene } from "@/scenes/euclidean/facing-mirror";
 import { euclideanHalfPlanesScene } from "@/scenes/euclidean/half-planes";
 import { euclideanHingeScene } from "@/scenes/euclidean/hinge";
 import { euclideanMultiPlaneScene } from "@/scenes/euclidean/multi-plane";
