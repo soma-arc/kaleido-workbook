@@ -491,14 +491,16 @@ export function EuclideanSceneHost({
             sourcePlanes: HalfPlane[],
             points: HalfPlaneControlPoints[],
             controlPointId: string | null,
-            primaryIndex: number,
+            primaryIndex: number | null,
         ): HalfPlane[] => {
             return sourcePlanes.map((plane, idx) => {
                 const pair = points[idx];
                 if (!pair) return plane;
                 const shouldUpdate = controlPointId
                     ? pair.some((point) => point.id === controlPointId)
-                    : idx === primaryIndex;
+                    : primaryIndex === null
+                      ? true
+                      : idx === primaryIndex;
                 if (!shouldUpdate) {
                     return plane;
                 }
@@ -532,7 +534,7 @@ export function EuclideanSceneHost({
         }
         setHandleControls({ spacing: handleSpacing, points: nextPoints });
         const initialPlanes = initializedFromControlPoints
-            ? recomputePlanesFromControls(normalized, nextPoints, null, 0)
+            ? recomputePlanesFromControls(normalized, nextPoints, null, null)
             : normalized;
         latestEuclideanPlanesRef.current = initialPlanes;
         if (initializedFromControlPoints) {
