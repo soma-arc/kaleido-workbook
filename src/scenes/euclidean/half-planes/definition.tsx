@@ -20,7 +20,7 @@ export const euclideanHalfPlanesScene = {
     textureRectangle: {
         enabled: true,
         center: { x: 0, y: 0 },
-        halfExtents: { x: 0.7, y: 0.7 },
+        halfExtents: { x: 0.2, y: 0.2 },
         rotation: 0,
     },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
