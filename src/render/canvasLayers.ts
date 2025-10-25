@@ -3,7 +3,6 @@ import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { drawCircle, drawLine } from "./canvasAdapter";
-import { cropToCenteredSquare } from "./crop";
 import type { GeodesicPrimitive, RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { worldToScreen } from "./viewport";
