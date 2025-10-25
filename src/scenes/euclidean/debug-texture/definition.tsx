@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_DEBUG_TEXTURE_SCENE_KEY = "debugTexture" as const;
@@ -12,7 +13,16 @@ export const euclideanDebugTextureScene = {
     description: "Renders the base texture in the viewport center for shader debugging.",
     supportsHandles: false,
     editable: false,
-    defaultTexturePresetId: "grid",
+    supportsPanZoom: true,
+    defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
+    renderPipelineId: EUCLIDEAN_DEBUG_TEXTURE_PIPELINE_ID,
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 5, y: 5 },
+        rotation: 0,
+    },
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

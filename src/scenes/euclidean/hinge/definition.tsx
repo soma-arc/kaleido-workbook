@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_HINGE_SCENE_KEY = "euclideanHinge" as const;
@@ -14,10 +15,10 @@ const HINGE_HALF_PLANES = [
 const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
     [
         { id: "hinge", x: 0, y: 0, fixed: true },
-        { id: "hinge-plane-0-free", x: 0, y: 0.6, fixed: false },
+        { id: "hinge-plane-0-free", x: 1 / Math.sqrt(2), y: -1 / Math.sqrt(2), fixed: false },
     ],
     [
-        { id: "hinge-plane-1-free", x: -0.8, y: 0, fixed: false },
+        { id: "hinge-plane-1-free", x: -1 / Math.sqrt(2), y: -1 / Math.sqrt(2), fixed: false },
         { id: "hinge", x: 0, y: 0, fixed: true },
     ],
 ];
@@ -42,9 +43,18 @@ export const euclideanHingeScene = {
     description: "Two mirrors share a fixed hinge; drag the free endpoints to rotate them.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     allowPlaneDrag: false,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: -0.5 },
+        halfExtents: { x: 0.3, y: 0.3 },
+        rotation: 0,
+    },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "hinge", fixed: true },
         { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },

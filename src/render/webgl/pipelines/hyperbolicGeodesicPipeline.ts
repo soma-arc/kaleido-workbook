@@ -14,12 +14,12 @@ import vertexShaderSource from "../shaders/geodesic.vert?raw";
 import fragmentShaderSourceTemplate from "../shaders/hyperbolicGeodesic.frag?raw";
 import { createTextureManager, type TextureManager } from "../textureManager";
 import { MAX_TEXTURE_SLOTS } from "../textures";
+import { HYPERBOLIC_GEODESIC_PIPELINE_ID } from "./pipelineIds";
 import { getUniformLocation } from "./uniformUtils";
 
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
-export const HYPERBOLIC_GEODESIC_PIPELINE_ID = "webgl-hyperbolic-geodesic" as const;
 
 /**
  * Default pipeline for rendering hyperbolic geodesic layers with optional texture compositing.

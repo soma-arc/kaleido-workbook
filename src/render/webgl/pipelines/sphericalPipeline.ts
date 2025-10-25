@@ -10,8 +10,7 @@ import {
     type WebGLPipelineInstance,
     type WebGLPipelineRenderContext,
 } from "../pipelineRegistry";
-
-const PIPELINE_ID = "webgl-spherical";
+import { SPHERICAL_PIPELINE_ID } from "./pipelineIds";
 
 /**
  * WebGL pipeline that defers spherical rendering to the dedicated renderer while adhering to the generic pipeline contract.
@@ -52,4 +51,4 @@ function createPipeline(
     return new SphericalPipeline(renderer);
 }
 
-registerGeometryWebGLPipeline(GEOMETRY_KIND.spherical, PIPELINE_ID, createPipeline);
+registerGeometryWebGLPipeline(GEOMETRY_KIND.spherical, SPHERICAL_PIPELINE_ID, createPipeline);

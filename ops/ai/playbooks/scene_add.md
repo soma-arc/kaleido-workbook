@@ -26,6 +26,7 @@
 2. 下記を明記:
     - `label`, `variant`, `geometry`, `description`, `supportsHandles`, `editable`。
     - 必要な初期状態（半平面 / 円 / 球面頂点など）。
+    - Euclidean シーンで既定のテクスチャが必要な場合は `defaultTexturePresetId` を設定する（例: `"grid"`, `"cat-fish-run"`）。
 3. Scene ID を `SCENE_IDS.<alias>` へ追加し、他コンポーネントから参照できるようにする。
 
 ## 4. レンダリングパイプライン
@@ -46,6 +47,7 @@
 1. 対象ホスト（`EuclideanSceneHost`, `HyperbolicSceneHost`, `SphericalSceneHost` など）に新シーンが選択肢として表示されるよう更新。
 2. コントロールパネルに追加パラメータが必要な場合は、最小限の入力に絞り、`useSceneRegistry` との整合を保つ。
 3. アクセシビリティ: Canvas の `aria-label`, フォーカス制御、固定ハンドルの表示を確認。
+4. `TexturePicker` / `CameraInput` を再利用する場合は、`useTextureInput` の `origin` フラグを尊重し、自動プリセット (`"auto"`) と手動操作 (`"manual"`) が上書き条件で衝突しないようにする。
 4. **Embed モードのオーバーレイ UI**  
    - `SceneLayout` は `overlay` プロパティを受け取り、`embed` モードではキャンバス上にカード形式の UI を重ねられる（実装は `src/ui/scenes/layouts.tsx` の `EMBED_OVERLAY_STYLE` を参照）。  
    - 既定のオーバーレイは各 SceneHost が提供する。シーン固有 UI を追加したい場合は `SceneDefinition.embedOverlayFactory` を指定し、`context.controls`（共通 UI）に要素を追加・差し替える。  

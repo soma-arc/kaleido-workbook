@@ -81,6 +81,7 @@ vi.mock("@/ui/hooks/useTextureSource", async () => {
 });
 
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { UseTriangleParamsResult } from "@/ui/hooks/useTriangleParams";
 import { EuclideanSceneHost } from "@/ui/scenes/EuclideanSceneHost";
 import type { SceneDefinition } from "@/ui/scenes/types";
@@ -97,6 +98,7 @@ describe("EuclideanSceneHost image export", () => {
         description: "",
         supportsHandles: false,
         editable: true,
+        renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     };
 
     const triangleStub: UseTriangleParamsResult = {

@@ -10,7 +10,6 @@ import {
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
 import "@/render/webgl/pipelines/sphericalPipeline";
-import { EmbedOverlayPanel } from "@/ui/components/EmbedOverlayPanel";
 import { PresetSelector } from "@/ui/components/PresetSelector";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import {
@@ -20,7 +19,13 @@ import {
     type TrianglePreset,
 } from "@/ui/trianglePresets";
 import { ModeControls } from "../components/ModeControls";
-import { SceneLayout } from "./layouts";
+import {
+    createDefaultEmbedOverlay,
+    resolveSceneControls,
+    resolveSceneEmbedOverlay,
+    SceneLayout,
+    STAGE_CANVAS_BASE_STYLE,
+} from "./layouts";
 import type { SceneDefinition, SceneId } from "./types";
 
 export type SphericalSceneHostProps = {
@@ -322,7 +327,7 @@ export function SphericalSceneHost({
         setSamples(Number(event.target.value));
     }, []);
 
-    const controls = controlsVisible ? (
+    const defaultControls = controlsVisible ? (
         <>
             <ModeControls
                 scenes={scenes}
@@ -430,26 +435,36 @@ export function SphericalSceneHost({
         </>
     ) : null;
 
-    const overlay = useMemo(() => {
-        if (!embed) return null;
-        const defaultOverlay = <EmbedOverlayPanel title={scene.label} subtitle="Scene" />;
-        if (!scene.embedOverlayFactory) {
-            return defaultOverlay;
-        }
-        return scene.embedOverlayFactory({
-            scene,
-            renderBackend: "hybrid",
-            controls: defaultOverlay,
-        });
-    }, [embed, scene]);
+    const controls = resolveSceneControls({
+        scene,
+        renderBackend: "hybrid",
+        defaultControls,
+    });
+
+    const defaultOverlay = useMemo(
+        () =>
+            createDefaultEmbedOverlay({
+                scene,
+                subtitle: "Scene",
+            }),
+        [scene],
+    );
+
+    const overlay = useMemo(
+        () =>
+            resolveSceneEmbedOverlay({
+                scene,
+                renderBackend: "hybrid",
+                defaultOverlay,
+            }),
+        [scene, defaultOverlay],
+    );
 
     const canvas = (
         <StageCanvas
             ref={canvasRef}
             style={{
-                border: "none",
-                width: "100%",
-                height: "100%",
+                ...STAGE_CANVAS_BASE_STYLE,
                 cursor: dragging ? "grabbing" : "grab",
             }}
             data-geometry={GEOMETRY_KIND.spherical}

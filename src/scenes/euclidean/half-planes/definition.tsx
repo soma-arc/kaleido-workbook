@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import { HalfPlaneOverlayControls } from "@/ui/components/HalfPlaneOverlayControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 import type { TrianglePreset, TrianglePresetGroup } from "@/ui/trianglePresets";
@@ -14,7 +15,15 @@ export const euclideanHalfPlanesScene = {
     description: "Interactive Euclidean mirrors derived from the current {p,q,r} triangle.",
     supportsHandles: true,
     editable: true,
-    defaultTexturePresetId: "grid",
+    supportsPanZoom: true,
+    defaultTexturePresetId: "cat-fish-run",
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.2, y: 0.2 },
+        rotation: 0,
+    },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     embedOverlayFactory: ({ controls, extras }) => {
         const context = (extras as {
             showHandles?: boolean;

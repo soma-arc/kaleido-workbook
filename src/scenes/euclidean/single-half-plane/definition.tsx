@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { halfPlaneFromNormalAndOffset, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_SINGLE_HALF_PLANE_SCENE_KEY = "euclideanSingleHalfPlane" as const;
@@ -27,9 +28,18 @@ export const euclideanSingleHalfPlaneScene = {
     description: "One adjustable half-plane represented with draggable handles.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     defaultHandleSpacing: 0.75,
-    defaultTexturePresetId: "grid",
+    defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(SINGLE_HALF_PLANE),
+    textureRectangle: {
+        enabled: true,
+        center: { x: 1, y: 0 },
+        halfExtents: { x: 0.75, y: 0.75 },
+        rotation: 0,
+    },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

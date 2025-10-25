@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { PqrKey } from "@/geom/triangle/snap";
+import {
+    EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
+    HYPERBOLIC_GEODESIC_PIPELINE_ID,
+} from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinition, SceneId } from "@/ui/scenes";
 import { DepthControls } from "../../../src/ui/components/DepthControls";
 import { ModeControls } from "../../../src/ui/components/ModeControls";
@@ -99,6 +103,7 @@ describe("UI components", () => {
                 variant: "tiling",
                 supportsHandles: false,
                 editable: false,
+                renderPipelineId: HYPERBOLIC_GEODESIC_PIPELINE_ID,
             },
             {
                 key: "test-euclidean",
@@ -108,6 +113,7 @@ describe("UI components", () => {
                 variant: "half-planes",
                 supportsHandles: true,
                 editable: true,
+                renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
             },
         ];
         const container = document.createElement("div");

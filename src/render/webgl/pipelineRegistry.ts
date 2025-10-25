@@ -38,7 +38,10 @@ type PipelineScope =
 
 const scenePipelineRegistry = new Map<SceneId, PipelineRegistration>();
 const geometryPipelineRegistry = new Map<GeometryKind, PipelineRegistration>();
+const geometryPipelineIds = new Map<GeometryKind, string>();
 let defaultPipeline: PipelineRegistration | null = null;
+let defaultPipelineId: string | null = null;
+const scenePipelineIds = new Map<SceneId, string>();
 
 /**
  * パイプラインを登録するベース関数。scope に応じて内部マップへ格納する。
@@ -83,6 +86,7 @@ export function registerDefaultWebGLPipeline(
     id: string,
     factory: (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => WebGLPipelineInstance,
 ): void {
+    defaultPipelineId = id;
     registerWebGLPipeline({ id, scope: { kind: "default" }, factory });
 }
 
@@ -92,6 +96,13 @@ export function registerGeometryWebGLPipeline(
     id: string,
     factory: (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => WebGLPipelineInstance,
 ): void {
+    const existing = geometryPipelineIds.get(geometry);
+    if (existing && existing !== id) {
+        throw new Error(
+            `Geometry pipeline already registered for ${geometry}: ${existing}. Cannot register ${id}.`,
+        );
+    }
+    geometryPipelineIds.set(geometry, id);
     registerWebGLPipeline({ id, scope: { kind: "geometry", geometry }, factory });
 }
 
@@ -101,5 +112,28 @@ export function registerSceneWebGLPipeline(
     id: string,
     factory: (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => WebGLPipelineInstance,
 ): void {
+    const existing = scenePipelineIds.get(sceneId);
+    if (existing && existing !== id) {
+        throw new Error(
+            `Scene pipeline already registered for ${sceneId}: ${existing}. Cannot register ${id}.`,
+        );
+    }
+    scenePipelineIds.set(sceneId, id);
     registerWebGLPipeline({ id, scope: { kind: "scene", id: sceneId }, factory });
+}
+
+export function getRegisteredScenePipelineId(sceneId: SceneId): string | undefined {
+    return scenePipelineIds.get(sceneId);
+}
+
+export function getRegisteredScenePipelineMap(): ReadonlyMap<SceneId, string> {
+    return scenePipelineIds;
+}
+
+export function getRegisteredGeometryPipelineId(geometry: GeometryKind): string | undefined {
+    return geometryPipelineIds.get(geometry);
+}
+
+export function getRegisteredDefaultPipelineId(): string | null {
+    return defaultPipelineId;
 }

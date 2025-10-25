@@ -1,5 +1,6 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import { SPHERICAL_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const SPHERICAL_TETRAHEDRON_SCENE_KEY = "sphericalTetrahedron" as const;
@@ -16,4 +17,6 @@ export const sphericalTetrahedronScene = {
         triangle: createRegularTetrahedronTriangle(0),
         handles: {},
     },
+    embedOverlayDefaultVisible: false,
+    renderPipelineId: SPHERICAL_PIPELINE_ID,
 } satisfies SceneDefinitionInput;

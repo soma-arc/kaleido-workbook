@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import { MultiPlaneOverlayControls } from "@/ui/components/MultiPlaneOverlayControls";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
@@ -13,13 +14,21 @@ export const euclideanMultiPlaneScene = {
     description: "Displays a configurable number of mirrors arranged as a regular polygon.",
     supportsHandles: false,
     editable: false,
-    defaultTexturePresetId: "grid",
+    supportsPanZoom: true,
+    defaultTexturePresetId: "cat-fish-run",
     multiPlaneConfig: {
         minSides: 3,
         maxSides: 20,
         initialSides: 4,
         radius: 0.7,
     },
+    textureRectangle: {
+        enabled: true,
+        center: { x: 0, y: 0 },
+        halfExtents: { x: 0.55, y: 0.55 },
+        rotation: 0,
+    },
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     embedOverlayFactory: ({ extras }) => {
         const context =
             (extras as {

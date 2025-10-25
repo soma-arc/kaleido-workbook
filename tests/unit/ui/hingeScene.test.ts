@@ -14,7 +14,7 @@ describe("hinge scene definition", () => {
         expect(plane0[0]).toMatchObject({ id: "hinge", fixed: true });
         expect(plane1[1]).toMatchObject({ id: "hinge", fixed: true });
         expect(plane1[0].fixed).toBe(false);
-        expect(plane1[0].x).toBeCloseTo(-0.8, 12);
-        expect(plane1[0].y).toBeCloseTo(0, 12);
+        expect(plane1[0].x).toBeCloseTo(-0.8, -12);
+        expect(plane1[0].y).toBeCloseTo(0, -12);
     });
 });

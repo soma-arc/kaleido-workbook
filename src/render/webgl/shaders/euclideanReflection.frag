@@ -11,6 +11,11 @@ uniform vec3 uLineColor;
 uniform vec3 uFillColor;
 uniform vec3 uViewport; // (scale, tx, ty)
 
+uniform int uTextureRectEnabled;
+uniform vec2 uTextureRectCenter;
+uniform vec2 uTextureRectHalfExtents;
+uniform float uTextureRectRotation;
+
 const int MAX_TEXTURE_SLOTS = __MAX_TEXTURE_SLOTS__;
 uniform int uTextureCount;
 uniform int uTextureEnabled[MAX_TEXTURE_SLOTS];
@@ -60,12 +65,35 @@ vec2 transformWorldPoint(int slot, vec2 worldPoint) {
     return rotated + uTextureOffset[slot];
 }
 
+vec2 textureRectLocal(vec2 point) {
+    vec2 local = point - uTextureRectCenter;
+    float angle = -uTextureRectRotation;
+    float c = cos(angle);
+    float s = sin(angle);
+    return vec2(c * local.x - s * local.y, s * local.x + c * local.y);
+}
+
+bool isInsideTextureRect(vec2 point) {
+    if (uTextureRectEnabled == 0) {
+        return false;
+    }
+    vec2 rotated = textureRectLocal(point);
+    vec2 bounds = max(uTextureRectHalfExtents, vec2(1e-6));
+    return abs(rotated.x) <= bounds.x && abs(rotated.y) <= bounds.y;
+}
+
 vec4 sampleTextureSlot(int slot, vec2 uv) {
 __SAMPLE_TEXTURE_CASES__
     return vec4(0.0);
 }
 
 vec4 sampleTextures(vec2 worldPoint) {
+    if (!isInsideTextureRect(worldPoint)) {
+        return vec4(0.0);
+    }
+    vec2 local = textureRectLocal(worldPoint);
+    vec2 bounds = max(uTextureRectHalfExtents, vec2(1e-6));
+    vec2 normalized = vec2(local.x / bounds.x, local.y / bounds.y);
     vec4 accum = vec4(0.0);
     for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) {
         if (i >= uTextureCount) {
@@ -74,7 +102,7 @@ vec4 sampleTextures(vec2 worldPoint) {
         if (uTextureEnabled[i] == 0) {
             continue;
         }
-        vec2 uv = transformWorldPoint(i, worldPoint);
+        vec2 uv = transformWorldPoint(i, normalized);
         vec4 texColor = sampleTextureSlot(i, uv);
         float opacity = clamp(uTextureOpacity[i], 0.0, 1.0);
         texColor.a *= opacity;

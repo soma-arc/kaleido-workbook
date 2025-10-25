@@ -3,6 +3,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import { EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { CircleInversionSceneConfig } from "@/ui/scenes/circleInversionConfig";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
@@ -81,8 +82,10 @@ export const euclideanCircleInversionScene = {
     description: "Inverts a draggable rectangle across a fixed circle using the WebGL pipeline.",
     supportsHandles: true,
     editable: true,
+    supportsPanZoom: true,
     defaultHandleSpacing: 1.2,
     defaultTexturePresetId: "cat-fish-run",
+    embedOverlayDefaultVisible: false,
     initialHalfPlanes: cloneHalfPlanes(CIRCLE_INVERSION_LINE_HALF_PLANE),
     controlAssignments: [
         { planeIndex: 0, pointIndex: 0, id: "circle-line-start" },
@@ -90,6 +93,7 @@ export const euclideanCircleInversionScene = {
     ],
     initialControlPoints: cloneControlPointsList(CIRCLE_INVERSION_LINE_CONTROL_POINTS),
     inversionConfig: CIRCLE_INVERSION_CONFIG,
+    renderPipelineId: EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;
