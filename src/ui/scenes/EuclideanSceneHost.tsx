@@ -1131,7 +1131,7 @@ export function EuclideanSceneHost({
                 offsetX: currentModifier.offsetX + deltaX,
                 offsetY: currentModifier.offsetY - deltaY,
             };
-            panCanvasBy(deltaX, deltaY);
+            panCanvasBy(deltaX, -deltaY);
             setDrag({ type: "pan", pointerId: drag.pointerId, last: pointer });
             const planesForRender =
                 latestEuclideanPlanesRef.current ??
