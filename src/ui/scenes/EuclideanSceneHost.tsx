@@ -4,6 +4,7 @@ import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import {
+    evaluateHalfPlane,
     halfPlaneFromNormalAndOffset,
     halfPlaneOffset,
     normalizeHalfPlane,
@@ -161,6 +162,31 @@ function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
         y: unit.anchor.y - delta * unit.normal.y,
     };
     return normalizeHalfPlane({ anchor, normal: unit.normal });
+}
+
+function remapDerivedPointsToExisting(
+    derived: readonly [Vec2, Vec2],
+    existing: HalfPlaneControlPoints,
+): HalfPlaneControlPoints {
+    const [existingA, existingB] = existing;
+    const [derivedA, derivedB] = derived;
+    const distSquared = (p: Vec2, q: Vec2): number => {
+        const dx = p.x - q.x;
+        const dy = p.y - q.y;
+        return dx * dx + dy * dy;
+    };
+    const directCost = distSquared(derivedA, existingA) + distSquared(derivedB, existingB);
+    const swappedCost = distSquared(derivedA, existingB) + distSquared(derivedB, existingA);
+    if (directCost <= swappedCost) {
+        return [
+            { ...existingA, x: derivedA.x, y: derivedA.y },
+            { ...existingB, x: derivedB.x, y: derivedB.y },
+        ];
+    }
+    return [
+        { ...existingA, x: derivedB.x, y: derivedB.y },
+        { ...existingB, x: derivedA.x, y: derivedA.y },
+    ];
 }
 
 function pad(value: number): string {
@@ -493,6 +519,28 @@ export function EuclideanSceneHost({
             controlPointId: string | null,
             primaryIndex: number | null,
         ): HalfPlane[] => {
+            const hingeFreePoints =
+                scene.variant === "hinge"
+                    ? points.map((pair) => {
+                          if (!pair) return null;
+                          const freePoint = pair.find((point) => !point.fixed);
+                          return freePoint ? { x: freePoint.x, y: freePoint.y } : null;
+                      })
+                    : null;
+            const hingeSegmentMidpoint =
+                hingeFreePoints && hingeFreePoints.length >= 2
+                    ? (() => {
+                          const a = hingeFreePoints[0];
+                          const b = hingeFreePoints[1];
+                          if (!a || !b) {
+                              return null;
+                          }
+                          return {
+                              x: (a.x + b.x) * 0.5,
+                              y: (a.y + b.y) * 0.5,
+                          };
+                      })()
+                    : null;
             return sourcePlanes.map((plane, idx) => {
                 const pair = points[idx];
                 if (!pair) return plane;
@@ -505,10 +553,19 @@ export function EuclideanSceneHost({
                     return plane;
                 }
                 const derived = deriveHalfPlaneFromPoints(pair);
-                return alignHalfPlaneOrientation(plane, derived);
+                let oriented = alignHalfPlaneOrientation(plane, derived);
+                if (hingeSegmentMidpoint) {
+                    if (evaluateHalfPlane(oriented, hingeSegmentMidpoint) <= 0) {
+                        oriented = {
+                            anchor: { ...oriented.anchor },
+                            normal: { x: -oriented.normal.x, y: -oriented.normal.y },
+                        };
+                    }
+                }
+                return oriented;
             });
         },
-        [],
+        [scene.variant],
     );
 
     useEffect(() => {
@@ -521,11 +578,13 @@ export function EuclideanSceneHost({
         }
         const source = baseHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
         const normalized = source.map((plane) => normalizeHalfPlane(plane));
+        const initialControlPoints = scene.initialControlPoints;
         let nextPoints: HalfPlaneControlPoints[];
         const initializedFromControlPoints =
-            scene.initialControlPoints && scene.initialControlPoints.length === normalized.length;
+            Array.isArray(initialControlPoints) &&
+            initialControlPoints.length === normalized.length;
         if (initializedFromControlPoints) {
-            nextPoints = scene.initialControlPoints.map((pair) => [
+            nextPoints = initialControlPoints.map((pair) => [
                 { ...pair[0] },
                 { ...pair[1] },
             ]) as HalfPlaneControlPoints[];
@@ -955,11 +1014,16 @@ export function EuclideanSceneHost({
                                 ),
                             };
                         }
-                        const nextPoints = prev.points.map((points, planeIndex) =>
-                            planeIndex === idx
-                                ? derivePointsFromHalfPlane(updatedPlanes[planeIndex], prev.spacing)
-                                : points,
-                        ) as HalfPlaneControlPoints[];
+                        const nextPoints = prev.points.map((points, planeIndex) => {
+                            if (planeIndex !== idx || !points) {
+                                return points;
+                            }
+                            const derived = derivePointsFromHalfPlane(
+                                updatedPlanes[planeIndex],
+                                prev.spacing,
+                            );
+                            return remapDerivedPointsToExisting(derived, points);
+                        }) as HalfPlaneControlPoints[];
                         return { spacing: prev.spacing, points: nextPoints };
                     });
                 }
@@ -1032,11 +1096,16 @@ export function EuclideanSceneHost({
                         nextPointsForRender = points;
                         return { spacing: handleSpacing, points };
                     }
-                    const points = prev.points.map((pts, idx) =>
-                        idx === drag.index
-                            ? derivePointsFromHalfPlane(resolvedPlanes[idx], prev.spacing)
-                            : pts,
-                    ) as HalfPlaneControlPoints[];
+                    const points = prev.points.map((pts, idx) => {
+                        if (idx !== drag.index || !pts) {
+                            return pts;
+                        }
+                        const derived = derivePointsFromHalfPlane(
+                            resolvedPlanes[idx],
+                            prev.spacing,
+                        );
+                        return remapDerivedPointsToExisting(derived, pts);
+                    }) as HalfPlaneControlPoints[];
                     nextPointsForRender = points;
                     return { spacing: prev.spacing, points };
                 });
@@ -1062,7 +1131,7 @@ export function EuclideanSceneHost({
                 offsetX: currentModifier.offsetX + deltaX,
                 offsetY: currentModifier.offsetY - deltaY,
             };
-            panCanvasBy(deltaX, -deltaY);
+            panCanvasBy(deltaX, deltaY);
             setDrag({ type: "pan", pointerId: drag.pointerId, last: pointer });
             const planesForRender =
                 latestEuclideanPlanesRef.current ??
@@ -1111,8 +1180,10 @@ export function EuclideanSceneHost({
         }
 
         // handle drag
-        const world = screenToWorld(viewport, getPointer(e));
+        const screenPointer = getPointer(e);
+        const world = screenToWorld(viewport, screenPointer);
         let nextPoints: HalfPlaneControlPoints[] | null = null;
+        let controlPointsChanged = false;
         setHandleControls((prev) => {
             if (!prev) return prev;
             const updatedPoints = updateControlPoint(
@@ -1121,10 +1192,16 @@ export function EuclideanSceneHost({
                 drag.pointIndex,
                 world,
             );
+            if (updatedPoints === prev.points) {
+                return prev;
+            }
+            controlPointsChanged = true;
             nextPoints = updatedPoints;
             return { spacing: prev.spacing, points: updatedPoints };
         });
-        if (!nextPoints) return;
+        if (!controlPointsChanged || !nextPoints) {
+            return;
+        }
         let updatedPlanes: HalfPlane[] | null = null;
         setEditableHalfPlanes((prev) => {
             if (!nextPoints) return prev;

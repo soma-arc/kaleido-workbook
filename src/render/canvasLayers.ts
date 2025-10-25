@@ -3,6 +3,7 @@ import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { drawCircle, drawLine } from "./canvasAdapter";
+import { cropToCenteredSquare } from "./crop";
 import type { GeodesicPrimitive, RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
 import { worldToScreen } from "./viewport";
@@ -42,6 +43,7 @@ export function renderTileLayer(
     const lineWidth = options.lineWidth ?? 1;
     const drawDiskOption = options.drawDisk;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
     if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
         const shouldDrawDisk = drawDiskOption ?? true;
         if (shouldDrawDisk) {
@@ -115,7 +117,10 @@ export function renderHandleOverlay(
     ctx.save();
     for (const handle of overlay.handles) {
         handle.points.forEach((point, pointIndex) => {
+            console.log(viewport);
+            console.log(point);
             const projected = worldToScreen(viewport, point);
+            console.log(projected);
             const isActive =
                 Boolean(active) &&
                 active?.planeIndex === handle.planeIndex &&

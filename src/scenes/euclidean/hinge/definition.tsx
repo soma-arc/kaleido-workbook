@@ -15,10 +15,10 @@ const HINGE_HALF_PLANES = [
 const HINGE_INITIAL_CONTROL_POINTS: HalfPlaneControlPoints[] = [
     [
         { id: "hinge", x: 0, y: 0, fixed: true },
-        { id: "hinge-plane-0-free", x: 0, y: 0.6, fixed: false },
+        { id: "hinge-plane-0-free", x: 1 / Math.sqrt(2), y: -1 / Math.sqrt(2), fixed: false },
     ],
     [
-        { id: "hinge-plane-1-free", x: -0.8, y: 0, fixed: false },
+        { id: "hinge-plane-1-free", x: -1 / Math.sqrt(2), y: -1 / Math.sqrt(2), fixed: false },
         { id: "hinge", x: 0, y: 0, fixed: true },
     ],
 ];
@@ -50,8 +50,8 @@ export const euclideanHingeScene = {
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     textureRectangle: {
         enabled: true,
-        center: { x: 0, y: 0 },
-        halfExtents: { x: 0.75, y: 0.75 },
+        center: { x: 0, y: -0.5 },
+        halfExtents: { x: 0.3, y: 0.3 },
         rotation: 0,
     },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
