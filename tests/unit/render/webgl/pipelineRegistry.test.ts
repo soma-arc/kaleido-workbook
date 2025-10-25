@@ -4,7 +4,6 @@ import { resolveWebGLPipeline } from "@/render/webgl/pipelineRegistry";
 import {
     EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID,
     EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
-    FACING_MIRROR_PIPELINE_ID,
     HYPERBOLIC_GEODESIC_PIPELINE_ID,
 } from "@/render/webgl/pipelines/pipelineIds";
 import { SCENE_IDS, SCENES_BY_ID } from "@/ui/scenes";
@@ -13,7 +12,6 @@ import type { SceneDefinition } from "@/ui/scenes/types";
 import "@/render/webgl/pipelines/hyperbolicGeodesicPipeline";
 import "@/render/webgl/pipelines/euclideanHalfPlanePipeline";
 import "@/render/webgl/pipelines/euclideanCircleInversionPipeline";
-import "@/render/webgl/pipelines/facingMirrorPipeline";
 
 type MinimalSceneDefinition = Pick<
     SceneDefinition,
@@ -61,9 +59,9 @@ describe("resolveWebGLPipeline", () => {
         expect(registration.id).toBe(EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID);
     });
 
-    it("returns the facing mirror pipeline for the facing-mirror scene", () => {
+    it("returns the euclidean pipeline for the facing-mirror scene", () => {
         const scene = SCENES_BY_ID[SCENE_IDS.facingMirrorRoom];
         const registration = resolveWebGLPipeline(scene);
-        expect(registration.id).toBe(FACING_MIRROR_PIPELINE_ID);
+        expect(registration.id).toBe(EUCLIDEAN_HALF_PLANE_PIPELINE_ID);
     });
 });

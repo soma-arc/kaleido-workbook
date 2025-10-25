@@ -4,6 +4,7 @@ import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import {
+    evaluateHalfPlane,
     halfPlaneFromNormalAndOffset,
     halfPlaneOffset,
     normalizeHalfPlane,
@@ -19,7 +20,7 @@ import { generateRegularPolygonHalfplanes } from "@/geom/primitives/regularPolyg
 import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import { cropToCenteredSquare } from "@/render/crop";
-import type { CaptureRequestKind, RenderMode } from "@/render/engine";
+import type { CaptureRequestKind, RenderMode, ViewportModifier } from "@/render/engine";
 import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
@@ -38,6 +39,7 @@ import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TriangleParamForm } from "@/ui/components/TriangleParamForm";
 import { CameraInput } from "@/ui/components/texture/CameraInput";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
+import { usePanZoomState } from "@/ui/hooks/usePanZoomState";
 import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import { nextOffsetOnDrag, pickHalfPlaneIndex } from "@/ui/interactions/euclideanHalfPlaneDrag";
@@ -162,6 +164,31 @@ function planeWithOffset(plane: HalfPlane, offset: number): HalfPlane {
     return normalizeHalfPlane({ anchor, normal: unit.normal });
 }
 
+function remapDerivedPointsToExisting(
+    derived: readonly [Vec2, Vec2],
+    existing: HalfPlaneControlPoints,
+): HalfPlaneControlPoints {
+    const [existingA, existingB] = existing;
+    const [derivedA, derivedB] = derived;
+    const distSquared = (p: Vec2, q: Vec2): number => {
+        const dx = p.x - q.x;
+        const dy = p.y - q.y;
+        return dx * dx + dy * dy;
+    };
+    const directCost = distSquared(derivedA, existingA) + distSquared(derivedB, existingB);
+    const swappedCost = distSquared(derivedA, existingB) + distSquared(derivedB, existingA);
+    if (directCost <= swappedCost) {
+        return [
+            { ...existingA, x: derivedA.x, y: derivedA.y },
+            { ...existingB, x: derivedB.x, y: derivedB.y },
+        ];
+    }
+    return [
+        { ...existingA, x: derivedB.x, y: derivedB.y },
+        { ...existingB, x: derivedA.x, y: derivedA.y },
+    ];
+}
+
 function pad(value: number): string {
     return value.toString().padStart(2, "0");
 }
@@ -197,7 +224,13 @@ type OverlayDragState = {
     offset: Vec2;
 };
 
-type DragState = PlaneDragState | HandleDragState | OverlayDragState;
+type PanDragState = {
+    type: "pan";
+    pointerId: number;
+    last: { x: number; y: number };
+};
+
+type DragState = PlaneDragState | HandleDragState | OverlayDragState | PanDragState;
 
 export type EuclideanSceneHostProps = {
     scene: SceneDefinition;
@@ -479,6 +512,62 @@ export function EuclideanSceneHost({
         return base.map((plane) => normalizeHalfPlane(plane));
     }, [scene.geometry, editableHalfPlanes, baseHalfPlanes]);
 
+    const recomputePlanesFromControls = useCallback(
+        (
+            sourcePlanes: HalfPlane[],
+            points: HalfPlaneControlPoints[],
+            controlPointId: string | null,
+            primaryIndex: number | null,
+        ): HalfPlane[] => {
+            const hingeFreePoints =
+                scene.variant === "hinge"
+                    ? points.map((pair) => {
+                          if (!pair) return null;
+                          const freePoint = pair.find((point) => !point.fixed);
+                          return freePoint ? { x: freePoint.x, y: freePoint.y } : null;
+                      })
+                    : null;
+            const hingeSegmentMidpoint =
+                hingeFreePoints && hingeFreePoints.length >= 2
+                    ? (() => {
+                          const a = hingeFreePoints[0];
+                          const b = hingeFreePoints[1];
+                          if (!a || !b) {
+                              return null;
+                          }
+                          return {
+                              x: (a.x + b.x) * 0.5,
+                              y: (a.y + b.y) * 0.5,
+                          };
+                      })()
+                    : null;
+            return sourcePlanes.map((plane, idx) => {
+                const pair = points[idx];
+                if (!pair) return plane;
+                const shouldUpdate = controlPointId
+                    ? pair.some((point) => point.id === controlPointId)
+                    : primaryIndex === null
+                      ? true
+                      : idx === primaryIndex;
+                if (!shouldUpdate) {
+                    return plane;
+                }
+                const derived = deriveHalfPlaneFromPoints(pair);
+                let oriented = alignHalfPlaneOrientation(plane, derived);
+                if (hingeSegmentMidpoint) {
+                    if (evaluateHalfPlane(oriented, hingeSegmentMidpoint) <= 0) {
+                        oriented = {
+                            anchor: { ...oriented.anchor },
+                            normal: { x: -oriented.normal.x, y: -oriented.normal.y },
+                        };
+                    }
+                }
+                return oriented;
+            });
+        },
+        [scene.variant],
+    );
+
     useEffect(() => {
         setEditableHalfPlanes(null);
         setDrag(null);
@@ -489,9 +578,13 @@ export function EuclideanSceneHost({
         }
         const source = baseHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
         const normalized = source.map((plane) => normalizeHalfPlane(plane));
+        const initialControlPoints = scene.initialControlPoints;
         let nextPoints: HalfPlaneControlPoints[];
-        if (scene.initialControlPoints && scene.initialControlPoints.length === normalized.length) {
-            nextPoints = scene.initialControlPoints.map((pair) => [
+        const initializedFromControlPoints =
+            Array.isArray(initialControlPoints) &&
+            initialControlPoints.length === normalized.length;
+        if (initializedFromControlPoints) {
+            nextPoints = initialControlPoints.map((pair) => [
                 { ...pair[0] },
                 { ...pair[1] },
             ]) as HalfPlaneControlPoints[];
@@ -499,7 +592,13 @@ export function EuclideanSceneHost({
             nextPoints = controlPointsFromHalfPlanes(normalized, handleSpacing, controlAssignments);
         }
         setHandleControls({ spacing: handleSpacing, points: nextPoints });
-        latestEuclideanPlanesRef.current = normalized;
+        const initialPlanes = initializedFromControlPoints
+            ? recomputePlanesFromControls(normalized, nextPoints, null, null)
+            : normalized;
+        latestEuclideanPlanesRef.current = initialPlanes;
+        if (initializedFromControlPoints) {
+            setEditableHalfPlanes(initialPlanes);
+        }
         setExportStatus(null);
     }, [
         baseHalfPlanes,
@@ -507,9 +606,10 @@ export function EuclideanSceneHost({
         handleSpacing,
         scene.geometry,
         scene.initialControlPoints,
+        recomputePlanesFromControls,
     ]);
 
-    const computeViewport = useCallback((canvas: HTMLCanvasElement): Viewport => {
+    const computeBaseViewport = useCallback((canvas: HTMLCanvasElement): Viewport => {
         const rect = canvas.getBoundingClientRect();
         const ratio = getCanvasPixelRatio(canvas);
         const width = canvas.width || Math.max(1, (rect.width || 1) * ratio);
@@ -519,6 +619,33 @@ export function EuclideanSceneHost({
         const scale = Math.max(1, size / 2 - margin);
         return { scale, tx: width / 2, ty: height / 2 };
     }, []);
+
+    const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
+    const panZoomState = usePanZoomState(computeBaseViewport, panZoomLimits);
+    const {
+        modifierRef: panZoomModifierRef,
+        getViewport: getPanZoomViewport,
+        panBy: panCanvasBy,
+        zoomAt: zoomCanvasAt,
+        reset: resetPanZoom,
+    } = panZoomState;
+
+    const computeViewport = useCallback(
+        (canvas: HTMLCanvasElement): Viewport => getPanZoomViewport(canvas),
+        [getPanZoomViewport],
+    );
+
+    const getCanvasPoint = useCallback(
+        (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+            const rect = canvas.getBoundingClientRect();
+            const ratio = getCanvasPixelRatio(canvas);
+            return {
+                x: (clientX - rect.left) * ratio,
+                y: (clientY - rect.top) * ratio,
+            };
+        },
+        [],
+    );
 
     useEffect(() => {
         if (!scene.supportsHandles || !showHandles) {
@@ -565,24 +692,25 @@ export function EuclideanSceneHost({
         scene.initialControlPoints,
     ]);
 
-    const getPointer = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-        const canvas = e.currentTarget;
-        const rect = canvas.getBoundingClientRect();
-        const ratio = getCanvasPixelRatio(canvas);
-        return {
-            x: (e.clientX - rect.left) * ratio,
-            y: (e.clientY - rect.top) * ratio,
-        };
-    }, []);
+    const getPointer = useCallback(
+        (e: React.PointerEvent<HTMLCanvasElement>) => {
+            const canvas = canvasRef.current ?? e.currentTarget;
+            return getCanvasPoint(canvas, e.clientX, e.clientY);
+        },
+        [canvasRef, getCanvasPoint],
+    );
 
     const projectPointerToWorld = useCallback(
         (event: React.PointerEvent<HTMLCanvasElement>) => {
-            const canvas = event.currentTarget;
+            const canvas = canvasRef.current ?? event.currentTarget;
+            if (!canvas) {
+                return { x: 0, y: 0 };
+            }
             const viewport = computeViewport(canvas);
-            const pointer = getPointer(event);
+            const pointer = getCanvasPoint(canvas, event.clientX, event.clientY);
             return screenToWorld(viewport, pointer);
         },
-        [computeViewport, getPointer],
+        [canvasRef, computeViewport, getCanvasPoint],
     );
 
     const textureRectangleInteraction = useTextureRectangleInteraction({
@@ -592,35 +720,17 @@ export function EuclideanSceneHost({
     });
     const textureRectangle = textureRectangleInteraction.rect;
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
+    useEffect(() => {
+        resetPanZoom();
+    }, [scene.id, resetPanZoom]);
+
     const currentControlPoints = handleControls?.points ?? null;
     const allowPlaneDrag = scene.allowPlaneDrag !== false;
     const activeHandle =
         drag?.type === "handle"
             ? { planeIndex: drag.planeIndex, pointIndex: drag.pointIndex }
             : null;
-
-    const recomputePlanesFromControls = useCallback(
-        (
-            sourcePlanes: HalfPlane[],
-            points: HalfPlaneControlPoints[],
-            controlPointId: string | null,
-            primaryIndex: number,
-        ): HalfPlane[] => {
-            return sourcePlanes.map((plane, idx) => {
-                const pair = points[idx];
-                if (!pair) return plane;
-                const shouldUpdate = controlPointId
-                    ? pair.some((point) => point.id === controlPointId)
-                    : idx === primaryIndex;
-                if (!shouldUpdate) {
-                    return plane;
-                }
-                const derived = deriveHalfPlaneFromPoints(pair);
-                return alignHalfPlaneOrientation(plane, derived);
-            });
-        },
-        [],
-    );
 
     const renderEuclideanScene = useCallback(
         (
@@ -629,6 +739,7 @@ export function EuclideanSceneHost({
             overrideActive?: { planeIndex: number; pointIndex: 0 | 1 } | null,
             overrideInversion?: CircleInversionState | null,
             overrideTextureRect?: TextureRectangleState,
+            viewportModifierOverride?: ViewportModifier,
         ) => {
             const handlePoints = overridePoints ?? currentControlPoints;
             const active = overrideActive ?? activeHandle;
@@ -651,6 +762,11 @@ export function EuclideanSceneHost({
                 rectForRender !== scene.textureRectangle
                     ? { ...scene, textureRectangle: rectForRender }
                     : scene;
+            const viewportModifier = viewportModifierOverride
+                ? viewportModifierOverride
+                : scene.supportsPanZoom
+                  ? panZoomModifierRef.current
+                  : undefined;
             renderEngineRef.current?.render({
                 scene: sceneForRender,
                 geometry: GEOMETRY_KIND.euclidean,
@@ -658,6 +774,7 @@ export function EuclideanSceneHost({
                 handles,
                 textures: textureInput.textures,
                 inversion: inversion ?? undefined,
+                viewportModifier,
             });
         },
         [
@@ -667,9 +784,11 @@ export function EuclideanSceneHost({
             textureRectangle,
             scene,
             scene.supportsHandles,
+            scene.supportsPanZoom,
             showHandles,
             textureInput.textures,
             renderEngineRef,
+            panZoomModifierRef,
         ],
     );
 
@@ -778,7 +897,10 @@ export function EuclideanSceneHost({
             return;
         }
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
-        const canvas = e.currentTarget;
+        const canvas = canvasRef.current ?? e.currentTarget;
+        if (!canvas) {
+            return;
+        }
         const viewport = computeViewport(canvas);
         const screen = getPointer(e);
         const ratio = getCanvasPixelRatio(canvas);
@@ -865,53 +987,72 @@ export function EuclideanSceneHost({
             }
         }
 
-        if (!allowPlaneDrag) {
-            return;
+        if (allowPlaneDrag) {
+            const idx = pickHalfPlaneIndex(normalizedHalfPlanes, viewport, screen, 8 * ratio);
+            if (idx >= 0) {
+                const unit = normalizedHalfPlanes[idx];
+                try {
+                    canvas.setPointerCapture(e.pointerId);
+                } catch {
+                    // ignore
+                }
+                const p0 = screenToWorld(viewport, screen);
+                const snappedStartOffset = -(unit.normal.x * p0.x + unit.normal.y * p0.y);
+                const updatedPlanes = normalizedHalfPlanes.map((plane, i) =>
+                    i === idx ? planeWithOffset(plane, snappedStartOffset) : plane,
+                );
+                setEditableHalfPlanes(updatedPlanes);
+                if (scene.supportsHandles && showHandles) {
+                    setHandleControls((prev) => {
+                        if (!prev || prev.points.length !== updatedPlanes.length) {
+                            return {
+                                spacing: handleSpacing,
+                                points: controlPointsFromHalfPlanes(
+                                    updatedPlanes,
+                                    handleSpacing,
+                                    controlAssignments,
+                                ),
+                            };
+                        }
+                        const nextPoints = prev.points.map((points, planeIndex) => {
+                            if (planeIndex !== idx || !points) {
+                                return points;
+                            }
+                            const derived = derivePointsFromHalfPlane(
+                                updatedPlanes[planeIndex],
+                                prev.spacing,
+                            );
+                            return remapDerivedPointsToExisting(derived, points);
+                        }) as HalfPlaneControlPoints[];
+                        return { spacing: prev.spacing, points: nextPoints };
+                    });
+                }
+                renderEuclideanScene(updatedPlanes);
+                setDrag({
+                    type: "plane",
+                    pointerId: e.pointerId,
+                    index: idx,
+                    startOffset: snappedStartOffset,
+                    startScreen: screen,
+                    normal: unit.normal,
+                });
+                return;
+            }
         }
 
-        const idx = pickHalfPlaneIndex(normalizedHalfPlanes, viewport, screen, 8 * ratio);
-        if (idx < 0) return;
-        const unit = normalizedHalfPlanes[idx];
-        try {
-            canvas.setPointerCapture(e.pointerId);
-        } catch {
-            // ignore
-        }
-        const p0 = screenToWorld(viewport, screen);
-        const snappedStartOffset = -(unit.normal.x * p0.x + unit.normal.y * p0.y);
-        const updatedPlanes = normalizedHalfPlanes.map((plane, i) =>
-            i === idx ? planeWithOffset(plane, snappedStartOffset) : plane,
-        );
-        setEditableHalfPlanes(updatedPlanes);
-        if (scene.supportsHandles && showHandles) {
-            setHandleControls((prev) => {
-                if (!prev || prev.points.length !== updatedPlanes.length) {
-                    return {
-                        spacing: handleSpacing,
-                        points: controlPointsFromHalfPlanes(
-                            updatedPlanes,
-                            handleSpacing,
-                            controlAssignments,
-                        ),
-                    };
-                }
-                const nextPoints = prev.points.map((points, planeIndex) =>
-                    planeIndex === idx
-                        ? derivePointsFromHalfPlane(updatedPlanes[planeIndex], prev.spacing)
-                        : points,
-                ) as HalfPlaneControlPoints[];
-                return { spacing: prev.spacing, points: nextPoints };
+        if (scene.supportsPanZoom) {
+            try {
+                canvas.setPointerCapture(e.pointerId);
+            } catch {
+                // ignore
+            }
+            e.preventDefault();
+            setDrag({
+                type: "pan",
+                pointerId: e.pointerId,
+                last: screen,
             });
         }
-        renderEuclideanScene(updatedPlanes);
-        setDrag({
-            type: "plane",
-            pointerId: e.pointerId,
-            index: idx,
-            startOffset: snappedStartOffset,
-            startScreen: screen,
-            normal: unit.normal,
-        });
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -955,11 +1096,16 @@ export function EuclideanSceneHost({
                         nextPointsForRender = points;
                         return { spacing: handleSpacing, points };
                     }
-                    const points = prev.points.map((pts, idx) =>
-                        idx === drag.index
-                            ? derivePointsFromHalfPlane(resolvedPlanes[idx], prev.spacing)
-                            : pts,
-                    ) as HalfPlaneControlPoints[];
+                    const points = prev.points.map((pts, idx) => {
+                        if (idx !== drag.index || !pts) {
+                            return pts;
+                        }
+                        const derived = derivePointsFromHalfPlane(
+                            resolvedPlanes[idx],
+                            prev.spacing,
+                        );
+                        return remapDerivedPointsToExisting(derived, pts);
+                    }) as HalfPlaneControlPoints[];
                     nextPointsForRender = points;
                     return { spacing: prev.spacing, points };
                 });
@@ -968,6 +1114,37 @@ export function EuclideanSceneHost({
                 planeIndex: drag.index,
                 pointIndex: 0,
             });
+            return;
+        }
+
+        if (drag.type === "pan") {
+            const pointer = getPointer(e);
+            const deltaX = pointer.x - drag.last.x;
+            const deltaY = pointer.y - drag.last.y;
+            if (deltaX === 0 && deltaY === 0) {
+                return;
+            }
+            e.preventDefault();
+            const currentModifier = panZoomModifierRef.current;
+            const modifierOverride: ViewportModifier = {
+                scale: currentModifier.scale,
+                offsetX: currentModifier.offsetX + deltaX,
+                offsetY: currentModifier.offsetY - deltaY,
+            };
+            panCanvasBy(deltaX, -deltaY);
+            setDrag({ type: "pan", pointerId: drag.pointerId, last: pointer });
+            const planesForRender =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(
+                planesForRender,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                modifierOverride,
+            );
             return;
         }
 
@@ -1003,8 +1180,10 @@ export function EuclideanSceneHost({
         }
 
         // handle drag
-        const world = screenToWorld(viewport, getPointer(e));
+        const screenPointer = getPointer(e);
+        const world = screenToWorld(viewport, screenPointer);
         let nextPoints: HalfPlaneControlPoints[] | null = null;
+        let controlPointsChanged = false;
         setHandleControls((prev) => {
             if (!prev) return prev;
             const updatedPoints = updateControlPoint(
@@ -1013,10 +1192,16 @@ export function EuclideanSceneHost({
                 drag.pointIndex,
                 world,
             );
+            if (updatedPoints === prev.points) {
+                return prev;
+            }
+            controlPointsChanged = true;
             nextPoints = updatedPoints;
             return { spacing: prev.spacing, points: updatedPoints };
         });
-        if (!nextPoints) return;
+        if (!controlPointsChanged || !nextPoints) {
+            return;
+        }
         let updatedPlanes: HalfPlane[] | null = null;
         setEditableHalfPlanes((prev) => {
             if (!nextPoints) return prev;
@@ -1084,6 +1269,91 @@ export function EuclideanSceneHost({
             }
         }
     };
+
+    const handleWheelCore = useCallback(
+        (event: WheelEvent) => {
+            if (!scene.supportsPanZoom || scene.geometry !== GEOMETRY_KIND.euclidean) {
+                return;
+            }
+            const canvasElement = canvasRef.current;
+            if (!canvasElement) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === "function") {
+                event.stopImmediatePropagation();
+            }
+            const currentViewport = computeViewport(canvasElement);
+            const focus = getCanvasPoint(canvasElement, event.clientX, event.clientY);
+            const factor = Math.exp(-event.deltaY * 0.001);
+            if (!Number.isFinite(factor) || factor === 1) {
+                return;
+            }
+            const currentModifier = panZoomModifierRef.current;
+            const unclampedScale = currentModifier.scale * factor;
+            const nextScale = Math.min(
+                panZoomLimits.maxScale,
+                Math.max(panZoomLimits.minScale, unclampedScale),
+            );
+            const appliedFactor = nextScale / currentModifier.scale;
+            if (!Number.isFinite(appliedFactor) || appliedFactor === 1) {
+                return;
+            }
+            const nextTx = focus.x - (focus.x - currentViewport.tx) * appliedFactor;
+            const nextTy = focus.y + (currentViewport.ty - focus.y) * appliedFactor;
+            const baseViewport = computeBaseViewport(canvasElement);
+            const modifierOverride: ViewportModifier = {
+                scale: nextScale,
+                offsetX: nextTx - baseViewport.tx,
+                offsetY: nextTy - baseViewport.ty,
+            };
+            zoomCanvasAt(focus, appliedFactor);
+            const planesForRender =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(
+                planesForRender,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                modifierOverride,
+            );
+        },
+        [
+            scene.supportsPanZoom,
+            scene.geometry,
+            panZoomLimits.maxScale,
+            panZoomLimits.minScale,
+            computeViewport,
+            getCanvasPoint,
+            computeBaseViewport,
+            zoomCanvasAt,
+            renderEuclideanScene,
+            normalizedHalfPlanes,
+            canvasRef,
+            panZoomModifierRef,
+        ],
+    );
+
+    useEffect(() => {
+        const canvasElement = canvasRef.current;
+        if (!canvasElement) {
+            return;
+        }
+        if (!scene.supportsPanZoom || scene.geometry !== GEOMETRY_KIND.euclidean) {
+            return;
+        }
+        const listener = (event: WheelEvent) => {
+            handleWheelCore(event);
+        };
+        canvasElement.addEventListener("wheel", listener, { passive: false });
+        return () => {
+            canvasElement.removeEventListener("wheel", listener);
+        };
+    }, [handleWheelCore, scene.supportsPanZoom, scene.geometry, canvasRef]);
 
     useEffect(() => {
         if (!engineReady) {
@@ -1529,8 +1799,9 @@ export function EuclideanSceneHost({
                     ...STAGE_CANVAS_BASE_STYLE,
                     cursor:
                         textureRectangleInteraction.cursor ??
-                        STAGE_CANVAS_BASE_STYLE.cursor ??
-                        "default",
+                        (scene.supportsPanZoom
+                            ? "grab"
+                            : (STAGE_CANVAS_BASE_STYLE.cursor ?? "default")),
                 }}
             />
         </>
@@ -1542,6 +1813,7 @@ export function EuclideanSceneHost({
             canvas={canvas}
             embed={embed}
             overlay={overlay ?? undefined}
+            onCanvasWheelCapture={undefined}
         />
     );
 }

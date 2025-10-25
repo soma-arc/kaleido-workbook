@@ -53,6 +53,7 @@ export interface SceneDefinition {
     description?: string;
     supportsHandles: boolean;
     editable: boolean;
+    supportsPanZoom?: boolean;
     /**
      * シーン初期化時に自動適用したいテクスチャプリセットの ID。
      * base スロットが空で idle の場合に適用される。

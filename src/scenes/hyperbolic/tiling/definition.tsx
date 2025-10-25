@@ -12,5 +12,6 @@ export const hyperbolicTilingScene = {
     description: "Generates a {p,q,r} hyperbolic tiling rendered inside the Poincaré disk.",
     supportsHandles: false,
     editable: false,
+    supportsPanZoom: true,
     renderPipelineId: HYPERBOLIC_GEODESIC_PIPELINE_ID,
 } satisfies SceneDefinitionInput;

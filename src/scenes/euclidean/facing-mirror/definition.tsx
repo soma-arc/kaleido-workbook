@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
-import { FACING_MIRROR_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
+import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { FacingMirrorSceneConfig, SceneDefinitionInput } from "@/ui/scenes/types";
 
 export const EUCLIDEAN_FACING_MIRROR_SCENE_KEY = "facingMirrorRoom" as const;
@@ -29,17 +29,18 @@ export const euclideanFacingMirrorScene = {
     key: EUCLIDEAN_FACING_MIRROR_SCENE_KEY,
     label: "Facing Mirrors",
     geometry: GEOMETRY_KIND.euclidean,
-    variant: "facing-mirror-room",
+    variant: "facing-mirror",
     description:
         "Displays two opposing mirrors with a central square panel that can display textures.",
     supportsHandles: false,
     editable: false,
+    supportsPanZoom: true,
     allowPlaneDrag: false,
     initialHalfPlanes: FACING_MIRROR_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     facingMirrorConfig: cloneFacingMirrorConfig(FACING_MIRROR_CONFIG),
     defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,
-    renderPipelineId: FACING_MIRROR_PIPELINE_ID,
+    renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
     textureRectangle: {
         enabled: true,
         center: { ...FACING_MIRROR_CONFIG.rectangleCenter },

@@ -42,6 +42,7 @@ export function renderTileLayer(
     const lineWidth = options.lineWidth ?? 1;
     const drawDiskOption = options.drawDisk;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
     if (scene.geometry === GEOMETRY_KIND.hyperbolic) {
         const shouldDrawDisk = drawDiskOption ?? true;
         if (shouldDrawDisk) {
