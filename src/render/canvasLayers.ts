@@ -117,10 +117,7 @@ export function renderHandleOverlay(
     ctx.save();
     for (const handle of overlay.handles) {
         handle.points.forEach((point, pointIndex) => {
-            console.log(viewport);
-            console.log(point);
             const projected = worldToScreen(viewport, point);
-            console.log(projected);
             const isActive =
                 Boolean(active) &&
                 active?.planeIndex === handle.planeIndex &&
