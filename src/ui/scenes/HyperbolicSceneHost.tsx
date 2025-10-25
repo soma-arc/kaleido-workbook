@@ -10,10 +10,7 @@ import {
     HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
     HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
 } from "@/scenes/hyperbolic/tiling-333/constants";
-import {
-    HyperbolicTiling333Controls,
-    type HyperbolicTiling333ControlsProps,
-} from "@/scenes/hyperbolic/tiling-333/ui/Controls";
+import type { HyperbolicTiling333ControlsProps } from "@/scenes/hyperbolic/tiling-333/ui/Controls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
@@ -55,6 +52,7 @@ export function HyperbolicSceneHost({
     const { canvasRef, renderEngineRef, renderMode, ready } = useRenderEngineWithCanvas();
     const textureInput = useTextureInput();
     const sliderId = useId();
+    const triangleSliderId = `${sliderId}-triangle`;
     const [maxReflections, setMaxReflections] = useState(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
 
     const isReflectionScene = scene.id === HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID;
@@ -322,30 +320,42 @@ export function HyperbolicSceneHost({
         };
     }, [isReflectionScene, sliderId, maxReflections, handleMaxReflectionsChange]);
 
+    const sceneControlsExtras = useMemo(() => {
+        const extras: SceneContextExtras = {
+            triangle,
+            textureInput,
+            triangleSliderId,
+        };
+        if (reflectionControls) {
+            extras.reflectionControls = reflectionControls;
+        }
+        return extras;
+    }, [triangle, textureInput, triangleSliderId, reflectionControls]);
+
     const controls = resolveSceneControls({
         scene,
         renderBackend: renderMode,
         defaultControls,
-        extras: {
-            triangle,
-            textureInput,
-            reflectionControls,
-        } as SceneContextExtras,
+        extras: sceneControlsExtras,
     });
 
-    const overlayExtras: SceneContextExtras | undefined = reflectionControls
-        ? { reflectionControls }
-        : undefined;
+    const overlayExtras = useMemo(() => {
+        const extras: SceneContextExtras = {
+            triangle,
+            triangleSliderId,
+        };
+        if (reflectionControls) {
+            extras.reflectionControls = reflectionControls;
+        }
+        return extras;
+    }, [triangle, triangleSliderId, reflectionControls]);
 
     const defaultOverlay = useMemo(
         () =>
             createDefaultEmbedOverlay({
                 scene,
-                children: reflectionControls ? (
-                    <HyperbolicTiling333Controls {...reflectionControls} variant="overlay" />
-                ) : undefined,
             }),
-        [scene, reflectionControls],
+        [scene],
     );
 
     const overlay = useMemo(
