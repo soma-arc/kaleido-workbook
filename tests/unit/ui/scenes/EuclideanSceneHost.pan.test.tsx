@@ -204,6 +204,6 @@ describe("EuclideanSceneHost pan", () => {
             dispatchPointerEvent(canvas, "pointermove", { clientX: 200, clientY: 240 });
         });
 
-        expect(panByMock).toHaveBeenCalledWith(0, 40);
+        expect(panByMock).toHaveBeenCalledWith(0, -40);
     });
 });
