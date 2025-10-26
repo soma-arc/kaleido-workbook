@@ -12,7 +12,7 @@ import { applyEmbedClass, parseSceneEmbedQuery, syncSceneEmbedQuery } from "./ut
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;
-const HYPERBOLIC_INITIAL_PARAMS = { p: 3, q: 3, r: 7, depth: 2 } as const;
+const HYPERBOLIC_INITIAL_PARAMS = { p: 3, q: 3, r: 4, depth: 2 } as const;
 const DEPTH_RANGE = { min: 0, max: 10 } as const;
 
 export function App(): JSX.Element {

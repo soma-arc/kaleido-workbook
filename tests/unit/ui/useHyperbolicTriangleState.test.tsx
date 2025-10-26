@@ -18,7 +18,7 @@ type HookHarness = {
 };
 
 const DEFAULT_OPTIONS: UseHyperbolicTriangleStateOptions = {
-    initialParams: { p: 3, q: 3, r: 7, depth: 2 },
+    initialParams: { p: 3, q: 3, r: 4, depth: 2 },
     triangleNMax: 100,
     depthRange: { min: 0, max: 10 },
 };

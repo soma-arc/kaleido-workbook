@@ -27,11 +27,18 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         expect(Math.abs(c - gamma)).toBeLessThan(5e-3);
     });
 
-    it("stays hyperbolic and approximates Euclidean angles near the boundary", () => {
+    it("produces a scaled Euclidean triangle with smooth angles at the boundary", () => {
         const tri = buildHyperbolicTriangle(3, 3, 3);
         expect(tri.boundaries).toHaveLength(3);
-        const circleEdges = tri.boundaries.filter((boundary) => boundary.kind === "circle");
-        expect(circleEdges.length).toBeGreaterThan(0);
+        tri.boundaries.forEach((boundary) => {
+            expect(boundary.kind).toBe("line");
+        });
+
+        const edgeLength = Math.hypot(
+            tri.vertices[1].x - tri.vertices[0].x,
+            tri.vertices[1].y - tri.vertices[0].y,
+        );
+        expect(edgeLength).toBeGreaterThanOrEqual(1e-4);
 
         const expected = Math.PI / 3;
         tri.angles.forEach((angle) => {

@@ -2,11 +2,12 @@ import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { evaluateHalfPlane, type HalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { OrientedGeodesic } from "@/geom/primitives/orientedGeodesic";
+import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
 
 const SUM_TOL = 1e-6;
 const DIAMETER_EPS = 1e-12;
-const HYPERBOLIC_MIN_R_EPS = 1e-6;
+const MIN_EUCLIDEAN_RENDER_SCALE = 1e-4;
 
 function safeAcosh(x: number): number {
     const clamped = Math.max(1, x);
@@ -168,6 +169,73 @@ function orientedCircleFromCircleGeodesic(
     };
 }
 
+type EuclideanLimitContext = {
+    p: number;
+    q: number;
+    r: number;
+    alpha: number;
+    beta: number;
+    gamma: number;
+    a: number;
+    b: number;
+    c: number;
+};
+
+function buildEuclideanLimitTriangle(context: EuclideanLimitContext): HyperbolicTrianglePrimitives {
+    const { p, q, r, alpha, beta, gamma, a, b, c } = context;
+    const { scaledC } = computeEuclideanLimitLengths(a, b, c);
+    const euclidean = buildEuclideanTriangle(p, q, r);
+    const scaleFactor = scaledC;
+
+    const scaledVertices = euclidean.vertices.map((vertex) => ({
+        x: vertex.x * scaleFactor,
+        y: vertex.y * scaleFactor,
+    })) as [Vec2, Vec2, Vec2];
+
+    const scaledBoundaries = euclidean.boundaries.map((plane) =>
+        orientedLineFromHalfPlane(scaleHalfPlane(plane, scaleFactor)),
+    ) as [OrientedGeodesic, OrientedGeodesic, OrientedGeodesic];
+
+    return {
+        kind: GEOMETRY_KIND.hyperbolic,
+        boundaries: scaledBoundaries,
+        vertices: scaledVertices,
+        angles: [alpha, beta, gamma],
+    };
+}
+
+function computeEuclideanLimitLengths(
+    a: number,
+    b: number,
+    c: number,
+): {
+    scaledA: number;
+    scaledB: number;
+    scaledC: number;
+} {
+    const ellA = Math.sqrt(Math.max(0, 2 * (Math.cosh(a) - 1)));
+    const ellB = Math.sqrt(Math.max(0, 2 * (Math.cosh(b) - 1)));
+    const ellC = Math.sqrt(Math.max(0, 2 * (Math.cosh(c) - 1)));
+
+    const chord = 2 * Math.tanh(c / 4);
+    const targetC = Math.max(chord, MIN_EUCLIDEAN_RENDER_SCALE);
+    const scale = ellC > 0 ? targetC / ellC : 0;
+
+    return {
+        scaledA: ellA * scale,
+        scaledB: ellB * scale,
+        scaledC: targetC,
+    };
+}
+
+function scaleHalfPlane(plane: HalfPlane, factor: number): HalfPlane {
+    const scaled = {
+        anchor: { x: plane.anchor.x * factor, y: plane.anchor.y * factor },
+        normal: plane.normal,
+    } satisfies HalfPlane;
+    return normalizeHalfPlane(scaled);
+}
+
 /**
  * buildHyperbolicTriangle
  * Construct a canonical (p,q,r) hyperbolic triangle primitive set.
@@ -186,34 +254,24 @@ export function buildHyperbolicTriangle(
             `[HyperbolicTriangle] (p,q)=(${p},${q}) cannot produce a hyperbolic triangle`,
         );
     }
-    const minimumHyperbolicR = 1 / (1 - sumWithoutR);
 
-    if (r < minimumHyperbolicR - HYPERBOLIC_MIN_R_EPS) {
-        throw new Error(
-            `[HyperbolicTriangle] r=${r} is below the hyperbolic threshold for (p,q)=(${p},${q})`,
-        );
-    }
-
-    let effectiveR = r;
-    if (effectiveR <= minimumHyperbolicR + HYPERBOLIC_MIN_R_EPS) {
-        effectiveR = minimumHyperbolicR + HYPERBOLIC_MIN_R_EPS;
-    }
-
-    let hyperbolicConstraint = 1 / p + 1 / q + 1 / effectiveR;
-    if (hyperbolicConstraint >= 1 - SUM_TOL) {
-        effectiveR = minimumHyperbolicR + 10 * HYPERBOLIC_MIN_R_EPS;
-        hyperbolicConstraint = 1 / p + 1 / q + 1 / effectiveR;
-    }
-    if (hyperbolicConstraint > 1 - 1e-12) {
+    const hyperbolicConstraint = sumWithoutR + 1 / r;
+    if (hyperbolicConstraint > 1 + SUM_TOL) {
         throw new Error(
             `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) violates hyperbolic constraint (1/p + 1/q + 1/r >= 1)`,
         );
     }
+
     const alpha = Math.PI / p;
     const beta = Math.PI / q;
-    const gamma = Math.PI / effectiveR;
+    const gamma = Math.PI / r;
 
     const { a, b, c: sideC } = sidesFromAnglesHyperbolic(alpha, beta, gamma);
+
+    if (hyperbolicConstraint >= 1 - SUM_TOL) {
+        return buildEuclideanLimitTriangle({ p, q, r, alpha, beta, gamma, a, b, c: sideC });
+    }
+
     const vertices = placeVerticesOnDisk(a, b, sideC);
     const interior: Vec2 = {
         x: (vertices[0].x + vertices[1].x + vertices[2].x) / 3,

@@ -27,7 +27,7 @@ export type HyperbolicTriangleState = {
 export function useHyperbolicTriangleState(
     options: UseHyperbolicTriangleStateOptions,
 ): HyperbolicTriangleState {
-    const { initialParams, triangleNMax, depthRange } = options;
+    const { initialParams, triangleNMax } = options;
     const [params, setParams] = useState<TilingParams>({ ...initialParams });
     const [snapEnabled, setSnapEnabledState] = useState(true);
 
