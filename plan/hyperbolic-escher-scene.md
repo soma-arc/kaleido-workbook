@@ -29,8 +29,11 @@
    - (2,6,4) と (2,8,3) の 2 プリセットをトグルできるシンプルなボタン UI を `EmbedOverlayPanel` ベースで実装。
    - 選択状態の保持と `useHyperbolicTriangleState` / `useTriangleParams` との連携を確認。
 3. **レンダリング**
-   - 既存の `hyperbolicTripleReflection` パイプライン（シェーダ `hyperbolicTripleReflection.frag`）をそのまま使用。
-   - 追加の WebGL 拡張は不要。プリセット切替で `TilingParams` を差し替えるのみ。
+   - `hyperbolicTripleReflection.frag` をコピーし Escher 専用シェーダ（例: `hyperbolicEscher.frag`）を作成。
+   - Triple Reflection パイプラインをベースに新パイプライン ID を登録し、Escher シーンと紐付ける。
+   - 手描き入力用に Canvas 2D を新設し、ユーザーのストロークをこのキャンバスへ描画。
+   - 描画内容を WebGL テクスチャへ同期し、Escher シーン専用シェーダで既存タイルの上に重ね合わせる。
+   - UI 上では WebGL キャンバスの上に手描きキャンバスをオーバーレイし、リアルタイムに更新されるようにする。
 4. **ジオメトリ / データ**
    - プリセット定義・初期値・補助ユーティリティなどシーン固有のコードは `src/scenes/hyperbolic/escher/` 配下に閉じ込め、他シーンへ漏れない構成にする。
    - 既存ユーティリティ（`buildTiling`, `buildHyperbolicTriangle` など）をラップする場合も Escher シーン専用モジュール上で扱う。

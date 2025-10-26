@@ -13,6 +13,7 @@ import "./webgl/pipelines/euclideanCircleInversionPipeline";
 import "./webgl/pipelines/sphericalPipeline";
 import "./webgl/pipelines/debugTexturePipeline";
 import "@/scenes/hyperbolic/tiling-333/pipeline";
+import "@/scenes/hyperbolic/escher/pipeline";
 
 type RenderOptions = {
     clipToDisk?: boolean;

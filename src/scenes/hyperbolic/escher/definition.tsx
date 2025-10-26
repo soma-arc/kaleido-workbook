@@ -1,5 +1,5 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
+import { HYPERBOLIC_ESCHER_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { HyperbolicTriangleState } from "@/ui/hooks/useHyperbolicTriangleState";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
 import { HYPERBOLIC_ESCHER_SCENE_KEY } from "./constants";
@@ -20,7 +20,7 @@ export const hyperbolicEscherScene = {
     supportsPanZoom: true,
     embedOverlayDefaultVisible: true,
     showTriangleControls: false,
-    renderPipelineId: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    renderPipelineId: HYPERBOLIC_ESCHER_PIPELINE_ID,
     embedOverlayFactory: ({ extras }) => {
         const context = extras as { triangle?: HyperbolicTriangleState } | undefined;
         return <EscherOverlayControls triangle={context?.triangle} />;
