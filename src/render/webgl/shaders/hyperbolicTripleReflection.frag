@@ -97,8 +97,19 @@ vec4 sampleTextures(vec2 worldPoint) {
     return accum;
 }
 
-vec4 shadeReflections(const vec2 worldPoint, float diskMask) {
+struct TileData {
+    vec3 color;
+    float alpha;
+    vec2 tracePoint;
+    bool hitLimit;
+    bool insideFundamental;
+    int reflections;
+    float minAbsDistance;
+};
+
+TileData shadeTiles(const vec2 worldPoint, float tileMask) {
     float minAbsDistance = 1e9;
+    bool insideFundamental = true;
     for (int i = 0; i < MAX_GEODESICS; ++i) {
         if (i >= uGeodesicCount) {
             break;
@@ -107,16 +118,23 @@ vec4 shadeReflections(const vec2 worldPoint, float diskMask) {
         if (uGeodesicKinds[i] == 0) {
             float d = signedDistanceCircle(worldPoint, packed.xy, packed.z);
             minAbsDistance = min(minAbsDistance, abs(d));
+            if (d < 0.0) {
+                insideFundamental = false;
+            }
         } else {
             vec2 normal = normalize(packed.xy);
             float d = signedDistanceLine(worldPoint, normal, packed.zw);
             minAbsDistance = min(minAbsDistance, abs(d));
+            if (d < 0.0) {
+                insideFundamental = false;
+            }
         }
     }
 
     vec2 tracePoint = worldPoint;
     int reflections = 0;
     int limit = max(uMaxReflections, 0);
+    bool hitReflectionLimit = false;
     for (int step = 0; step < limit; ++step) {
         bool reflected = false;
         for (int i = 0; i < MAX_GEODESICS; ++i) {
@@ -146,31 +164,47 @@ vec4 shadeReflections(const vec2 worldPoint, float diskMask) {
         if (!reflected) {
             break;
         }
+        if (step == limit - 1) {
+            hitReflectionLimit = true;
+        }
     }
-
-    float edgeAlpha = 0.0;
-    if (uGeodesicCount > 0) {
-        float pxDist = minAbsDistance * uViewport.x;
-        edgeAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, pxDist);
-        edgeAlpha = clamp(edgeAlpha, 0.0, 1.0);
-    }
-    edgeAlpha *= diskMask;
 
     vec3 bodyColor = vec3(0.0);
-    if (reflections > 0) {
+    if (reflections > 0 || insideFundamental) {
         float hue = fract(float(reflections) * 0.16180339);
         vec3 wavePalette = palette(hue);
         vec3 baseTone = normalize(uFillColor + vec3(1e-6));
         bodyColor = mix(baseTone, wavePalette, 0.65);
     }
 
+    if (hitReflectionLimit) {
+        bodyColor = vec3(0.0);
+    }
+
     vec4 textureColor = sampleTextures(tracePoint);
-    textureColor.a *= diskMask;
+    textureColor.a *= tileMask;
     vec3 fillBlend = mix(bodyColor, textureColor.rgb, textureColor.a);
 
-    vec3 finalColor = mix(fillBlend, uLineColor, edgeAlpha);
-    float finalAlpha = max(max(textureColor.a, edgeAlpha), 0.9 * diskMask);
-    return vec4(finalColor, finalAlpha);
+    float fillAlpha = hitReflectionLimit ? 0.0 : 0.9 * tileMask;
+
+    TileData data;
+    data.color = fillBlend;
+    data.alpha = max(textureColor.a, fillAlpha);
+    data.tracePoint = tracePoint;
+    data.hitLimit = hitReflectionLimit;
+    data.insideFundamental = insideFundamental;
+    data.reflections = reflections;
+    data.minAbsDistance = minAbsDistance;
+    return data;
+}
+
+float computeEdgeAlpha(float minAbsDistance) {
+    if (uGeodesicCount == 0) {
+        return 0.0;
+    }
+    float pxDist = minAbsDistance * uViewport.x;
+    float edgeAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, pxDist);
+    return clamp(edgeAlpha, 0.0, 1.0);
 }
 
 vec4 shadeDebug(vec2 worldPoint, float diskMask) {
@@ -218,19 +252,36 @@ vec4 shadeDebug(vec2 worldPoint, float diskMask) {
 void main() {
     vec2 worldPoint = screenToWorld(vFragCoord);
 
-    float diskMask = 1.0;
+    float tileMask = 1.0;
     if (uClipToDisk == 1) {
         float diskDistPx = (length(worldPoint) - 1.0) * uViewport.x;
-        diskMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
-        if (diskMask <= 0.0) {
-            discard;
-        }
+        tileMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
     }
 
-    vec4 color = shadeReflections(worldPoint, diskMask);
+    TileData tile = shadeTiles(worldPoint, tileMask);
+    float edgeAlpha = computeEdgeAlpha(tile.minAbsDistance);
+    if (tile.hitLimit) {
+        tile.alpha = 0.0;
+        tile.color = vec3(0.0);
+    }
+
+    vec4 textureColor = sampleTextures(tile.tracePoint);
+    textureColor.a *= tileMask;
+    vec3 fillBlend = mix(tile.color, textureColor.rgb, textureColor.a);
+
+    float unitCircleDist = abs(length(worldPoint) - 1.0);
+    float unitCirclePx = unitCircleDist * uViewport.x;
+    float unitCircleAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, unitCirclePx);
+
+    vec3 finalColor = mix(fillBlend, uLineColor, edgeAlpha);
+    finalColor = mix(finalColor, vec3(1.0), unitCircleAlpha);
+
+    float finalAlpha = max(max(textureColor.a, edgeAlpha), unitCircleAlpha);
+    finalAlpha = max(finalAlpha, tile.alpha);
+    vec4 color = vec4(finalColor, finalAlpha);
 
     if (HTR_DEBUG == 1) {
-        color = shadeDebug(worldPoint, diskMask);
+        color = shadeDebug(worldPoint, tileMask);
     }
 
     if (color.a <= 1e-4) {

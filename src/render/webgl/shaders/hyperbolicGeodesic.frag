@@ -8,6 +8,7 @@ uniform int uGeodesicCount;
 uniform float uLineWidth;
 uniform float uFeather;
 uniform vec3 uLineColor;
+uniform vec3 uUnitCircleColor;
 uniform int uClipToDisk;
 uniform vec3 uViewport; // (scale, tx, ty)
 
@@ -86,9 +87,6 @@ void main() {
     if (uClipToDisk == 1) {
         float diskDistPx = (length(worldPoint) - 1.0) * uViewport.x;
         diskMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
-        if (diskMask <= 0.0) {
-            discard;
-        }
     }
 
     vec4 textureColor = sampleTextures(worldPoint, diskMask);
@@ -111,11 +109,25 @@ void main() {
     float minSdfPx = minSdfWorld * uViewport.x;
     float alpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, minSdfPx);
     alpha *= diskMask;
-    if (alpha <= 0.0 && textureColor.a <= 0.0) {
-        discard;
+
+    vec2 unitCircleDiff = worldPoint;
+    float unitCircleDist = abs(length(worldPoint) - 1.0);
+    float unitCirclePx = unitCircleDist * uViewport.x;
+    float unitCircleAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, unitCirclePx);
+
+    if (alpha <= 0.0 && textureColor.a <= 0.0 && unitCircleAlpha <= 0.0) {
+        if (uClipToDisk == 1 && diskMask <= 0.0) {
+            discard;
+        }
+        outColor = vec4(0.0);
+        return;
     }
 
-    vec3 finalColor = mix(textureColor.rgb, uLineColor, alpha);
-    float finalAlpha = max(textureColor.a, alpha);
-    outColor = vec4(finalColor, finalAlpha);
+    float geodesicAlpha = max(alpha, 0.0);
+    float combinedAlpha = max(max(textureColor.a, geodesicAlpha), unitCircleAlpha);
+
+    vec3 blended = mix(textureColor.rgb, uLineColor, geodesicAlpha);
+    blended = mix(blended, uUnitCircleColor, unitCircleAlpha);
+
+    outColor = vec4(blended, combinedAlpha);
 }

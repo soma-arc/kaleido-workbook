@@ -20,6 +20,7 @@ import { getUniformLocation } from "./uniformUtils";
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
+const UNIT_CIRCLE_COLOR = [1, 1, 1] as const;
 
 /**
  * Default pipeline for rendering hyperbolic geodesic layers with optional texture compositing.
@@ -68,6 +69,7 @@ class HyperbolicGeodesicPipeline implements WebGLPipelineInstance {
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
         gl.uniform3f(gl.getUniformLocation(this.program, "uLineColor"), ...LINE_COLOR);
+        gl.uniform3f(gl.getUniformLocation(this.program, "uUnitCircleColor"), ...UNIT_CIRCLE_COLOR);
         gl.uniform1f(gl.getUniformLocation(this.program, "uLineWidth"), LINE_WIDTH);
         gl.uniform1f(gl.getUniformLocation(this.program, "uFeather"), LINE_FEATHER);
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
