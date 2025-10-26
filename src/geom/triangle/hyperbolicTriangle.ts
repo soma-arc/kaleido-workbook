@@ -2,11 +2,11 @@ import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { evaluateHalfPlane, type HalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { OrientedGeodesic } from "@/geom/primitives/orientedGeodesic";
-import { buildEuclideanTriangle } from "@/geom/triangle/euclideanTriangle";
 import type { HyperbolicTrianglePrimitives } from "@/geom/triangle/types";
 
 const SUM_TOL = 1e-6;
 const DIAMETER_EPS = 1e-12;
+const HYPERBOLIC_MIN_R_EPS = 1e-6;
 
 function safeAcosh(x: number): number {
     const clamped = Math.max(1, x);
@@ -168,19 +168,6 @@ function orientedCircleFromCircleGeodesic(
     };
 }
 
-function buildEuclideanFallback(p: number, q: number, r: number): HyperbolicTrianglePrimitives {
-    const euclidean = buildEuclideanTriangle(p, q, r);
-    const orientedBoundaries = euclidean.boundaries.map((plane) =>
-        orientedLineFromHalfPlane(plane),
-    ) as [OrientedGeodesic, OrientedGeodesic, OrientedGeodesic];
-    return {
-        kind: GEOMETRY_KIND.hyperbolic,
-        boundaries: orientedBoundaries,
-        vertices: euclidean.vertices,
-        angles: euclidean.angles,
-    };
-}
-
 /**
  * buildHyperbolicTriangle
  * Construct a canonical (p,q,r) hyperbolic triangle primitive set.
@@ -193,18 +180,38 @@ export function buildHyperbolicTriangle(
     if (!(p > 1 && q > 1 && r > 1)) {
         throw new Error("Invalid (p,q,r) for hyperbolic triangle");
     }
-    const hyperbolicConstraint = 1 / p + 1 / q + 1 / r;
-    if (Math.abs(hyperbolicConstraint - 1) <= SUM_TOL) {
-        return buildEuclideanFallback(p, q, r);
+    const sumWithoutR = 1 / p + 1 / q;
+    if (sumWithoutR >= 1 - SUM_TOL) {
+        throw new Error(
+            `[HyperbolicTriangle] (p,q)=(${p},${q}) cannot produce a hyperbolic triangle`,
+        );
     }
-    if (hyperbolicConstraint > 1 + SUM_TOL) {
+    const minimumHyperbolicR = 1 / (1 - sumWithoutR);
+
+    if (r < minimumHyperbolicR - HYPERBOLIC_MIN_R_EPS) {
+        throw new Error(
+            `[HyperbolicTriangle] r=${r} is below the hyperbolic threshold for (p,q)=(${p},${q})`,
+        );
+    }
+
+    let effectiveR = r;
+    if (effectiveR <= minimumHyperbolicR + HYPERBOLIC_MIN_R_EPS) {
+        effectiveR = minimumHyperbolicR + HYPERBOLIC_MIN_R_EPS;
+    }
+
+    let hyperbolicConstraint = 1 / p + 1 / q + 1 / effectiveR;
+    if (hyperbolicConstraint >= 1 - SUM_TOL) {
+        effectiveR = minimumHyperbolicR + 10 * HYPERBOLIC_MIN_R_EPS;
+        hyperbolicConstraint = 1 / p + 1 / q + 1 / effectiveR;
+    }
+    if (hyperbolicConstraint > 1 - 1e-12) {
         throw new Error(
             `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) violates hyperbolic constraint (1/p + 1/q + 1/r >= 1)`,
         );
     }
     const alpha = Math.PI / p;
     const beta = Math.PI / q;
-    const gamma = Math.PI / r;
+    const gamma = Math.PI / effectiveR;
 
     const { a, b, c: sideC } = sidesFromAnglesHyperbolic(alpha, beta, gamma);
     const vertices = placeVerticesOnDisk(a, b, sideC);

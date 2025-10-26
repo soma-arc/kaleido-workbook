@@ -1,6 +1,6 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
-import type { UseTriangleParamsResult } from "@/ui/hooks/useTriangleParams";
+import type { HyperbolicTriangleState } from "@/ui/hooks/useHyperbolicTriangleState";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
 import {
     HyperbolicTiling333Controls,
@@ -47,7 +47,7 @@ export const hyperbolicTripleReflectionScene = {
         const context = extras as
             | {
                   reflectionControls?: HyperbolicTiling333ControlsProps;
-                  triangle?: UseTriangleParamsResult;
+                  triangle?: HyperbolicTriangleState;
                   triangleSliderId?: string;
               }
             | undefined;
@@ -68,7 +68,7 @@ export const hyperbolicTripleReflectionScene = {
 } satisfies SceneDefinitionInput;
 
 function createTriangleSliderProps(
-    triangle: UseTriangleParamsResult | undefined,
+    triangle: HyperbolicTriangleState | undefined,
     sliderId: string | undefined,
 ): HyperbolicTiling333TriangleSliderProps | undefined {
     if (!triangle || !sliderId) {

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { evaluateHalfPlane, normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import { orientedGeodesicToGeodesic } from "@/geom/primitives/orientedGeodesic";
 import { angleBetweenGeodesicsAt } from "@/geom/triangle/geodesicAngles";
 import { buildHyperbolicTriangle } from "@/geom/triangle/hyperbolicTriangle";
@@ -28,22 +27,19 @@ describe("geom/triangle/hyperbolicTriangle", () => {
         expect(Math.abs(c - gamma)).toBeLessThan(5e-3);
     });
 
-    it("falls back to Euclidean construction when 1/p+1/q+1/r ≈ 1", () => {
+    it("stays hyperbolic and approximates Euclidean angles near the boundary", () => {
         const tri = buildHyperbolicTriangle(3, 3, 3);
         expect(tri.boundaries).toHaveLength(3);
-        const interior = {
-            x: (tri.vertices[0].x + tri.vertices[1].x + tri.vertices[2].x) / 3,
-            y: (tri.vertices[0].y + tri.vertices[1].y + tri.vertices[2].y) / 3,
-        };
+        const circleEdges = tri.boundaries.filter((boundary) => boundary.kind === "circle");
+        expect(circleEdges.length).toBeGreaterThan(0);
 
-        tri.boundaries.forEach((boundary) => {
-            if (boundary.kind !== "line") throw new Error("expected line");
-            const hp = normalizeHalfPlane({ anchor: boundary.anchor, normal: boundary.normal });
-            expect(evaluateHalfPlane(hp, interior)).toBeGreaterThan(0);
+        const expected = Math.PI / 3;
+        tri.angles.forEach((angle) => {
+            expect(Math.abs(angle - expected)).toBeLessThan(1e-3);
         });
     });
 
     it("throws when 1/p+1/q+1/r > 1", () => {
-        expect(() => buildHyperbolicTriangle(2.1, 2.1, 2.1)).toThrowError(/hyperbolic constraint/);
+        expect(() => buildHyperbolicTriangle(2.1, 2.1, 2.1)).toThrowError();
     });
 });

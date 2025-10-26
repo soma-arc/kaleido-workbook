@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { detectRenderMode, type RenderMode } from "@/render/engine";
+import { useHyperbolicTriangleState } from "./hooks/useHyperbolicTriangleState";
 import { useTriangleParams } from "./hooks/useTriangleParams";
 import { DEFAULT_SCENE_ID, getSceneDefinition, type SceneId } from "./scenes";
 import { EuclideanSceneHost } from "./scenes/EuclideanSceneHost";
@@ -11,6 +12,7 @@ import { applyEmbedClass, parseSceneEmbedQuery, syncSceneEmbedQuery } from "./ut
 
 const TRIANGLE_N_MAX = 100;
 const INITIAL_PARAMS = { p: 2, q: 3, r: 7, depth: 2 } as const;
+const HYPERBOLIC_INITIAL_PARAMS = { p: 3, q: 3, r: 7, depth: 2 } as const;
 const DEPTH_RANGE = { min: 0, max: 10 } as const;
 
 export function App(): JSX.Element {
@@ -57,6 +59,12 @@ export function App(): JSX.Element {
         syncSceneEmbedQuery(selectedSceneId, embed, fallbackSceneId);
     }, [selectedSceneId, embed, fallbackSceneId]);
 
+    const hyperbolicTriangle = useHyperbolicTriangleState({
+        initialParams: HYPERBOLIC_INITIAL_PARAMS,
+        triangleNMax: TRIANGLE_N_MAX,
+        depthRange: DEPTH_RANGE,
+    });
+
     const triangleParams = useTriangleParams({
         initialParams: INITIAL_PARAMS,
         triangleNMax: TRIANGLE_N_MAX,
@@ -83,7 +91,7 @@ export function App(): JSX.Element {
                 scenes={scenes}
                 activeSceneId={selectedSceneId}
                 onSceneChange={setSelectedSceneId}
-                triangle={triangleParams}
+                triangle={hyperbolicTriangle}
                 embed={embed}
             />
         );
