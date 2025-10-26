@@ -4,6 +4,11 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import type { GeometryRenderRequest, ViewportModifier } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
+import { HYPERBOLIC_ESCHER_SCENE_ID } from "@/scenes/hyperbolic/escher";
+import {
+    EscherHandDrawCanvas,
+    type HandDrawCanvasApi,
+} from "@/scenes/hyperbolic/escher/ui/HandDrawCanvas";
 import { HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID } from "@/scenes/hyperbolic/tiling-333";
 import {
     HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
@@ -56,6 +61,9 @@ export function HyperbolicSceneHost({
     const [maxReflections, setMaxReflections] = useState(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
 
     const isReflectionScene = scene.id === HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID;
+    const isEscherScene = scene.id === HYPERBOLIC_ESCHER_SCENE_ID;
+    const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+    const [handDrawApi, setHandDrawApi] = useState<HandDrawCanvasApi | null>(null);
 
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
@@ -343,12 +351,16 @@ export function HyperbolicSceneHost({
         const extras: SceneContextExtras = {
             triangle,
             triangleSliderId,
+            textureInput,
         };
         if (reflectionControls) {
             extras.reflectionControls = reflectionControls;
         }
+        if (handDrawApi) {
+            extras.handDraw = handDrawApi;
+        }
         return extras;
-    }, [triangle, triangleSliderId, reflectionControls]);
+    }, [triangle, triangleSliderId, textureInput, reflectionControls, handDrawApi]);
 
     const defaultOverlay = useMemo(
         () =>
@@ -370,20 +382,32 @@ export function HyperbolicSceneHost({
     );
 
     const canvasNode = (
-        <StageCanvas
-            ref={canvasRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            style={{
-                ...STAGE_CANVAS_BASE_STYLE,
-                cursor: scene.supportsPanZoom
-                    ? "grab"
-                    : (STAGE_CANVAS_BASE_STYLE.cursor ?? "default"),
-            }}
-        />
+        <div
+            ref={canvasContainerRef}
+            style={{ position: "relative", width: "100%", height: "100%" }}
+        >
+            <StageCanvas
+                ref={canvasRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                style={{
+                    ...STAGE_CANVAS_BASE_STYLE,
+                    cursor: scene.supportsPanZoom
+                        ? "grab"
+                        : (STAGE_CANVAS_BASE_STYLE.cursor ?? "default"),
+                }}
+            />
+            {isEscherScene ? (
+                <EscherHandDrawCanvas
+                    containerRef={canvasContainerRef}
+                    textureInput={textureInput}
+                    onReady={setHandDrawApi}
+                />
+            ) : null}
+        </div>
     );
 
     return (

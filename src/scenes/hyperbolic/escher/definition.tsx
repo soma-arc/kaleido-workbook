@@ -3,6 +3,7 @@ import { HYPERBOLIC_ESCHER_PIPELINE_ID } from "@/render/webgl/pipelines/pipeline
 import type { HyperbolicTriangleState } from "@/ui/hooks/useHyperbolicTriangleState";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
 import { HYPERBOLIC_ESCHER_SCENE_KEY } from "./constants";
+import type { HandDrawCanvasApi } from "./ui/HandDrawCanvas";
 import { EscherOverlayControls } from "./ui/Overlay";
 
 export const HYPERBOLIC_ESCHER_SCENE_ID = createSceneId({
@@ -22,7 +23,14 @@ export const hyperbolicEscherScene = {
     showTriangleControls: false,
     renderPipelineId: HYPERBOLIC_ESCHER_PIPELINE_ID,
     embedOverlayFactory: ({ extras }) => {
-        const context = extras as { triangle?: HyperbolicTriangleState } | undefined;
-        return <EscherOverlayControls triangle={context?.triangle} />;
+        const context = extras as
+            | { triangle?: HyperbolicTriangleState; handDraw?: HandDrawCanvasApi }
+            | undefined;
+        return (
+            <EscherOverlayControls
+                triangle={context?.triangle}
+                onClearDrawing={context?.handDraw?.clear}
+            />
+        );
     },
 } satisfies SceneDefinitionInput;

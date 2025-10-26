@@ -4,9 +4,13 @@ import { ESCHER_PRESETS } from "../constants";
 
 type EscherOverlayControlsProps = {
     triangle?: HyperbolicTriangleState;
+    onClearDrawing?: () => void;
 };
 
-export function EscherOverlayControls({ triangle }: EscherOverlayControlsProps): JSX.Element {
+export function EscherOverlayControls({
+    triangle,
+    onClearDrawing,
+}: EscherOverlayControlsProps): JSX.Element {
     const activePresetId = ESCHER_PRESETS.find((preset) => {
         if (!triangle) return false;
         return (
@@ -32,7 +36,7 @@ export function EscherOverlayControls({ triangle }: EscherOverlayControlsProps):
     };
 
     return (
-        <div style={{ display: "grid", gap: "8px" }}>
+        <div style={{ display: "grid", gap: "12px" }}>
             <div style={{ display: "flex", gap: "8px" }}>
                 {ESCHER_PRESETS.map((preset) => {
                     const active = activePresetId === preset.id;
@@ -59,6 +63,23 @@ export function EscherOverlayControls({ triangle }: EscherOverlayControlsProps):
                     );
                 })}
             </div>
+            <button
+                type="button"
+                onClick={() => onClearDrawing?.()}
+                style={{
+                    justifySelf: "start",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5f5",
+                    background: "rgba(15,23,42,0.35)",
+                    color: "#e2e8f0",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "background 0.2s ease, border-color 0.2s ease",
+                }}
+            >
+                描画をクリア
+            </button>
         </div>
     );
 }
