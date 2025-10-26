@@ -274,7 +274,7 @@ void main() {
     float unitCircleAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, unitCirclePx);
 
     vec3 finalColor = mix(fillBlend, uLineColor, edgeAlpha);
-    finalColor = mix(finalColor, vec3(1.0), unitCircleAlpha);
+    //finalColor = mix(finalColor, vec3(1.0), unitCircleAlpha);
 
     float finalAlpha = max(max(textureColor.a, edgeAlpha), unitCircleAlpha);
     finalAlpha = max(finalAlpha, tile.alpha);
