@@ -122,6 +122,7 @@ function createTriangleStub(): UseTriangleParamsResult {
         clearAnchor: vi.fn(),
         setSnapEnabled: vi.fn(),
         setRFromSlider: vi.fn(),
+        applyDirectTriple: vi.fn(),
         updateDepth: vi.fn(),
         setGeometryMode: vi.fn(),
     };
