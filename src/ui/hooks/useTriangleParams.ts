@@ -46,6 +46,7 @@ export type UseTriangleParamsResult = {
     setRFromSlider: (value: number) => void;
     updateDepth: (value: number) => void;
     setGeometryMode: (mode: GeometryMode) => void;
+    applyDirectTriple: (triple: TriangleTriple) => void;
 };
 
 export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangleParamsResult {
@@ -97,6 +98,22 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
 
     const setSnapEnabled = useCallback((enabled: boolean) => {
         setSnapEnabledState(enabled);
+    }, []);
+
+    const applyDirectTriple = useCallback((triple: TriangleTriple) => {
+        setAnchor(null);
+        setPreservePresetDisplay(false);
+        setFormInputs((prev) => {
+            const next: FormInputs = {
+                p: String(triple.p),
+                q: String(triple.q),
+                r: String(triple.r),
+            };
+            if (prev.p === next.p && prev.q === next.q && prev.r === next.r) {
+                return prev;
+            }
+            return next;
+        });
     }, []);
 
     const setRFromSlider = useCallback((value: number) => {
@@ -254,5 +271,6 @@ export function useTriangleParams(options: UseTriangleParamsOptions): UseTriangl
         setRFromSlider,
         updateDepth,
         setGeometryMode,
+        applyDirectTriple,
     };
 }

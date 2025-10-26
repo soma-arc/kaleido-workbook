@@ -86,9 +86,7 @@ function createTriangleSliderProps(
         if (triangle.snapEnabled) {
             triangle.setSnapEnabled(false);
         }
-        triangle.setParamInput("p", "3");
-        triangle.setParamInput("q", "3");
-        triangle.setRFromSlider(clamped);
+        triangle.applyDirectTriple({ p: 3, q: 3, r: clamped });
     };
     return {
         sliderId,

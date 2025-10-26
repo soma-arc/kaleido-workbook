@@ -57,6 +57,17 @@ export function HyperbolicSceneHost({
 
     const isReflectionScene = scene.id === HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID;
 
+    useEffect(() => {
+        if (!isReflectionScene) {
+            return;
+        }
+        const current = triangle.params;
+        if (current.p === 3 && current.q === 3) {
+            return;
+        }
+        triangle.applyDirectTriple({ p: 3, q: 3, r: current.r });
+    }, [isReflectionScene, triangle]);
+
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
         const rect = canvasElement.getBoundingClientRect();

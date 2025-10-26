@@ -135,4 +135,14 @@ describe("useTriangleParams", () => {
         expect(harness.current.formInputs).toMatchObject({ p: "3", q: "3", r: "3" });
         harness.cleanup();
     });
+
+    it("allows overriding the triple directly without presets", () => {
+        const harness = renderHook();
+        harness.update((state) => {
+            state.applyDirectTriple({ p: 3, q: 3, r: 4 });
+        });
+        expect(harness.current.anchor).toBeNull();
+        expect(harness.current.params).toMatchObject({ p: 3, q: 3, r: 4 });
+        harness.cleanup();
+    });
 });
