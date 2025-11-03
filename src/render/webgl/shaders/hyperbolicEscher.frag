@@ -87,6 +87,9 @@ vec4 sampleTextures(vec2 worldPoint) {
         if (uTextureEnabled[i] == 0) {
             continue;
         }
+
+    outColor = vec4(vFragCoord / uViewport.xy, 0.0, 1.0);
+
         vec2 uv = transformWorldPoint(i, worldPoint);
         vec4 texColor = sampleTextureSlot(i, uv);
         float opacity = clamp(uTextureOpacity[i], 0.0, 1.0);
@@ -250,6 +253,8 @@ vec4 shadeDebug(vec2 worldPoint, float diskMask) {
 }
 
 void main() {
+    outColor = vec4(vFragCoord / uViewport.xy, 0.0, 1.0);
+    return;
     vec2 worldPoint = screenToWorld(vFragCoord);
 
     float tileMask = 1.0;
@@ -258,27 +263,11 @@ void main() {
         tileMask = 1.0 - smoothstep(0.0, uFeather, diskDistPx);
     }
 
-    TileData tile = shadeTiles(worldPoint, tileMask);
-    float edgeAlpha = computeEdgeAlpha(tile.minAbsDistance);
-    if (tile.hitLimit) {
-        tile.alpha = 0.0;
-        tile.color = vec3(0.0);
-    }
-
-    vec4 textureColor = sampleTextures(tile.tracePoint);
+    // テクスチャのみを描画（タイル計算をスキップ）
+    vec4 textureColor = sampleTextures(worldPoint);
     textureColor.a *= tileMask;
-    vec3 fillBlend = mix(tile.color, textureColor.rgb, textureColor.a);
 
-    float unitCircleDist = abs(length(worldPoint) - 1.0);
-    float unitCirclePx = unitCircleDist * uViewport.x;
-    float unitCircleAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, unitCirclePx);
-
-    vec3 finalColor = mix(fillBlend, uLineColor, edgeAlpha);
-    //finalColor = mix(finalColor, vec3(1.0), unitCircleAlpha);
-
-    float finalAlpha = max(max(textureColor.a, edgeAlpha), unitCircleAlpha);
-    finalAlpha = max(finalAlpha, tile.alpha);
-    vec4 color = vec4(finalColor, finalAlpha);
+    vec4 color = textureColor;
 
     if (HTR_DEBUG == 1) {
         color = shadeDebug(worldPoint, tileMask);
