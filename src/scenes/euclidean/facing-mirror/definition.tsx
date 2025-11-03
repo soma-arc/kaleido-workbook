@@ -7,8 +7,8 @@ import type { FacingMirrorSceneConfig, SceneDefinitionInput } from "@/ui/scenes/
 export const EUCLIDEAN_FACING_MIRROR_SCENE_KEY = "facingMirrorRoom" as const;
 
 const FACING_MIRROR_HALF_PLANES = [
-    normalizeHalfPlane({ anchor: { x: -0.5, y: 0 }, normal: { x: 1, y: 0 } }),
-    normalizeHalfPlane({ anchor: { x: 0.5, y: 0 }, normal: { x: -1, y: 0 } }),
+    normalizeHalfPlane({ anchor: { x: -0.34, y: 0 }, normal: { x: 1, y: 0 } }),
+    normalizeHalfPlane({ anchor: { x: 0.34, y: 0 }, normal: { x: -1, y: 0 } }),
 ] as const;
 
 const FACING_MIRROR_CONFIG: FacingMirrorSceneConfig = {

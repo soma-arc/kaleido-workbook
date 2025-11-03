@@ -162,6 +162,22 @@ export function HyperbolicSceneHost({
         renderHyperbolicScene();
     }, [renderHyperbolicScene]);
 
+    // エッシャーシーンの場合、動的テクスチャ（手書きキャンバス）の更新を監視して自動レンダリング
+    useEffect(() => {
+        if (!isEscherScene || !ready) {
+            return;
+        }
+        let frameId: number;
+        const animate = () => {
+            renderHyperbolicScene();
+            frameId = requestAnimationFrame(animate);
+        };
+        frameId = requestAnimationFrame(animate);
+        return () => {
+            cancelAnimationFrame(frameId);
+        };
+    }, [isEscherScene, ready, renderHyperbolicScene]);
+
     const handlePointerDown = useCallback(
         (event: React.PointerEvent<HTMLCanvasElement>) => {
             if (!scene.supportsPanZoom) {

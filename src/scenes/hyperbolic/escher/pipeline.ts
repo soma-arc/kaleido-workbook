@@ -69,12 +69,28 @@ class HyperbolicEscherPipeline implements WebGLPipelineInstance {
 
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
-        gl.uniform3f(gl.getUniformLocation(this.program, "uLineColor"), ...LINE_COLOR);
-        gl.uniform3f(gl.getUniformLocation(this.program, "uFillColor"), ...FILL_COLOR);
-        gl.uniform1f(gl.getUniformLocation(this.program, "uLineWidth"), LINE_WIDTH);
-        gl.uniform1f(gl.getUniformLocation(this.program, "uFeather"), LINE_FEATHER);
-        gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
-        gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
+        const lineColorLoc = gl.getUniformLocation(this.program, "uLineColor");
+        if (lineColorLoc) {
+            gl.uniform3f(lineColorLoc, ...LINE_COLOR);
+        }
+        const fillColorLoc = gl.getUniformLocation(this.program, "uFillColor");
+        if (fillColorLoc) {
+            gl.uniform3f(fillColorLoc, ...FILL_COLOR);
+        }
+        const lineWidthLoc = gl.getUniformLocation(this.program, "uLineWidth");
+        if (lineWidthLoc) {
+            gl.uniform1f(lineWidthLoc, LINE_WIDTH);
+        }
+        const featherLoc = gl.getUniformLocation(this.program, "uFeather");
+        if (featherLoc) {
+            gl.uniform1f(featherLoc, LINE_FEATHER);
+        }
+        if (this.uniforms.textureSamplers) {
+            gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
+        }
+        if (this.uniforms.textureCount) {
+            gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
+        }
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
@@ -92,21 +108,44 @@ class HyperbolicEscherPipeline implements WebGLPipelineInstance {
         const height = canvas.height || gl.drawingBufferHeight || 1;
         gl.viewport(0, 0, width, height);
         gl.useProgram(this.program);
-        gl.uniform2f(this.uniforms.resolution, width, height);
-        gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
-        gl.uniform1i(this.uniforms.clipToDisk, clipToDisk ? 1 : 0);
+
+        if (this.uniforms.resolution) {
+            gl.uniform2f(this.uniforms.resolution, width, height);
+        }
+        if (this.uniforms.viewport) {
+            gl.uniform3f(this.uniforms.viewport, viewport.scale, viewport.tx, viewport.ty);
+        }
+        if (this.uniforms.clipToDisk) {
+            gl.uniform1i(this.uniforms.clipToDisk, clipToDisk ? 1 : 0);
+        }
 
         const count = packSceneGeodesics(renderScene, this.geodesicBuffers, MAX_UNIFORM_GEODESICS);
-        gl.uniform1i(this.uniforms.geodesicCount, count);
-        gl.uniform4fv(this.uniforms.geodesics, this.geodesicBuffers.data);
-        gl.uniform1iv(this.uniforms.geodesicKinds, this.geodesicBuffers.kinds);
+        if (this.uniforms.geodesicCount) {
+            gl.uniform1i(this.uniforms.geodesicCount, count);
+        }
+        if (this.uniforms.geodesics) {
+            gl.uniform4fv(this.uniforms.geodesics, this.geodesicBuffers.data);
+        }
+        if (this.uniforms.geodesicKinds) {
+            gl.uniform1iv(this.uniforms.geodesicKinds, this.geodesicBuffers.kinds);
+        }
 
         const textureUniforms = this.textureManager.sync(textures);
-        gl.uniform1iv(this.uniforms.textureEnabled, textureUniforms.enabled);
-        gl.uniform2fv(this.uniforms.textureOffset, textureUniforms.offset);
-        gl.uniform2fv(this.uniforms.textureScale, textureUniforms.scale);
-        gl.uniform1fv(this.uniforms.textureRotation, textureUniforms.rotation);
-        gl.uniform1fv(this.uniforms.textureOpacity, textureUniforms.opacity);
+        if (this.uniforms.textureEnabled) {
+            gl.uniform1iv(this.uniforms.textureEnabled, textureUniforms.enabled);
+        }
+        if (this.uniforms.textureOffset) {
+            gl.uniform2fv(this.uniforms.textureOffset, textureUniforms.offset);
+        }
+        if (this.uniforms.textureScale) {
+            gl.uniform2fv(this.uniforms.textureScale, textureUniforms.scale);
+        }
+        if (this.uniforms.textureRotation) {
+            gl.uniform1fv(this.uniforms.textureRotation, textureUniforms.rotation);
+        }
+        if (this.uniforms.textureOpacity) {
+            gl.uniform1fv(this.uniforms.textureOpacity, textureUniforms.opacity);
+        }
 
         const reflections = resolveReflections(
             sceneUniforms as HyperbolicTripleReflectionUniforms | undefined,
@@ -133,19 +172,19 @@ class HyperbolicEscherPipeline implements WebGLPipelineInstance {
 }
 
 type UniformLocations = {
-    resolution: WebGLUniformLocation;
-    viewport: WebGLUniformLocation;
-    geodesicCount: WebGLUniformLocation;
-    geodesics: WebGLUniformLocation;
-    geodesicKinds: WebGLUniformLocation;
-    clipToDisk: WebGLUniformLocation;
-    textureEnabled: WebGLUniformLocation;
-    textureOffset: WebGLUniformLocation;
-    textureScale: WebGLUniformLocation;
-    textureRotation: WebGLUniformLocation;
-    textureOpacity: WebGLUniformLocation;
-    textureCount: WebGLUniformLocation;
-    textureSamplers: WebGLUniformLocation;
+    resolution: WebGLUniformLocation | null;
+    viewport: WebGLUniformLocation | null;
+    geodesicCount: WebGLUniformLocation | null;
+    geodesics: WebGLUniformLocation | null;
+    geodesicKinds: WebGLUniformLocation | null;
+    clipToDisk: WebGLUniformLocation | null;
+    textureEnabled: WebGLUniformLocation | null;
+    textureOffset: WebGLUniformLocation | null;
+    textureScale: WebGLUniformLocation | null;
+    textureRotation: WebGLUniformLocation | null;
+    textureOpacity: WebGLUniformLocation | null;
+    textureCount: WebGLUniformLocation | null;
+    textureSamplers: WebGLUniformLocation | null;
     maxReflections: WebGLUniformLocation | null;
 };
 
@@ -195,19 +234,19 @@ function resolveUniformLocations(
     gl: WebGL2RenderingContext,
     program: WebGLProgram,
 ): UniformLocations {
-    const resolution = getUniformLocation(gl, program, "uResolution");
-    const viewport = getUniformLocation(gl, program, "uViewport");
-    const geodesicCount = getUniformLocation(gl, program, "uGeodesicCount");
-    const geodesics = getUniformLocation(gl, program, "uGeodesicsA[0]");
-    const geodesicKinds = getUniformLocation(gl, program, "uGeodesicKinds[0]");
-    const clipToDisk = getUniformLocation(gl, program, "uClipToDisk");
-    const textureEnabled = getUniformLocation(gl, program, "uTextureEnabled[0]");
-    const textureOffset = getUniformLocation(gl, program, "uTextureOffset[0]");
-    const textureScale = getUniformLocation(gl, program, "uTextureScale[0]");
-    const textureRotation = getUniformLocation(gl, program, "uTextureRotation[0]");
-    const textureOpacity = getUniformLocation(gl, program, "uTextureOpacity[0]");
-    const textureCount = getUniformLocation(gl, program, "uTextureCount");
-    const textureSamplers = getUniformLocation(gl, program, "uTextures[0]");
+    const resolution = getOptionalUniformLocation(gl, program, "uResolution");
+    const viewport = getOptionalUniformLocation(gl, program, "uViewport");
+    const geodesicCount = getOptionalUniformLocation(gl, program, "uGeodesicCount");
+    const geodesics = getOptionalUniformLocation(gl, program, "uGeodesicsA[0]");
+    const geodesicKinds = getOptionalUniformLocation(gl, program, "uGeodesicKinds[0]");
+    const clipToDisk = getOptionalUniformLocation(gl, program, "uClipToDisk");
+    const textureEnabled = getOptionalUniformLocation(gl, program, "uTextureEnabled[0]");
+    const textureOffset = getOptionalUniformLocation(gl, program, "uTextureOffset[0]");
+    const textureScale = getOptionalUniformLocation(gl, program, "uTextureScale[0]");
+    const textureRotation = getOptionalUniformLocation(gl, program, "uTextureRotation[0]");
+    const textureOpacity = getOptionalUniformLocation(gl, program, "uTextureOpacity[0]");
+    const textureCount = getOptionalUniformLocation(gl, program, "uTextureCount");
+    const textureSamplers = getOptionalUniformLocation(gl, program, "uTextures[0]");
     const maxReflections = getOptionalUniformLocation(gl, program, "uMaxReflections");
 
     return {
