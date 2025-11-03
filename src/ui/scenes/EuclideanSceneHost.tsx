@@ -893,9 +893,6 @@ export function EuclideanSceneHost({
     }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures, renderEngineRef]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (textureRectangleInteraction.onPointerDown(e)) {
-            return;
-        }
         if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
         const canvas = canvasRef.current ?? e.currentTarget;
         if (!canvas) {
@@ -906,6 +903,54 @@ export function EuclideanSceneHost({
         const ratio = getCanvasPixelRatio(canvas);
         const worldPoint = screenToWorld(viewport, screen);
 
+        // 制御点のヒットテストを最優先（インタラクティブ編集の中核）
+        if (
+            scene.supportsHandles &&
+            showHandles &&
+            currentControlPoints &&
+            currentControlPoints.length === normalizedHalfPlanes.length
+        ) {
+            const hit = hitTestControlPoints(
+                currentControlPoints,
+                viewport,
+                screen,
+                HANDLE_HIT_TOLERANCE_PX * ratio,
+            );
+            if (hit) {
+                try {
+                    canvas.setPointerCapture(e.pointerId);
+                } catch {
+                    // ignore
+                }
+                const draggedControlPointId =
+                    currentControlPoints[hit.planeIndex]?.[hit.pointIndex]?.id ?? null;
+                const nextPoints = updateControlPoint(
+                    currentControlPoints,
+                    hit.planeIndex,
+                    hit.pointIndex,
+                    worldPoint,
+                );
+                const nextPlanes = recomputePlanesFromControls(
+                    normalizedHalfPlanes,
+                    nextPoints,
+                    draggedControlPointId,
+                    hit.planeIndex,
+                );
+                setEditableHalfPlanes(nextPlanes);
+                setHandleControls({ spacing: handleSpacing, points: nextPoints });
+                setDrag({
+                    type: "handle",
+                    pointerId: e.pointerId,
+                    planeIndex: hit.planeIndex,
+                    pointIndex: hit.pointIndex,
+                    controlPointId: draggedControlPointId,
+                });
+                renderEuclideanScene(nextPlanes, nextPoints, hit);
+                return;
+            }
+        }
+
+        // Overlay (Circle Inversion) rectangles
         const overlayTarget = hitTestCircleInversionRectangles(
             effectiveCircleInversion,
             worldPoint,
@@ -940,51 +985,9 @@ export function EuclideanSceneHost({
             return;
         }
 
-        if (
-            scene.supportsHandles &&
-            showHandles &&
-            currentControlPoints &&
-            currentControlPoints.length === normalizedHalfPlanes.length
-        ) {
-            const hit = hitTestControlPoints(
-                currentControlPoints,
-                viewport,
-                screen,
-                HANDLE_HIT_TOLERANCE_PX * ratio,
-            );
-            if (hit) {
-                try {
-                    canvas.setPointerCapture(e.pointerId);
-                } catch {
-                    // ignore
-                }
-                const worldPoint = screenToWorld(viewport, screen);
-                const draggedControlPointId =
-                    currentControlPoints[hit.planeIndex]?.[hit.pointIndex]?.id ?? null;
-                const nextPoints = updateControlPoint(
-                    currentControlPoints,
-                    hit.planeIndex,
-                    hit.pointIndex,
-                    worldPoint,
-                );
-                const nextPlanes = recomputePlanesFromControls(
-                    normalizedHalfPlanes,
-                    nextPoints,
-                    draggedControlPointId,
-                    hit.planeIndex,
-                );
-                setEditableHalfPlanes(nextPlanes);
-                setHandleControls({ spacing: handleSpacing, points: nextPoints });
-                setDrag({
-                    type: "handle",
-                    pointerId: e.pointerId,
-                    planeIndex: hit.planeIndex,
-                    pointIndex: hit.pointIndex,
-                    controlPointId: draggedControlPointId,
-                });
-                renderEuclideanScene(nextPlanes, nextPoints, hit);
-                return;
-            }
+        // テクスチャ矩形（制御点より低優先）
+        if (textureRectangleInteraction.onPointerDown(e)) {
+            return;
         }
 
         if (allowPlaneDrag) {
@@ -1056,8 +1059,11 @@ export function EuclideanSceneHost({
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (textureRectangleInteraction.onPointerMove(e)) {
-            return;
+        // 既存のドラッグ中はテクスチャ矩形の判定をスキップ
+        if (!drag) {
+            if (textureRectangleInteraction.onPointerMove(e)) {
+                return;
+            }
         }
         if (!drag || scene.geometry !== GEOMETRY_KIND.euclidean) return;
         const canvas = e.currentTarget;
