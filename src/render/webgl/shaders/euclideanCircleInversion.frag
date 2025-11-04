@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+const float GAMMA = 2.2;
+
 in vec2 vFragCoord;
 layout(location = 0) out vec4 outColor;
 
@@ -121,6 +123,10 @@ vec4 sampleRectangleColor(vec2 local, vec4 fallbackColor) {
     vec2 normalized = vec2(local.x / (safeHalfExtents.y * aspect), local.y / safeHalfExtents.y);
     vec2 uv = applyTextureTransform(normalized);
     vec4 texColor = texture(uRectTexture, uv);
+    
+    // Degamma texture (sRGB to linear)
+    texColor.rgb = pow(texColor.rgb, vec3(GAMMA));
+    
     float opacity = clamp(mix(fallbackColor.a, texColor.a, uTextureOpacity), 0.0, 1.0);
     vec3 blended = mix(fallbackColor.rgb, texColor.rgb, uTextureOpacity);
     return vec4(blended, opacity);
@@ -213,5 +219,9 @@ void main() {
     if (color.a <= 1e-4) {
         discard;
     }
-    outColor = vec4(color.rgb, color.a);
+    
+    // Apply gamma correction (linear to sRGB)
+    vec3 gammaCorrected = pow(color.rgb, vec3(1.0 / GAMMA));
+    
+    outColor = vec4(gammaCorrected, color.a);
 }

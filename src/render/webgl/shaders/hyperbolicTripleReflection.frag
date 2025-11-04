@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+const float GAMMA = 2.2;
+
 #define HTR_DEBUG 0
 
 in vec2 vFragCoord;
@@ -287,5 +289,9 @@ void main() {
     if (color.a <= 1e-4) {
         discard;
     }
-    outColor = color;
+    
+    // Apply gamma correction (linear to sRGB)
+    vec3 gammaCorrected = pow(color.rgb, vec3(1.0 / GAMMA));
+    
+    outColor = vec4(gammaCorrected, color.a);
 }

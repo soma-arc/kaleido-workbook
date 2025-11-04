@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+const float GAMMA = 2.2;
+
 in vec2 vFragCoord;
 layout(location = 0) out vec4 outColor;
 
@@ -104,6 +106,10 @@ vec4 sampleTextures(vec2 worldPoint) {
         }
         vec2 uv = transformWorldPoint(i, normalized);
         vec4 texColor = sampleTextureSlot(i, uv);
+        
+        // Degamma texture (sRGB to linear)
+        texColor.rgb = pow(texColor.rgb, vec3(GAMMA));
+        
         float opacity = clamp(uTextureOpacity[i], 0.0, 1.0);
         texColor.a *= opacity;
         accum.rgb = mix(accum.rgb, texColor.rgb, texColor.a);
@@ -176,5 +182,8 @@ void main() {
         discard;
     }
 
-    outColor = vec4(finalColor, finalAlpha);
+    // Apply gamma correction (linear to sRGB)
+    vec3 gammaCorrected = pow(finalColor, vec3(1.0 / GAMMA));
+
+    outColor = vec4(gammaCorrected, finalAlpha);
 }
