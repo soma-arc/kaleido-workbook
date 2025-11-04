@@ -146,7 +146,12 @@ export function createRenderEngine(
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
+
+        // Canvas2D handle overlay is only used when WebGL control points are not available
+        const useCanvasHandles = !webgl;
+
         if (
+            useCanvasHandles &&
             scene.geometry === GEOMETRY_KIND.euclidean &&
             request.geometry === GEOMETRY_KIND.euclidean
         ) {
