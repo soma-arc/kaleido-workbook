@@ -1,3 +1,5 @@
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+
 /**
  * Control point uniform data structures and utilities.
  */
@@ -84,4 +86,46 @@ export function buildControlPointUniforms(
         strokeWidthsPx,
         shapes,
     };
+}
+
+/**
+ * Convert HalfPlaneControlPoints to ControlPoint array for WebGL rendering.
+ * Fixed points are rendered as squares, free points as circles.
+ * @param halfPlaneControlPoints - Dynamic control points from UI state
+ * @returns Array of control points with visual properties
+ */
+export function convertHalfPlaneControlPointsToRenderPoints(
+    halfPlaneControlPoints: HalfPlaneControlPoints[] | null | undefined,
+): ControlPoint[] {
+    if (!halfPlaneControlPoints) {
+        return [];
+    }
+
+    const points: ControlPoint[] = [];
+    const seenIds = new Set<string>();
+
+    for (const pair of halfPlaneControlPoints) {
+        for (const point of pair) {
+            // Skip duplicates (same id appearing in multiple planes)
+            if (seenIds.has(point.id)) {
+                continue;
+            }
+            seenIds.add(point.id);
+
+            // Fixed points: red square, Free points: blue circle
+            const isFixed = point.fixed;
+            points.push({
+                position: { x: point.x, y: point.y },
+                radiusPx: 8,
+                fillColor: isFixed
+                    ? { r: 0.9, g: 0.2, b: 0.2, a: 0.8 } // Red for fixed
+                    : { r: 0.2, g: 0.4, b: 0.9, a: 0.8 }, // Blue for free
+                strokeColor: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
+                strokeWidthPx: 2,
+                shape: isFixed ? SHAPE_SQUARE : SHAPE_CIRCLE,
+            });
+        }
+    }
+
+    return points;
 }

@@ -92,18 +92,6 @@ export interface SceneDefinition {
     multiPlaneConfig?: MultiPlaneSceneConfig;
     textureRectangle?: TextureRectangleConfig;
     /**
-     * WebGL rendering用の制御点データ。
-     * シェーダで描画される視覚的な制御点（円・四角など）を定義する。
-     */
-    renderControlPoints?: Array<{
-        position: { x: number; y: number };
-        radiusPx: number;
-        fillColor: { r: number; g: number; b: number; a: number };
-        strokeColor: { r: number; g: number; b: number; a: number };
-        strokeWidthPx: number;
-        shape: number; // 0: circle, 1: square
-    }>;
-    /**
      * コントロールパネルの内容をシーン単位でカスタマイズしたい場合に指定する。
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
      */

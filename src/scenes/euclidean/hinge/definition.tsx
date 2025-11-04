@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
-import { SHAPE_CIRCLE, SHAPE_SQUARE } from "@/render/webgl/controlPointUniforms";
 import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
@@ -61,35 +60,6 @@ export const euclideanHingeScene = {
         { planeIndex: 1, pointIndex: 1, id: "hinge", fixed: true },
     ],
     initialControlPoints: cloneControlPointsList(HINGE_INITIAL_CONTROL_POINTS),
-    renderControlPoints: [
-        // Hinge point (fixed, red circle)
-        {
-            position: { x: 0, y: 0 },
-            radiusPx: 8,
-            fillColor: { r: 0.9, g: 0.2, b: 0.2, a: 0.8 },
-            strokeColor: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-            strokeWidthPx: 2,
-            shape: SHAPE_CIRCLE,
-        },
-        // Free point 1 (blue square)
-        {
-            position: { x: 1 / Math.sqrt(2), y: -1 / Math.sqrt(2) },
-            radiusPx: 8,
-            fillColor: { r: 0.2, g: 0.4, b: 0.9, a: 0.8 },
-            strokeColor: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-            strokeWidthPx: 2,
-            shape: SHAPE_SQUARE,
-        },
-        // Free point 2 (green square)
-        {
-            position: { x: -1 / Math.sqrt(2), y: -1 / Math.sqrt(2) },
-            radiusPx: 8,
-            fillColor: { r: 0.2, g: 0.9, b: 0.4, a: 0.8 },
-            strokeColor: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-            strokeWidthPx: 2,
-            shape: SHAPE_SQUARE,
-        },
-    ],
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             presetControls?: ReactNode;

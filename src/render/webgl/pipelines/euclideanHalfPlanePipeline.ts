@@ -1,5 +1,8 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { buildControlPointUniforms, type ControlPoint } from "../controlPointUniforms";
+import {
+    buildControlPointUniforms,
+    convertHalfPlaneControlPointsToRenderPoints,
+} from "../controlPointUniforms";
 import {
     createGeodesicUniformBuffers,
     MAX_UNIFORM_GEODESICS,
@@ -97,6 +100,7 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         textures,
         canvas,
         sceneDefinition,
+        halfPlaneControlPoints,
     }: WebGLPipelineRenderContext): void {
         const gl = this.gl;
         const width = canvas.width || gl.drawingBufferWidth || 1;
@@ -127,7 +131,7 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.uniform1f(this.uniforms.textureRectRotation, rotation);
 
         // Control Points
-        const controlPoints: ControlPoint[] = sceneDefinition?.renderControlPoints ?? [];
+        const controlPoints = convertHalfPlaneControlPointsToRenderPoints(halfPlaneControlPoints);
         const cpUniforms = buildControlPointUniforms(controlPoints, MAX_CONTROL_POINTS);
         gl.uniform1i(this.uniforms.controlPointCount, cpUniforms.count);
         gl.uniform2fv(this.uniforms.controlPointPositions, cpUniforms.positions);
