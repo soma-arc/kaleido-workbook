@@ -127,7 +127,7 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.uniform1f(this.uniforms.textureRectRotation, rotation);
 
         // Control Points
-        const controlPoints: ControlPoint[] = []; // TODO: Wire to scene/UI state
+        const controlPoints: ControlPoint[] = sceneDefinition?.renderControlPoints ?? [];
         const cpUniforms = buildControlPointUniforms(controlPoints, MAX_CONTROL_POINTS);
         gl.uniform1i(this.uniforms.controlPointCount, cpUniforms.count);
         gl.uniform2fv(this.uniforms.controlPointPositions, cpUniforms.positions);
