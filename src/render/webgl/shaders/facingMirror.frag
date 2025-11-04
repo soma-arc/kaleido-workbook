@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+const float GAMMA = 2.2;
+
 in vec2 vFragCoord;
 layout(location = 0) out vec4 outColor;
 
@@ -171,5 +173,8 @@ void main() {
         discard;
     }
 
-    outColor = vec4(combinedColor, combinedAlpha);
+    // Apply gamma correction (linear to sRGB)
+    vec3 gammaCorrected = pow(combinedColor, vec3(1.0 / GAMMA));
+
+    outColor = vec4(gammaCorrected, combinedAlpha);
 }

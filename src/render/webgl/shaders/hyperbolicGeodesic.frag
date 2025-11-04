@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+const float GAMMA = 2.2;
+
 in vec2 vFragCoord;
 layout(location = 0) out vec4 outColor;
 
@@ -129,5 +131,8 @@ void main() {
     vec3 blended = mix(textureColor.rgb, uLineColor, geodesicAlpha);
     blended = mix(blended, uUnitCircleColor, unitCircleAlpha);
 
-    outColor = vec4(blended, combinedAlpha);
+    // Apply gamma correction (linear to sRGB)
+    vec3 gammaCorrected = pow(blended, vec3(1.0 / GAMMA));
+
+    outColor = vec4(gammaCorrected, combinedAlpha);
 }
