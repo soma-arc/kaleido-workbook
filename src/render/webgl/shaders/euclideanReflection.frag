@@ -31,7 +31,7 @@ const int MAX_GEODESICS = __MAX_GEODESICS__;
 uniform vec4 uGeodesicsA[MAX_GEODESICS]; // Packed via packLine(...) as (unitNormal.x, unitNormal.y, anchor.x, anchor.y)
 
 // ===============================================
-// Control Points
+// Control Points - Uniforms
 // ===============================================
 #define MAX_CONTROL_POINTS __MAX_CONTROL_POINTS__
 #define SHAPE_CIRCLE 0
@@ -54,6 +54,31 @@ const vec2 AA_SAMPLE_OFFSETS[MAX_AA_SAMPLES] = vec2[](
     vec2(0.5, 0.5)
 );
 
+// ===============================================
+// Geodesic Functions
+// ===============================================
+float signedDistance(vec2 point, vec4 plane) {
+    vec2 normal = plane.xy;
+    vec2 anchor = plane.zw;
+    return dot(normal, point - anchor);
+}
+
+vec2 reflectPoint(vec2 point, vec4 plane) {
+    vec2 normal = plane.xy;
+    vec2 anchor = plane.zw;
+    float dist = dot(normal, point - anchor);
+    return point - 2.0 * dist * normal;
+}
+
+vec2 screenToWorld(vec2 fragCoord) {
+    float scale = max(uViewport.x, 1e-6);
+    vec2 translation = uViewport.yz;
+    return (fragCoord - translation) / scale;
+}
+
+// ===============================================
+// Control Points - Rendering Functions
+// ===============================================
 float controlPointCircleSDF(vec2 point, vec2 center, float radius) {
     return length(point - center) - radius;
 }
@@ -104,28 +129,6 @@ vec4 renderControlPoint(vec2 worldPoint, int index) {
     }
     
     return accumulated / float(MAX_AA_SAMPLES);
-}
-
-// ===============================================
-// Geodesic Functions
-// ===============================================
-float signedDistance(vec2 point, vec4 plane) {
-    vec2 normal = plane.xy;
-    vec2 anchor = plane.zw;
-    return dot(normal, point - anchor);
-}
-
-vec2 reflectPoint(vec2 point, vec4 plane) {
-    vec2 normal = plane.xy;
-    vec2 anchor = plane.zw;
-    float dist = dot(normal, point - anchor);
-    return point - 2.0 * dist * normal;
-}
-
-vec2 screenToWorld(vec2 fragCoord) {
-    float scale = max(uViewport.x, 1e-6);
-    vec2 translation = uViewport.yz;
-    return (fragCoord - translation) / scale;
 }
 
 vec3 palette(float t) {
@@ -269,8 +272,6 @@ void main() {
     // ===============================================
     // Control Points Overlay
     // ===============================================
-    vec2 worldPoint = screenToWorld(vFragCoord);
-    
     for (int i = 0; i < MAX_CONTROL_POINTS; ++i) {
         if (i >= uControlPointCount) {
             break;
