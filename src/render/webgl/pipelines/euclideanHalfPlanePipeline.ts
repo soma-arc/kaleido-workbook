@@ -1,4 +1,5 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { buildControlPointUniforms, type ControlPoint } from "../controlPointUniforms";
 import {
     createGeodesicUniformBuffers,
     MAX_UNIFORM_GEODESICS,
@@ -125,6 +126,17 @@ class EuclideanHalfPlanePipeline implements WebGLPipelineInstance {
         gl.uniform2f(this.uniforms.textureRectHalfExtents, halfExtents.x, halfExtents.y);
         gl.uniform1f(this.uniforms.textureRectRotation, rotation);
 
+        // Control Points
+        const controlPoints: ControlPoint[] = []; // TODO: Wire to scene/UI state
+        const cpUniforms = buildControlPointUniforms(controlPoints, MAX_CONTROL_POINTS);
+        gl.uniform1i(this.uniforms.controlPointCount, cpUniforms.count);
+        gl.uniform2fv(this.uniforms.controlPointPositions, cpUniforms.positions);
+        gl.uniform1fv(this.uniforms.controlPointRadiiPx, cpUniforms.radiiPx);
+        gl.uniform4fv(this.uniforms.controlPointFillColors, cpUniforms.fillColors);
+        gl.uniform4fv(this.uniforms.controlPointStrokeColors, cpUniforms.strokeColors);
+        gl.uniform1fv(this.uniforms.controlPointStrokeWidthsPx, cpUniforms.strokeWidthsPx);
+        gl.uniform1iv(this.uniforms.controlPointShapes, cpUniforms.shapes);
+
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.bindVertexArray(this.vao);
@@ -158,6 +170,14 @@ type UniformLocations = {
     textureRectCenter: WebGLUniformLocation;
     textureRectHalfExtents: WebGLUniformLocation;
     textureRectRotation: WebGLUniformLocation;
+    // Control Points
+    controlPointCount: WebGLUniformLocation;
+    controlPointPositions: WebGLUniformLocation;
+    controlPointRadiiPx: WebGLUniformLocation;
+    controlPointFillColors: WebGLUniformLocation;
+    controlPointStrokeColors: WebGLUniformLocation;
+    controlPointStrokeWidthsPx: WebGLUniformLocation;
+    controlPointShapes: WebGLUniformLocation;
 };
 
 function buildFragmentShaderSource(): string {
@@ -222,6 +242,24 @@ function resolveUniformLocations(
     const textureRectCenter = getUniformLocation(gl, program, "uTextureRectCenter");
     const textureRectHalfExtents = getUniformLocation(gl, program, "uTextureRectHalfExtents");
     const textureRectRotation = getUniformLocation(gl, program, "uTextureRectRotation");
+
+    // Control Points
+    const controlPointCount = getUniformLocation(gl, program, "uControlPointCount");
+    const controlPointPositions = getUniformLocation(gl, program, "uControlPointPositions[0]");
+    const controlPointRadiiPx = getUniformLocation(gl, program, "uControlPointRadiiPx[0]");
+    const controlPointFillColors = getUniformLocation(gl, program, "uControlPointFillColors[0]");
+    const controlPointStrokeColors = getUniformLocation(
+        gl,
+        program,
+        "uControlPointStrokeColors[0]",
+    );
+    const controlPointStrokeWidthsPx = getUniformLocation(
+        gl,
+        program,
+        "uControlPointStrokeWidthsPx[0]",
+    );
+    const controlPointShapes = getUniformLocation(gl, program, "uControlPointShapes[0]");
+
     return {
         resolution,
         viewport,
@@ -238,6 +276,13 @@ function resolveUniformLocations(
         textureRectCenter,
         textureRectHalfExtents,
         textureRectRotation,
+        controlPointCount,
+        controlPointPositions,
+        controlPointRadiiPx,
+        controlPointFillColors,
+        controlPointStrokeColors,
+        controlPointStrokeWidthsPx,
+        controlPointShapes,
     };
 }
 
