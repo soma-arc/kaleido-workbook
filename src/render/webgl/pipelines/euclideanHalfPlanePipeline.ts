@@ -16,6 +16,11 @@ import { MAX_TEXTURE_SLOTS } from "../textures";
 import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "./pipelineIds";
 import { getOptionalUniformLocation, getUniformLocation } from "./uniformUtils";
 
+/**
+ * Maximum number of control points that can be rendered simultaneously.
+ */
+const MAX_CONTROL_POINTS = 16;
+
 const LINE_WIDTH = 1.5;
 const LINE_FEATHER = 0.9;
 const LINE_COLOR = [74 / 255, 144 / 255, 226 / 255] as const;
@@ -163,6 +168,7 @@ function buildFragmentShaderSource(): string {
     return fragmentShaderSourceTemplate
         .replaceAll("__MAX_GEODESICS__", MAX_UNIFORM_GEODESICS.toString())
         .replaceAll("__MAX_TEXTURE_SLOTS__", MAX_TEXTURE_SLOTS.toString())
+        .replaceAll("__MAX_CONTROL_POINTS__", MAX_CONTROL_POINTS.toString())
         .replace("__SAMPLE_TEXTURE_CASES__", sampleCases);
 }
 
