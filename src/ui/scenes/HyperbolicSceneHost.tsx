@@ -413,7 +413,7 @@ export function HyperbolicSceneHost({
             activeFamily: { p: familyTriple.p, q: familyTriple.q },
             onSelectFamily: handleFamilyChange,
             rSlider: {
-                id: familySliderId,
+                sliderId: familySliderId,
                 min: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
                 max: HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
                 step: HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP,

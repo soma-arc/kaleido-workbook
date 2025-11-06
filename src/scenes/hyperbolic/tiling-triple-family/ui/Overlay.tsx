@@ -1,4 +1,8 @@
 import { useMemo } from "react";
+import {
+    HyperbolicTiling333TriangleSlider,
+    type HyperbolicTiling333TriangleSliderProps,
+} from "@/scenes/hyperbolic/tiling-333/ui/Controls";
 
 type FamilyOption = {
     key: string;
@@ -16,14 +20,7 @@ const FAMILY_OPTIONS: FamilyOption[] = [
 export type HyperbolicTripleFamilyOverlayProps = {
     activeFamily: { p: number; q: number };
     onSelectFamily: (family: { p: number; q: number }) => void;
-    rSlider: {
-        id: string;
-        min: number;
-        max: number;
-        step: number;
-        value: number;
-        onChange: (value: number) => void;
-    };
+    rSlider: HyperbolicTiling333TriangleSliderProps;
 };
 
 const CONTAINER_STYLE = {
@@ -68,23 +65,9 @@ const FAMILY_OPTION_INPUT_STYLE = {
 } as const;
 
 const SLIDER_SECTION_STYLE = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
+    display: "grid",
+    gap: "6px",
 } as const;
-
-const SLIDER_VALUE_STYLE = {
-    fontSize: "0.85rem",
-    minWidth: "4ch",
-    textAlign: "right" as const,
-} as const;
-
-function formatR(value: number): string {
-    if (!Number.isFinite(value)) {
-        return "-";
-    }
-    return value.toFixed(1);
-}
 
 export function HyperbolicTripleFamilyOverlay({
     activeFamily,
@@ -98,7 +81,7 @@ export function HyperbolicTripleFamilyOverlay({
         return match?.key ?? FAMILY_OPTIONS[0]?.key ?? "333";
     }, [activeFamily]);
 
-    const radioName = useMemo(() => `${rSlider.id}-family`, [rSlider.id]);
+    const radioName = useMemo(() => `${rSlider.sliderId}-family`, [rSlider.sliderId]);
 
     return (
         <div style={CONTAINER_STYLE}>
@@ -129,25 +112,7 @@ export function HyperbolicTripleFamilyOverlay({
                 })}
             </div>
             <div style={SLIDER_SECTION_STYLE}>
-                <input
-                    id={rSlider.id}
-                    type="range"
-                    min={rSlider.min}
-                    max={rSlider.max}
-                    step={rSlider.step}
-                    value={rSlider.value}
-                    onChange={(event) => {
-                        const nextValue = Number(event.target.value);
-                        if (Number.isFinite(nextValue)) {
-                            rSlider.onChange(nextValue);
-                        }
-                    }}
-                    aria-label="Adjust r value"
-                    aria-valuemin={rSlider.min}
-                    aria-valuemax={rSlider.max}
-                    aria-valuenow={rSlider.value}
-                />
-                <span style={SLIDER_VALUE_STYLE}>{formatR(rSlider.value)}</span>
+                <HyperbolicTiling333TriangleSlider {...rSlider} />
             </div>
         </div>
     );
