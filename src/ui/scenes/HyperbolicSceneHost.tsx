@@ -16,6 +16,7 @@ import type {
     SceneDefinition,
     SceneId,
 } from "@/ui/scenes/types";
+import { useHyperbolicBindingForScene } from "./hyperbolicBindings";
 import {
     createDefaultEmbedOverlay,
     resolveSceneControls,
@@ -47,12 +48,10 @@ export function HyperbolicSceneHost({
     const sliderId = useId();
     const triangleSliderId = `${sliderId}-triangle`;
     const createId = useCallback((suffix: string) => `${sliderId}-${suffix}`, [sliderId]);
-    const binding = scene.hyperbolicBindingFactory?.({
+    const binding = useHyperbolicBindingForScene(scene, {
         scene,
         triangle,
-        renderMode,
-        embed,
-        baseSliderId: sliderId,
+        sliderId,
         triangleSliderId,
         createId,
     });
