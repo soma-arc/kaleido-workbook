@@ -1,6 +1,7 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
+import { createHyperbolicTripleFamilyBinding } from "./binding";
 import {
     HyperbolicTripleFamilyOverlay,
     type HyperbolicTripleFamilyOverlayExtras,
@@ -26,6 +27,7 @@ export const hyperbolicTripleFamilyScene = {
     showTriangleControls: false,
     embedOverlayDefaultVisible: true,
     renderPipelineId: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    hyperbolicBindingFactory: createHyperbolicTripleFamilyBinding,
     embedOverlayFactory: ({ extras }) => {
         const context = extras as HyperbolicTripleFamilyOverlayExtras | undefined;
         if (!context?.tripleFamilyControls) {

@@ -8,6 +8,8 @@ import type {
 import type { RegularPolygonOptions } from "@/geom/primitives/regularPolygon";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TilingParams } from "@/geom/triangle/tiling";
+import type { RenderMode } from "@/render/engine";
+import type { HyperbolicTriangleState } from "../hooks/useHyperbolicTriangleState";
 import type { CircleInversionSceneConfig } from "./circleInversionConfig";
 
 export type FacingMirrorSceneConfig = {
@@ -96,6 +98,10 @@ export interface SceneDefinition {
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
      */
     controlsFactory?: (context: SceneControlsContext) => ReactNode;
+    /**
+     * ハイパーボリックホストに特化した拡張ポイント。シーン固有の状態管理や Uniform 提供を行う。
+     */
+    hyperbolicBindingFactory?: HyperbolicSceneBindingFactory;
 }
 
 export type SceneUniforms = Record<string, unknown>;
@@ -156,3 +162,24 @@ export type SceneControlsContext = {
     defaultControls: ReactNode;
     extras?: SceneContextExtras;
 };
+
+export type HyperbolicSceneHostContext = {
+    scene: SceneDefinition;
+    triangle: HyperbolicTriangleState;
+    renderMode: RenderMode;
+    embed: boolean;
+    baseSliderId: string;
+    triangleSliderId: string;
+    createId: (suffix: string) => string;
+};
+
+export type HyperbolicSceneBinding = {
+    uniforms?: HyperbolicTripleReflectionUniforms;
+    controlsExtras?: SceneContextExtras;
+    overlayExtras?: SceneContextExtras;
+    paramsOverride?: TilingParams;
+};
+
+export type HyperbolicSceneBindingFactory = (
+    context: HyperbolicSceneHostContext,
+) => HyperbolicSceneBinding;

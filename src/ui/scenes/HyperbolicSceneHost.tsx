@@ -1,25 +1,9 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import type { TilingParams } from "@/geom/triangle/tiling";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import type { GeometryRenderRequest, ViewportModifier } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
-import { HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID } from "@/scenes/hyperbolic/tiling-333";
-import {
-    HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
-    HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-    HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
-} from "@/scenes/hyperbolic/tiling-333/constants";
-import type { HyperbolicTiling333ControlsProps } from "@/scenes/hyperbolic/tiling-333/ui/Controls";
-import { HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID } from "@/scenes/hyperbolic/tiling-triple-family";
-import {
-    HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
-    HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
-    HYPERBOLIC_TILING_TRIPLE_FAMILY_REFLECTIONS,
-    HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP,
-} from "@/scenes/hyperbolic/tiling-triple-family/constants";
-import type { HyperbolicTripleFamilyOverlayProps } from "@/scenes/hyperbolic/tiling-triple-family/ui/Overlay";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
@@ -62,47 +46,18 @@ export function HyperbolicSceneHost({
     const textureInput = useTextureInput();
     const sliderId = useId();
     const triangleSliderId = `${sliderId}-triangle`;
-    const familySliderId = `${sliderId}-family`;
-    const [maxReflections, setMaxReflections] = useState(() =>
-        scene.id === HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID
-            ? HYPERBOLIC_TILING_TRIPLE_FAMILY_REFLECTIONS
-            : HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
-    );
-    const [familyTriple, setFamilyTriple] = useState<TilingParams>(() => ({
-        p: 3,
-        q: 3,
-        r: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
-        depth: triangle.params.depth,
-    }));
-
-    const isReflectionScene = scene.id === HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID;
-    const isTripleFamilyScene = scene.id === HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID;
-    const usesReflectionUniform = isReflectionScene || isTripleFamilyScene;
-    const previousSceneIdRef = useRef<SceneId>(scene.id);
-
-    useEffect(() => {
-        const previousId = previousSceneIdRef.current;
-        if (previousId !== scene.id) {
-            if (scene.id === HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID) {
-                setFamilyTriple({
-                    p: 3,
-                    q: 3,
-                    r: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
-                    depth: triangle.params.depth,
-                });
-            }
-            previousSceneIdRef.current = scene.id;
-            return;
-        }
-        if (scene.id === HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID) {
-            setFamilyTriple((prev) => {
-                if (prev.depth === triangle.params.depth) {
-                    return prev;
-                }
-                return { ...prev, depth: triangle.params.depth };
-            });
-        }
-    }, [scene.id, triangle.params.depth]);
+    const createId = useCallback((suffix: string) => `${sliderId}-${suffix}`, [sliderId]);
+    const binding = scene.hyperbolicBindingFactory?.({
+        scene,
+        triangle,
+        renderMode,
+        embed,
+        baseSliderId: sliderId,
+        triangleSliderId,
+        createId,
+    });
+    const bindingUniforms = binding?.uniforms as HyperbolicTripleReflectionUniforms | undefined;
+    const paramsOverride = binding?.paramsOverride;
 
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
@@ -136,55 +91,11 @@ export function HyperbolicSceneHost({
         [],
     );
 
-    useEffect(() => {
-        if (isReflectionScene) {
-            setMaxReflections(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
-        } else if (isTripleFamilyScene) {
-            setMaxReflections(HYPERBOLIC_TILING_TRIPLE_FAMILY_REFLECTIONS);
-        }
-    }, [isReflectionScene, isTripleFamilyScene]);
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
     useEffect(() => {
         resetPanZoom();
         panDragRef.current = null;
     }, [scene.id, resetPanZoom]);
-
-    const handleMaxReflectionsChange = useCallback((next: number) => {
-        const clamped = Math.min(
-            HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-            Math.max(HYPERBOLIC_TILING_333_MIN_REFLECTIONS, Math.round(next)),
-        );
-        setMaxReflections(clamped);
-    }, []);
-
-    const handleFamilyChange = useCallback((family: { p: number; q: number }) => {
-        setFamilyTriple((prev) => ({
-            ...prev,
-            p: family.p,
-            q: family.q,
-            r: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
-        }));
-    }, []);
-
-    const handleFamilyRChange = useCallback((value: number) => {
-        if (!Number.isFinite(value)) {
-            return;
-        }
-        const clamped = Math.min(
-            HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
-            Math.max(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R, value),
-        );
-        const snapped =
-            Math.round(clamped / HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP) *
-            HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP;
-        setFamilyTriple((prev) => {
-            if (prev.r === snapped) {
-                return prev;
-            }
-            return { ...prev, r: snapped };
-        });
-    }, []);
 
     const renderHyperbolicScene = useCallback(
         (viewportModifierOverride?: ViewportModifier) => {
@@ -196,9 +107,7 @@ export function HyperbolicSceneHost({
             if (!engine || !canvas || !ready) {
                 return;
             }
-            const params = isTripleFamilyScene
-                ? familyTriple
-                : (scene.fixedHyperbolicParams ?? triangle.params);
+            const params = paramsOverride ?? scene.fixedHyperbolicParams ?? triangle.params;
             const request: GeometryRenderRequest = {
                 geometry: GEOMETRY_KIND.hyperbolic,
                 params,
@@ -210,25 +119,21 @@ export function HyperbolicSceneHost({
                       ? panZoomModifierRef.current
                       : undefined,
             };
-            if (usesReflectionUniform) {
-                request.sceneUniforms = {
-                    uMaxReflections: maxReflections,
-                } satisfies HyperbolicTripleReflectionUniforms;
+            if (bindingUniforms) {
+                request.sceneUniforms = bindingUniforms;
             }
             engine.render(request);
         },
         [
             scene,
             triangle,
-            familyTriple,
+            paramsOverride,
             textureInput.textures,
             ready,
             renderEngineRef,
             canvasRef,
-            maxReflections,
+            bindingUniforms,
             panZoomModifierRef,
-            usesReflectionUniform,
-            isTripleFamilyScene,
         ],
     );
 
@@ -388,86 +293,43 @@ export function HyperbolicSceneHost({
         </>
     );
 
-    const reflectionControls = useMemo<HyperbolicTiling333ControlsProps | undefined>(() => {
-        if (!isReflectionScene) {
-            return undefined;
-        }
-        return {
-            sliderId,
-            min: HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
-            max: HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-            step: 1,
-            value: maxReflections,
-            onChange: handleMaxReflectionsChange,
-        };
-    }, [isReflectionScene, sliderId, maxReflections, handleMaxReflectionsChange]);
-
-    const tripleFamilyControls = useMemo<HyperbolicTripleFamilyOverlayProps | undefined>(() => {
-        if (!isTripleFamilyScene) {
-            return undefined;
-        }
-        const sliderValueRaw = Math.min(
-            HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
-            Math.max(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R, familyTriple.r),
-        );
-        const sliderValue =
-            Math.round(sliderValueRaw / HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP) *
-            HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP;
-        return {
-            activeFamily: { p: familyTriple.p, q: familyTriple.q },
-            onSelectFamily: handleFamilyChange,
-            rSlider: {
-                sliderId: familySliderId,
-                min: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
-                max: HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
-                step: HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP,
-                value: sliderValue,
-                onChange: handleFamilyRChange,
-            },
-        };
-    }, [
-        familyTriple,
-        familySliderId,
-        handleFamilyChange,
-        handleFamilyRChange,
-        isTripleFamilyScene,
-    ]);
-
-    const sceneControlsExtras = useMemo(() => {
-        const extras: SceneContextExtras = {
+    const baseControlsExtras = useMemo<SceneContextExtras>(
+        () => ({
             triangle,
             textureInput,
             triangleSliderId,
-        };
-        if (reflectionControls) {
-            extras.reflectionControls = reflectionControls;
+        }),
+        [triangle, textureInput, triangleSliderId],
+    );
+
+    const controlsExtras = useMemo<SceneContextExtras>(() => {
+        if (!binding?.controlsExtras) {
+            return baseControlsExtras;
         }
-        if (tripleFamilyControls) {
-            extras.tripleFamilyControls = tripleFamilyControls;
-        }
-        return extras;
-    }, [triangle, textureInput, triangleSliderId, reflectionControls, tripleFamilyControls]);
+        return { ...baseControlsExtras, ...binding.controlsExtras };
+    }, [baseControlsExtras, binding?.controlsExtras]);
 
     const controls = resolveSceneControls({
         scene,
         renderBackend: renderMode,
         defaultControls,
-        extras: sceneControlsExtras,
+        extras: controlsExtras,
     });
 
-    const overlayExtras = useMemo(() => {
-        const extras: SceneContextExtras = {
+    const baseOverlayExtras = useMemo<SceneContextExtras>(
+        () => ({
             triangle,
             triangleSliderId,
-        };
-        if (reflectionControls) {
-            extras.reflectionControls = reflectionControls;
+        }),
+        [triangle, triangleSliderId],
+    );
+
+    const overlayExtras = useMemo<SceneContextExtras>(() => {
+        if (!binding?.overlayExtras) {
+            return baseOverlayExtras;
         }
-        if (tripleFamilyControls) {
-            extras.tripleFamilyControls = tripleFamilyControls;
-        }
-        return extras;
-    }, [triangle, triangleSliderId, reflectionControls, tripleFamilyControls]);
+        return { ...baseOverlayExtras, ...binding.overlayExtras };
+    }, [baseOverlayExtras, binding?.overlayExtras]);
 
     const defaultOverlay = useMemo(
         () =>

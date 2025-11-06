@@ -2,6 +2,7 @@ import { GEOMETRY_KIND } from "@/geom/core/types";
 import { HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { HyperbolicTriangleState } from "@/ui/hooks/useHyperbolicTriangleState";
 import { createSceneId, type SceneDefinitionInput } from "@/ui/scenes/types";
+import { createHyperbolicTripleReflectionBinding } from "./binding";
 import {
     HyperbolicTiling333Controls,
     type HyperbolicTiling333ControlsProps,
@@ -29,6 +30,7 @@ export const hyperbolicTripleReflectionScene = {
     showTriangleControls: false,
     embedOverlayDefaultVisible: true,
     renderPipelineId: HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    hyperbolicBindingFactory: createHyperbolicTripleReflectionBinding,
     controlsFactory: ({ defaultControls, extras }) => {
         const context = extras as {
             reflectionControls?: HyperbolicTiling333ControlsProps;

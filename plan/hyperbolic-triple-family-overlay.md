@@ -79,3 +79,30 @@
   - `hostBindingFactory` の API 設計（受け渡すコンテキストと返り値の型を定義）。  
   - `hyperbolic-tiling-333` を対象に PoC を行い、ホスト側からシーン固有分岐を削減できるか検証。  
   - 実験結果を踏まえて他シーンへ段階的に展開し、`SceneContextExtras` と既存分岐の整理を進める。
+
+### 付録A: Host Binding API 案（2025-11-06）
+
+```ts
+type HyperbolicSceneHostContext = {
+  scene: SceneDefinition;
+  triangle: HyperbolicTriangleState;
+  renderMode: RenderMode;
+  embed: boolean;
+  createId: (suffix: string) => string;
+  requestRender: () => void;
+};
+
+type HyperbolicSceneBinding = {
+  uniforms?: HyperbolicTripleReflectionUniforms;
+  controlsExtras?: SceneContextExtras;
+  overlayExtras?: SceneContextExtras;
+};
+
+type HyperbolicSceneBindingFactory = (context: HyperbolicSceneHostContext) => HyperbolicSceneBinding;
+```
+
+- `SceneDefinition` に `hyperbolicBindingFactory?: HyperbolicSceneBindingFactory` を追加。  
+- `HyperbolicSceneHost` はレンダー毎に `scene.hyperbolicBindingFactory?.(hostContext)` を呼び、戻り値から `sceneUniforms` と `extras` を組み立てる。  
+- 既存の `controlsFactory` / `embedOverlayFactory` は `extras` を通じてシーン固有 UI を得る（現在の構造を温存）。  
+- バインディング内で React Hooks を利用し、`maxReflections` や `(p,q,r)` の状態管理、`triangle.applyDirectTriple` の呼び出しをシーン側へ移譲する。  
+- これにより `HyperbolicSceneHost` での `scene.id === ...` 分岐が不要になり、Uniform 渡し漏れ（今回の `uMaxReflections` 問題）が発生しにくくなる。
