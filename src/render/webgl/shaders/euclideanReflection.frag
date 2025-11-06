@@ -30,6 +30,33 @@ uniform sampler2D uTextures[MAX_TEXTURE_SLOTS];
 const int MAX_GEODESICS = __MAX_GEODESICS__;
 uniform vec4 uGeodesicsA[MAX_GEODESICS]; // Packed via packLine(...) as (unitNormal.x, unitNormal.y, anchor.x, anchor.y)
 
+// ===============================================
+// Control Points - Uniforms
+// ===============================================
+#define MAX_CONTROL_POINTS __MAX_CONTROL_POINTS__
+#define SHAPE_CIRCLE 0
+#define SHAPE_SQUARE 1
+
+uniform int uControlPointCount;
+uniform vec2 uControlPointPositions[MAX_CONTROL_POINTS];
+uniform float uControlPointRadiiPx[MAX_CONTROL_POINTS];
+uniform vec4 uControlPointFillColors[MAX_CONTROL_POINTS];
+uniform vec4 uControlPointStrokeColors[MAX_CONTROL_POINTS];
+uniform float uControlPointStrokeWidthsPx[MAX_CONTROL_POINTS];
+uniform int uControlPointShapes[MAX_CONTROL_POINTS];
+
+// Anti-aliasing sample offsets (spherical scene pattern)
+const int MAX_AA_SAMPLES = 4;
+const vec2 AA_SAMPLE_OFFSETS[MAX_AA_SAMPLES] = vec2[](
+    vec2(0.0, 0.0),
+    vec2(0.25, -0.25),
+    vec2(-0.25, 0.25),
+    vec2(0.5, 0.5)
+);
+
+// ===============================================
+// Geodesic Functions
+// ===============================================
 float signedDistance(vec2 point, vec4 plane) {
     vec2 normal = plane.xy;
     vec2 anchor = plane.zw;
@@ -47,6 +74,61 @@ vec2 screenToWorld(vec2 fragCoord) {
     float scale = max(uViewport.x, 1e-6);
     vec2 translation = uViewport.yz;
     return (fragCoord - translation) / scale;
+}
+
+// ===============================================
+// Control Points - Rendering Functions
+// ===============================================
+float controlPointCircleSDF(vec2 point, vec2 center, float radius) {
+    return length(point - center) - radius;
+}
+
+float controlPointSquareSDF(vec2 point, vec2 center, float halfSize) {
+    vec2 d = abs(point - center) - vec2(halfSize);
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+
+vec4 renderControlPoint(vec2 worldPoint, int index) {
+    vec2 cpPosition = uControlPointPositions[index];
+    float radiusPx = uControlPointRadiiPx[index];
+    vec4 fillColor = uControlPointFillColors[index];
+    vec4 strokeColor = uControlPointStrokeColors[index];
+    float strokeWidthPx = uControlPointStrokeWidthsPx[index];
+    int shape = uControlPointShapes[index];
+    
+    // World-space radius
+    float worldRadius = radiusPx / uViewport.x;
+    float worldStrokeRadius = (radiusPx + strokeWidthPx) / uViewport.x;
+    
+    // Multi-sampling for anti-aliasing
+    vec4 accumulated = vec4(0.0);
+    for (int s = 0; s < MAX_AA_SAMPLES; s++) {
+        // Screen-space offset, then convert to world space
+        vec2 screenOffset = AA_SAMPLE_OFFSETS[s];
+        vec2 sampleScreen = vFragCoord + screenOffset;
+        vec2 sampleWorld = screenToWorld(sampleScreen);
+        
+        // SDF calculation
+        float sdf = (shape == SHAPE_CIRCLE) 
+            ? controlPointCircleSDF(sampleWorld, cpPosition, worldRadius)
+            : controlPointSquareSDF(sampleWorld, cpPosition, worldRadius);
+        
+        if (sdf <= 0.0) {
+            // Inside fill
+            accumulated += fillColor;
+        } else if (strokeWidthPx > 0.0) {
+            // Stroke check
+            float strokeSDF = (shape == SHAPE_CIRCLE)
+                ? controlPointCircleSDF(sampleWorld, cpPosition, worldStrokeRadius)
+                : controlPointSquareSDF(sampleWorld, cpPosition, worldStrokeRadius);
+            
+            if (strokeSDF <= 0.0) {
+                accumulated += strokeColor;
+            }
+        }
+    }
+    
+    return accumulated / float(MAX_AA_SAMPLES);
 }
 
 vec3 palette(float t) {
@@ -186,4 +268,21 @@ void main() {
     vec3 gammaCorrected = pow(finalColor, vec3(1.0 / GAMMA));
 
     outColor = vec4(gammaCorrected, finalAlpha);
+    
+    // ===============================================
+    // Control Points Overlay
+    // ===============================================
+    for (int i = 0; i < MAX_CONTROL_POINTS; ++i) {
+        if (i >= uControlPointCount) {
+            break;
+        }
+        
+        vec4 cpColor = renderControlPoint(worldPoint, i);
+        
+        if (cpColor.a > 0.0) {
+            // Alpha blending
+            outColor.rgb = outColor.rgb * (1.0 - cpColor.a) + cpColor.rgb * cpColor.a;
+            outColor.a = max(outColor.a, cpColor.a);
+        }
+    }
 }

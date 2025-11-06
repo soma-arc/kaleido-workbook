@@ -1,4 +1,5 @@
 import type { GeometryKind } from "@/geom/core/types";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { SceneDefinition, SceneId } from "@/ui/scenes/types";
 import type { RenderScene } from "../scene";
 import type { Viewport } from "../viewport";
@@ -15,6 +16,11 @@ export interface WebGLPipelineRenderContext {
     textures: readonly TextureLayer[];
     canvas: HTMLCanvasElement;
     sceneUniforms?: Record<string, unknown>;
+    /**
+     * 動的な制御点の座標（UI状態から取得）。
+     * WebGLレンダリング用の制御点描画に使用される。
+     */
+    halfPlaneControlPoints?: HalfPlaneControlPoints[] | null;
 }
 
 /**

@@ -48,6 +48,7 @@ export type GeometryRenderRequest =
           halfPlanes: HalfPlane[];
           handles?: HalfPlaneHandleRequest;
           inversion?: CircleInversionState;
+          halfPlaneControlPoints?: HalfPlaneControlPoints[] | null;
       } & RenderRequestBase);
 
 export type CaptureRequestKind = "composite" | "webgl";
@@ -145,7 +146,12 @@ export function createRenderEngine(
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
         }
+
+        // Canvas2D handle overlay is only used when WebGL control points are not available
+        const useCanvasHandles = !webgl;
+
         if (
+            useCanvasHandles &&
             scene.geometry === GEOMETRY_KIND.euclidean &&
             request.geometry === GEOMETRY_KIND.euclidean
         ) {
@@ -162,11 +168,16 @@ export function createRenderEngine(
         renderCanvasLayer(ctx, scene, viewport, canvasStyle);
         if (webgl) {
             const clipToDisk = scene.geometry === GEOMETRY_KIND.hyperbolic;
+            const halfPlaneControlPoints =
+                request.geometry === GEOMETRY_KIND.euclidean
+                    ? request.halfPlaneControlPoints
+                    : undefined;
             const renderOptions = {
                 clipToDisk,
                 textures,
                 scene: request.scene,
                 sceneUniforms: request.sceneUniforms,
+                halfPlaneControlPoints,
             } as const;
             if (hasWebGLOutput) {
                 syncWebGLCanvas(webgl, canvas);

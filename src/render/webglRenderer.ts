@@ -1,3 +1,4 @@
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { SceneDefinition } from "@/ui/scenes/types";
 import type { RenderScene } from "./scene";
 import type { Viewport } from "./viewport";
@@ -19,6 +20,7 @@ type RenderOptions = {
     textures?: TextureLayer[];
     scene?: SceneDefinition;
     sceneUniforms?: Record<string, unknown>;
+    halfPlaneControlPoints?: HalfPlaneControlPoints[] | null;
 };
 
 export interface WebGLRenderer {
@@ -107,6 +109,7 @@ function createRealRenderer(
                 textures: options?.textures ?? [],
                 canvas,
                 sceneUniforms: options?.sceneUniforms,
+                halfPlaneControlPoints: options?.halfPlaneControlPoints,
             };
             pipeline.render(context);
         },

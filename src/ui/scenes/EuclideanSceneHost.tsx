@@ -775,6 +775,7 @@ export function EuclideanSceneHost({
                 textures: textureInput.textures,
                 inversion: inversion ?? undefined,
                 viewportModifier,
+                halfPlaneControlPoints: handlePoints,
             });
         },
         [
