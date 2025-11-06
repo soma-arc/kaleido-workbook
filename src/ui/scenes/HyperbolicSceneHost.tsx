@@ -63,7 +63,11 @@ export function HyperbolicSceneHost({
     const sliderId = useId();
     const triangleSliderId = `${sliderId}-triangle`;
     const familySliderId = `${sliderId}-family`;
-    const [maxReflections, setMaxReflections] = useState(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
+    const [maxReflections, setMaxReflections] = useState(() =>
+        scene.id === HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID
+            ? HYPERBOLIC_TILING_TRIPLE_FAMILY_REFLECTIONS
+            : HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
+    );
     const [familyTriple, setFamilyTriple] = useState<TilingParams>(() => ({
         p: 3,
         q: 3,
