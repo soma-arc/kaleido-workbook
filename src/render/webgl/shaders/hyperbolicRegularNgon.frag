@@ -113,85 +113,113 @@ struct TileData {
     float minAbsDistance;
 };
 
+const float INSIDE_EPS_BASE = 1e-6;  // 初期の内側判定閾値
+const float NUDGE_EPS       = 0.1;  // 反射直後の押し戻し量
+const float FD_H            = 2e-4;  // 有限差分のステップ
+
+// 64bit順序非依存ハッシュの更新（XORベース）
+uvec2 mixHash64(uvec2 acc, uint edge) {
+    uint h = edge * 1664525u + 1013904223u;
+    h ^= h << 13; h ^= h >> 17; h ^= h << 5;
+    acc.x ^= h * 0x9E3779B9u;
+    acc.y ^= (h ^ 0x85EBCA6Bu) * 0xC2B2AE35u;
+    return acc;
+}
+
+float hashToHue(uvec2 acc) {
+    uint folded = acc.x ^ (acc.y * 0x27D4EB2Du);
+    return fract(float(folded) * (1.0 / 4294967296.0) * 0.61803398875 + 0.12345);
+}
+
+// 辺 i のSDF（circle/line）を wrap
+float edgeSDF(int i, vec2 p) {
+    vec4 pk = uGeodesicsA[i];
+    return (uGeodesicKinds[i]==0) ? signedDistanceCircle(p, pk)
+                                  : signedDistanceLine(p,   pk);
+}
+
+// 辺 i のSDF勾配（有限差分・正規化）
+vec2 edgeSDFGrad(int i, vec2 p) {
+    float dx = edgeSDF(i, p + vec2(FD_H, 0.0)) - edgeSDF(i, p - vec2(FD_H, 0.0));
+    float dy = edgeSDF(i, p + vec2(0.0, FD_H)) - edgeSDF(i, p - vec2(0.0, FD_H));
+    vec2 g = vec2(dx, dy) * (0.5 / FD_H);
+    float L = max(length(g), 1e-30);
+    return g / L;
+}
+
 TileData shadeTiles(vec2 worldPoint, float tileMask) {
+    // 基本SDFとフレーム情報
     float minAbsDistance = 1e9;
     bool insideFundamental = true;
     for (int i = 0; i < MAX_GEODESICS; ++i) {
-        if (i >= uGeodesicCount) {
-            break;
-        }
-        vec4 packed = uGeodesicsA[i];
-        float distance;
-        if (uGeodesicKinds[i] == 0) {
-            distance = signedDistanceCircle(worldPoint, packed);
-        } else {
-            distance = signedDistanceLine(worldPoint, packed);
-        }
-        minAbsDistance = min(minAbsDistance, abs(distance));
-        if (distance < 0.0) {
-            insideFundamental = false;
-        }
+        if (i >= uGeodesicCount) break;
+        float d = edgeSDF(i, worldPoint);
+        minAbsDistance = min(minAbsDistance, abs(d));
+        if (d < -INSIDE_EPS_BASE) insideFundamental = false;
     }
 
-    vec2 tracePoint = worldPoint;
-    int reflections = 0;
-    int limit = max(uMaxReflections, 0);
+    vec2  z = worldPoint;
+    int   reflections = 0;
+    uvec2 tileId = uvec2(0u);
+
+    int  limit = max(uMaxReflections, 0);
     bool hitLimit = false;
+
     for (int step = 0; step < limit; ++step) {
-        bool reflected = false;
+        // ステップが進むほど判定をわずかに緩める（貼り付き回避）
+        float INSIDE_EPS = INSIDE_EPS_BASE * (1.0 + 0.5 * float(step) / float(max(1, limit)));
+
+        // 最も負の辺を選ぶ（同値はインデックス最小）
+        float mostNeg = 0.0;
+        int   idx     = -1;
         for (int i = 0; i < MAX_GEODESICS; ++i) {
-            if (i >= uGeodesicCount) {
-                break;
-            }
-            vec4 packed = uGeodesicsA[i];
-            float distance;
-            if (uGeodesicKinds[i] == 0) {
-                distance = signedDistanceCircle(tracePoint, packed);
-                if (distance < 0.0) {
-                    tracePoint = reflectCircle(tracePoint, packed);
-                    reflected = true;
-                }
-            } else {
-                distance = signedDistanceLine(tracePoint, packed);
-                if (distance < 0.0) {
-                    tracePoint = reflectLine(tracePoint, packed);
-                    reflected = true;
-                }
-            }
-            if (reflected) {
-                reflections += 1;
-                break;
+            if (i >= uGeodesicCount) break;
+            float d = edgeSDF(i, z);
+            if (d < mostNeg - 0.0) { mostNeg = d; idx = i; }
+            else if (abs(d - mostNeg) <= 1e-12 && d < -INSIDE_EPS) {
+                if (idx == -1 || i < idx) idx = i;
             }
         }
-        if (!reflected) {
-            break;
-        }
-        if (step == limit - 1) {
-            hitLimit = true;
-        }
+
+        // 全て非負（≧ -EPS）なら基本領域に到達
+        if (idx == -1 || mostNeg >= -INSIDE_EPS) break;
+
+        // その1本のみ反射
+        vec4 pk = uGeodesicsA[idx];
+        if (uGeodesicKinds[idx]==0) z = reflectCircle(z, pk);
+        else                        z = reflectLine(z,   pk);
+        reflections += 1;
+        tileId = mixHash64(tileId, uint(idx));
+
+        // 反射直後：その辺のSDFの勾配方向へ微小に押し戻す（境界から剥がす）
+        vec2 n = edgeSDFGrad(idx, z);
+        // SDFは負が「内側」なので、外側へ出すには +n 方向に押す
+        z += n * NUDGE_EPS;
+
+        if (step == limit - 1) hitLimit = true;
     }
 
+    // 色：順序非依存64bit ID を hue に写像
     vec3 bodyColor = vec3(0.0);
     if (reflections > 0 || insideFundamental) {
-        float hue = fract(float(reflections) * 0.16180339);
+        float hue = hashToHue(tileId);
         vec3 wavePalette = palette(hue);
         vec3 baseTone = normalize(uFillColor + vec3(1e-6));
         bodyColor = mix(baseTone, wavePalette, 0.65);
     }
-    if (hitLimit) {
-        bodyColor = vec3(0.0);
-    }
+    if (hitLimit) bodyColor = vec3(0.0);
 
-    vec4 textureColor = sampleTextures(tracePoint);
-    textureColor.a *= tileMask;
-    vec3 fillBlend = mix(bodyColor, textureColor.rgb, textureColor.a);
-    float fillAlpha = hitLimit ? 0.0 : max(textureColor.a, 0.85 * tileMask);
+    // テクスチャ合成（既存のまま）
+    vec4 tex = sampleTextures(z);
+    tex.a *= tileMask;
+    vec3 fill  = mix(bodyColor, tex.rgb, tex.a);
+    float alpha = hitLimit ? 0.0 : max(tex.a, 0.85 * tileMask);
 
-    TileData data;
-    data.color = fillBlend;
-    data.alpha = fillAlpha;
-    data.minAbsDistance = minAbsDistance;
-    return data;
+    TileData t;
+    t.color = fill;
+    t.alpha = alpha;
+    t.minAbsDistance = minAbsDistance;
+    return t;
 }
 
 void main() {
