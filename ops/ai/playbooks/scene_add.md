@@ -56,6 +56,10 @@
      - `tests/unit/ui/sceneLayout.embed.test.tsx` …… overlay の表示 / 非表示  
      - `tests/unit/ui/scenes/sceneDefinitions.embed.test.tsx` …… factory による拡張  
    - レスポンシブ対応が必要な場合は、`SceneLayout` 側のスタイル（または専用 CSS モジュール）でメディアクエリを設定し、幅が狭い環境ではレイアウトを縦並びに切り替える。
+5. **Hyperbolic シーン特有の Binding**  
+   - `HyperbolicSceneHost` は binding Hook (`useHyperbolicBindingForScene`) 経由で各シーン固有の状態を受け取る。新シーンを追加する場合は binding へ分岐を追加し、UI extras や Uniform (`uMaxReflections` など) をそこで確定させる。  
+   - 反射回数などが固定値の場合は UI を追加せず、binding から直接 pipeline へ注入する。  
+   - Embed 用 UI が最小構成（ラベル無しのスライダなど）で良いケースは、トリプルファミリーシーンと同じパターンを再利用する。
 
 ## 7. Storybook 整備
 1. CSF3 で `stories/<SceneName>.stories.tsx` を追加/更新し、Controls / Docs / Play / Accessibility を整備。

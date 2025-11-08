@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>正 n 双曲多角形（ポアンカレ円板）デモ</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --panel-bg: #ffffff;
+      --border: #e5e5e5;
+      --muted: #555555;
+      --btn-bg: #f9f9f9;
+      --btn-fg: #111111;
+      --unit: #666666;
+      --edge: #111111;
+      --circle: rgba(0,0,0,0.20);
+      --vertex: #d33;
+      --canvas-bg: #ffffff;
+      --danger: #b00020;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0f12;
+        --fg: #e8eaed;
+        --panel-bg: #111418;
+        --border: #2a2f36;
+        --muted: #9aa0a6;
+        --btn-bg: #1a1f24;
+        --btn-fg: #e8eaed;
+        --unit: #9aa0a6;
+        --edge: #e8eaed;
+        --circle: rgba(255,255,255,0.22);
+        --vertex: #ff6b6b;
+        --canvas-bg: #0b0f12;
+        --danger: #ff6b6b;
+      }
+    }
+
+    html, body { height: 100%; margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto; background: var(--bg); color: var(--fg); }
+    .wrap { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+    header { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .stage { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; box-sizing: border-box; height: calc(100vh - 54px); }
+    .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .row { margin-bottom: 10px; }
+    label { display: block; font-size: 13px; color: var(--fg); opacity: 0.9; margin-bottom: 4px; }
+    input[type="number"] { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); }
+    button { padding: 8px 12px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-fg); border-radius: 8px; cursor: pointer; }
+    button:active { transform: translateY(1px); }
+    .hint { font-size: 12px; color: var(--muted); }
+    canvas { width: 100%; height: 100%; background: var(--canvas-bg); border: 1px solid var(--border); border-radius: 10px; }
+    .kvs { font-variant-numeric: tabular-nums; }
+    #tests { font-size: 12px; background: color-mix(in oklab, var(--panel-bg) 92%, var(--fg) 8%); padding: 8px; border-radius: 8px; border: 1px solid var(--border); white-space: pre-wrap; color: var(--fg); }
+    .bad { color: var(--danger); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <strong>正 n 双曲多角形（ポアンカレ円板）</strong>
+    </header>
+    <div class="stage">
+      <div class="panel">
+        <div class="row">
+          <label>n（3以上）</label>
+          <input id="n" type="number" min="3" value="7" />
+        </div>
+        <div class="row">
+          <label>q（各頂点に集まる枚数：正 {n,q} の q、α=2π/q に設定）</label>
+          <input id="q" type="number" step="1" min="3" placeholder="例: 4" />
+        </div>
+        <div class="row hint">
+          <span id="condTxt">条件: (n-2)(q-2) &gt; 4（q 未指定）</span>
+        </div>
+        <div class="row">
+          <button id="draw">描画</button>
+          <button id="toggle">補助円/辺/頂点 切替</button>
+          <button id="runtests">テスト実行</button>
+        </div>
+        <div class="row kvs" id="info"></div>
+        <div class="row hint">
+          {n,q} が双曲条件 <code>(n-2)(q-2) &gt; 4<\/code> を満たさない場合は描画しません。
+        </div>
+        <div class="row">
+          <div id="tests" class="kvs" aria-live="polite"></div>
+        </div>
+      </div>
+      <canvas id="p"></canvas>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * @fileoverview 正 n 双曲多角形（ポアンカレ円板モデル）をブラウザで可視化する最小デモ。
+     * - UI で与えた (n, q) に対し、q が妥当なら α=2π/q を採用して正 n 角形を一枚だけ描画します。
+     * - 辺は「単位円と直交する円弧」のうち、**円板の内側**にある方を自動選択して描きます。
+     * - テストパネルでは幾何関係の数値検証を行います（T1〜T8）。
+     *
+     * 数式・規約
+     * - 距離はハイパーボリック距離（ポアンカレ円板）。
+     * - 直交円 C と単位円は |c|^2 - R^2 = 1 を満たします。
+     * - 変数名 rho は頂点のユークリッド半径（0<rho<1）です。
+     */
+
+    /**
+     * @typedef {{x:number, y:number}} Point - 2D ベクトル（ユークリッド座標）。
+     * @typedef {{center: Point, radius: number}} Circle - 円板と直交する円を含む一般の円。
+     * @typedef {{
+     *   n: number,
+     *   rho: number,
+     *   vertices: Point[],
+     *   circles: Circle[],
+     *   edgeLength: number,
+     *   alpha: number
+     * }} NGonData - 構成済み n 角形の幾何データ。
+     * @typedef {{
+     *   strokeWidth?: number,
+     *   vertexSize?: number,
+     *   showUnitCircle?: boolean,
+     *   showCircles?: boolean,
+     *   showEdges?: boolean,
+     *   showVertices?: boolean,
+     *   colorUnit?: string,
+     *   colorEdge?: string,
+     *   colorCircle?: string,
+     *   colorVertex?: string,
+     *   padding?: number
+     * }} DrawOptions - キャンバス描画オプション。
+     */
+
+    // ===== 数学ユーティリティ（DOMに依存しない） =====
+    /** @const {number} */
+    const TAU = Math.PI * 2;
+
+    /**
+     * 内積。
+     * @param {Point} a
+     * @param {Point} b
+     * @returns {number} a・b
+     */
+    const dot = (a,b) => a.x*b.x + a.y*b.y;
+
+    /**
+     * 二乗ノルム。
+     * @param {Point} a
+     * @returns {number} |a|^2
+     */
+    const norm2 = (a) => dot(a,a);
+
+    /**
+     * 角度 t の単位回転ベクトル。
+     * @param {number} t - ラジアン。
+     * @returns {Point} (cos t, sin t)
+     */
+    const rot = (t) => ({ x: Math.cos(t), y: Math.sin(t) });
+
+    /**
+     * ベクトルのスカラー倍。
+     * @param {Point} v
+     * @param {number} s
+     * @returns {Point}
+     */
+    const scale = (v,s) => ({ x: v.x*s, y: v.y*s });
+
+    /**
+     * ポアンカレ円板における双曲距離。
+     * 数式: \(\cosh d = 1 + \frac{2|z_1-z_2|^2}{(1-|z_1|^2)(1-|z_2|^2)}\)。
+     * @param {Point} z1
+     * @param {Point} z2
+     * @returns {number} d(z1,z2) ≥ 0
+     */
+    function hypDist(z1, z2) {
+      const dz2 = (z1.x - z2.x)**2 + (z1.y - z2.y)**2;
+      const d1 = 1 - norm2(z1);
+      const d2 = 1 - norm2(z2);
+      const arg = 1 + (2 * dz2) / (d1 * d2);
+      return Math.acosh(arg);
+    }
+
+    /**
+     * 正 n 角形の外接ユークリッド半径 rho から双曲辺長 ℓ を得る。
+     * 数式: \(\cosh(\ell/2) = 1 + \frac{8\rho^2\sin^2(\pi/n)}{(1-\rho^2)^2}\)。
+     * @param {number} n - 辺数 (n≥3)。
+     * @param {number} rho - 頂点のユークリッド半径 (0<rho<1)。
+     * @returns {number} edge length ℓ
+     */
+    function edgeLengthFromRho(n, rho) {
+      const S = Math.sin(Math.PI / n);
+      const num = 8 * (rho * rho) * (S * S);
+      const den = (1 - rho * rho) ** 2;
+      return Math.acosh(1 + num / den);
+    }
+
+    /**
+     * 双曲辺長から内角 α を算出。
+     * 数式: \(\cosh(\ell/2) = \frac{\cos(\pi/n)}{\sin(\alpha/2)}\)。
+     * @param {number} n - 辺数。
+     * @param {number} edgeLength - ℓ。
+     * @returns {number} α (rad)。
+     */
+    function alphaFromEdgeLength(n, edgeLength) {
+      const c = Math.cos(Math.PI / n);
+      const t = c / Math.cosh(edgeLength / 2);
+      const clamped = Math.min(1, Math.max(0, t));
+      return 2 * Math.asin(clamped);
+    }
+
+    /**
+     * 内角 α から双曲辺長 ℓ を算出（上式の反転）。
+     * @param {number} n - 辺数。
+     * @param {number} alpha - 内角（0 < α < (1-2/n)π）。
+     * @returns {number} ℓ。
+     * @throws {Error} α が（数値誤差を含め）許容域外。
+     */
+    function edgeLengthFromAlpha(n, alpha) {
+      const c = Math.cos(Math.PI / n);
+      const s = Math.sin(alpha / 2);
+      if (s <= 0 || s >= 1) throw new Error("alpha out of range");
+      const val = c / s;
+      return 2 * Math.acosh(val);
+    }
+
+    /**
+     * 双曲半径 rHyp (中心からの距離) をユークリッド半径 rho に変換。
+     * @param {number} rHyp - 双曲半径。
+     * @returns {number} rho = tanh(rHyp/2)
+     */
+    const rhoFromHyperbolicRadius = (rHyp) => Math.tanh(rHyp / 2);
+
+    /**
+     * 与えられた双曲辺長から rho を数値的に求める（二分探索）。
+     * @param {number} n - 辺数。
+     * @param {number} edgeLength - 目標 ℓ。
+     * @param {number} [tol=1e-12] - 収束許容誤差（絶対誤差）。
+     * @returns {number} rho（0<rho<1）。
+     */
+    function rhoFromEdgeLength(n, edgeLength, tol = 1e-12) {
+      let lo = 1e-12, hi = 1 - 1e-12;
+      for (let it = 0; it < 200; it++) {
+        const mid = 0.5 * (lo + hi);
+        const val = edgeLengthFromRho(n, mid);
+        if (Math.abs(val - edgeLength) < tol) return mid;
+        if (val > edgeLength) hi = mid; else lo = mid;
+      }
+      return 0.5 * (lo + hi);
+    }
+
+    /**
+     * ユークリッド半径 rho の円周上に等角度で配置された正 n 角形の頂点列を返す。
+     * @param {number} n - 辺数。
+     * @param {number} rho - 頂点半径 (0<rho<1)。
+     * @param {number} [rotation=0] - 回転位相（rad）。
+     * @returns {Point[]} 頂点列（反時計回り）。
+     */
+    function regularVertices(n, rho, rotation = 0) {
+      const verts = [];
+      for (let k = 0; k < n; k++) {
+        const theta = rotation + (TAU * k) / n;
+        verts.push(scale(rot(theta), rho));
+      }
+      return verts;
+    }
+
+    /**
+     * 単位円と直交し、2 点 v, w を通る円（辺のキャリア）を返す。
+     * 解は線形方程式と直交条件 |c|^2 - R^2 = 1 から得る。
+     * @param {Point} v
+     * @param {Point} w
+     * @returns {Circle} {center, radius}
+     * @throws {Error} v, w, 原点が同一直線上（退化）で解なし。
+     */
+    function orthCircleThrough(v, w) {
+      const a = v.x, b = v.y, c = w.x, d = w.y;
+      const rhs1 = 0.5 * (1 + a*a + b*b);
+      const rhs2 = 0.5 * (1 + c*c + d*d);
+      const det = a*d - b*c;
+      if (Math.abs(det) < 1e-15) throw new Error("隣接頂点が原点と共線です");
+      const cx = (rhs1 * d - rhs2 * b) / det;
+      const cy = (-rhs1 * c + rhs2 * a) / det;
+      const R = Math.sqrt(cx*cx + cy*cy - 1);
+      return { center: { x: cx, y: cy }, radius: R };
+    }
+
+    /**
+     * 角度差を (-π, π] に正規化。
+     * @param {number} a - ラジアン角。
+     * @returns {number} 範囲内角。
+     */
+    const normalizeDelta = (a) => {
+      let x = a;
+      while (x <= -Math.PI) x += TAU;
+      while (x > Math.PI) x -= TAU;
+      return x;
+    };
+
+    /**
+     * 正 n 双曲多角形を構成して返す。
+     * 省略パラメータから rho を一意に決定し、辺ごとの直交円を組み立てます。
+     * @param {number} n - 辺数 (n≥3)。
+     * @param {{rho?:number, rHyp?:number, edgeLength?:number, alpha?:number, rotation?:number}} [opt] - どれか一つで十分。
+     * @returns {NGonData}
+     * @throws {Error} 入力が物理的に不可能（例: rho∉(0,1), α 範囲外 など）。
+     * @example
+     * const d = buildRegularHyperbolicNGon(7, { alpha: 2*Math.PI/4 });
+     */
+    function buildRegularHyperbolicNGon(n, opt = {}) {
+      if (n < 3) throw new Error("n >= 3 が必要です");
+      let rho;
+      if (typeof opt.rho === 'number') {
+        rho = opt.rho;
+      } else if (typeof opt.rHyp === 'number') {
+        rho = rhoFromHyperbolicRadius(opt.rHyp);
+      } else if (typeof opt.edgeLength === 'number') {
+        rho = rhoFromEdgeLength(n, opt.edgeLength);
+      } else if (typeof opt.alpha === 'number') {
+        const maxAlpha = (1 - 2/n) * Math.PI - 1e-9;
+        if (!(opt.alpha > 0 && opt.alpha < maxAlpha)) throw new Error("α の範囲が不正です");
+        const ell = edgeLengthFromAlpha(n, opt.alpha);
+        rho = rhoFromEdgeLength(n, ell);
+      } else {
+        rho = 0.6;
+      }
+      if (!(rho > 0 && rho < 1)) throw new Error("rho は (0,1) 範囲にしてください");
+
+      const rotation = opt.rotation || 0;
+      const vertices = regularVertices(n, rho, rotation);
+      const circles = [];
+      for (let k = 0; k < n; k++) {
+        const v = vertices[k];
+        const w = vertices[(k + 1) % n];
+        circles.push(orthCircleThrough(v, w));
+      }
+      const edgeLength = hypDist(vertices[0], vertices[1]);
+      const alpha = alphaFromEdgeLength(n, edgeLength);
+      return { n, rho, vertices, circles, edgeLength, alpha };
+    }
+
+    /**
+     * 正 n 双曲多角形をキャンバスに描く。
+     * 単位円、各辺のキャリア円（任意）、頂点の点描などを制御可能。
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {NGonData} data
+     * @param {DrawOptions} [opts]
+     * @returns {void}
+     */
+    function drawNGonOnCanvas(ctx, data, opts = {}) {
+      const {
+        strokeWidth = 1.5,
+        vertexSize = 3,
+        showUnitCircle = true,
+        showCircles = false,
+        showEdges = true,
+        showVertices = true,
+        colorUnit = '#888',
+        colorEdge = '#111',
+        colorCircle = 'rgba(0,0,0,0.15)',
+        colorVertex = '#d33',
+        padding = 8,
+      } = opts;
+
+      const W = ctx.canvas.width;
+      const H = ctx.canvas.height;
+      const s = 0.5 * Math.min(W, H) - padding;
+      const cx = 0.5 * W, cy = 0.5 * H;
+      const toPx = (p) => ({ x: cx + s * p.x, y: cy - s * p.y });
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (showUnitCircle) {
+        ctx.beginPath();
+        ctx.strokeStyle = colorUnit;
+        ctx.arc(cx, cy, s, 0, TAU);
+        ctx.stroke();
+      }
+
+      if (showCircles) {
+        ctx.strokeStyle = colorCircle;
+        for (const C of data.circles) {
+          const pc = toPx(C.center);
+          ctx.beginPath();
+          ctx.arc(pc.x, pc.y, s * C.radius, 0, TAU);
+          ctx.stroke();
+        }
+      }
+
+      if (showEdges) {
+        ctx.strokeStyle = colorEdge;
+        for (let k = 0; k < data.n; k++) {
+          const v = data.vertices[k];
+          const w = data.vertices[(k + 1) % data.n];
+          const C = data.circles[k];
+          const angV = Math.atan2(v.y - C.center.y, v.x - C.center.x);
+          const angW = Math.atan2(w.y - C.center.y, w.x - C.center.x);
+
+          const delta1 = normalizeDelta(angW - angV);
+          const delta2 = (delta1 > 0 ? delta1 - TAU : delta1 + TAU);
+
+          function arcMidInside(delta) {
+            const mid = angV + 0.5 * delta;
+            const xm = C.center.x + C.radius * Math.cos(mid);
+            const ym = C.center.y + C.radius * Math.sin(mid);
+            return (xm*xm + ym*ym) < 1 - 1e-12;
+          }
+
+          const useDelta = arcMidInside(delta1) ? delta1 : delta2;
+          const Pc = toPx(C.center);
+          ctx.beginPath();
+          ctx.arc(Pc.x, Pc.y, s * C.radius, angV, angV + useDelta, useDelta < 0);
+          ctx.stroke();
+        }
+      }
+
+      if (showVertices) {
+        ctx.fillStyle = colorVertex;
+        for (const v of data.vertices) {
+          const p = toPx(v);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, vertexSize, 0, TAU);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // ===== DOM 準備ができてから初期化 =====
+
+    /**
+     * DOMContentLoaded 後にコールバックを実行する小ユーティリティ。
+     * @param {() => void} fn - 初期化関数。
+     */
+    function onReady(fn) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn, { once: true });
+      } else {
+        fn();
+      }
+    }
+
+    onReady(() => {
+      /**
+       * id から要素を取得（存在しないとき null）。
+       * @param {string} id
+       * @returns {HTMLElement|null}
+       */
+      const $ = (id) => document.getElementById(id);
+
+      /** @type {HTMLCanvasElement|null} */
+      const canvas = /** @type {HTMLCanvasElement} */($('p'));
+      const info = $('info');
+      const testsOut = $('tests');
+      const condTxt = $('condTxt');
+      const state = { showCircles: false, showEdges: true, showVertices: true };
+
+      if (!canvas || !info || !testsOut) {
+        console.error('必須要素が見つかりませんでした');
+        return;
+      }
+
+      /**
+       * デバイスピクセル比。
+       * @returns {number}
+       */
+      function getDevicePixelRatio() { return (window.devicePixelRatio || 1); }
+
+      /**
+       * キャンバスを HiDPI 向けにリサイズ。
+       * レイアウトサイズ×devicePixelRatio を物理ピクセル解像度に反映します。
+       */
+      function resizeCanvasForHiDPI() {
+        const ratio = getDevicePixelRatio();
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(1, Math.round(rect.width * ratio));
+        const h = Math.max(1, Math.round(rect.height * ratio));
+        if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      }
+
+      /** @type {NGonData|null} */
+      let current = null;
+
+      /**
+       * UI から n, q を読み取り、数値として返す。
+       * @returns {{n:number, q:number|undefined}}
+       */
+      function parseParams() {
+        const nEl = $('n');
+        const n = Math.max(3, Number(nEl && nEl.value || 7));
+        const q = $('q') && $('q').value ? Number($('q').value) : undefined;
+        return { n, q };
+      }
+
+      /**
+       * 画面を再描画。条件表示の更新・入力検証・多角形構成・描画をまとめて行う。
+       * @returns {void}
+       */
+      function draw() {
+        try {
+          resizeCanvasForHiDPI();
+          const ctx = canvas.getContext('2d');
+          const { n, q } = parseParams();
+
+          // UI: タイリング条件の表示と強調（(n-2)(q-2) > 4）
+          if (condTxt) {
+            if (typeof q === 'number' && isFinite(q) && q >= 3) {
+              const prod = (n - 2) * (q - 2);
+              const ok = prod > 4;
+              condTxt.textContent = `条件: (n-2)(q-2) > 4 → LHS=${prod.toFixed(4)} : ${ok ? 'OK' : 'NG'}`;
+              condTxt.classList.toggle('bad', !ok);
+            } else {
+              condTxt.textContent = '条件: (n-2)(q-2) > 4（q 未指定）';
+              condTxt.classList.remove('bad');
+            }
+          }
+
+          // q 指定時の検証と α 設定（描画抑止の判定は 1/n + 1/q < 1/2 を使用：同値）
+          /** @type {{alpha?:number}} */
+          let opt = {};
+          if (typeof q === 'number' && isFinite(q) && q >= 3) {
+            if ((1/n + 1/q) >= 0.5) {
+              throw new Error(`{${n}, ${q}} は双曲条件 1/n + 1/q < 1/2（≡ (n-2)(q-2) > 4）を満たしません`);
+            }
+            opt.alpha = (2*Math.PI)/q;
+          }
+
+          current = buildRegularHyperbolicNGon(n, opt);
+
+          // ダークモード用の配色を CSS 変数から取得
+          const cs = getComputedStyle(document.documentElement);
+          const colorUnit = cs.getPropertyValue('--unit').trim() || '#888';
+          const colorEdge = cs.getPropertyValue('--edge').trim() || '#111';
+          const colorCircle = cs.getPropertyValue('--circle').trim() || 'rgba(0,0,0,0.2)';
+          const colorVertex = cs.getPropertyValue('--vertex').trim() || '#d33';
+          const canvasBg = cs.getPropertyValue('--canvas-bg').trim();
+          if (canvasBg) canvas.style.background = canvasBg;
+
+          drawNGonOnCanvas(ctx, current, {
+            showCircles: state.showCircles,
+            showEdges: state.showEdges,
+            showVertices: state.showVertices,
+            colorUnit,
+            colorEdge,
+            colorCircle,
+            colorVertex,
+          });
+
+          const qLabel = (typeof q === 'number') ? `,  q=${q}` : '';
+          info.textContent = `rho=${current.rho.toFixed(6)},  ℓ=${current.edgeLength.toFixed(6)},  α=${current.alpha.toFixed(6)} rad${qLabel}`;
+        } catch (e) {
+          info.textContent = `エラー: ${e.message || e}`;
+        }
+      }
+
+      // ===== テスト =====
+
+      /**
+       * ほぼ等しいか（許容誤差 eps）。
+       * @param {number} a
+       * @param {number} b
+       * @param {number} [eps=1e-9]
+       * @returns {boolean}
+       */
+      function nearly(a, b, eps = 1e-9) { return Math.abs(a - b) <= eps; }
+
+      /**
+       * テスト出力に 1 行追記。
+       * @param {string} line
+       */
+      function report(line) { testsOut.textContent += line + "\n"; }
+
+      /** テスト出力をクリア。 */
+      function clearReport() { testsOut.textContent = ''; }
+
+      /**
+       * 単体・整合性テスト群を実行し、結果をパネルへ出力します。
+       * 既存テストは変更せず、必要な追加のみ行います（T8 ほか）。
+       */
+      function runTests() {
+        clearReport();
+        try {
+          const { n, q } = parseParams();
+          const data = buildRegularHyperbolicNGon(n, (typeof q==='number'&&q>=3)?{alpha:(2*Math.PI)/q}:{ });
+          report(`[Test] n=${data.n}, rho=${data.rho.toFixed(6)}`);
+
+          // T1: 端点が円上 & 直交条件
+          let pass1 = 0, total1 = 0;
+          for (let k = 0; k < data.n; k++) {
+            const v = data.vertices[k];
+            const w = data.vertices[(k + 1) % data.n];
+            const C = data.circles[k];
+            const dv = Math.hypot(v.x - C.center.x, v.y - C.center.y);
+            const dw = Math.hypot(w.x - C.center.x, w.y - C.center.y);
+            const cond1 = nearly(dv, C.radius, 1e-8) && nearly(dw, C.radius, 1e-8);
+            const cond2 = nearly((C.center.x**2 + C.center.y**2) - C.radius**2, 1.0, 1e-8);
+            if (cond1 && cond2) pass1++;
+            total1++;
+          }
+          report(`T1: edge-circle endpoints on circle & orthogonality  => ${pass1}/${total1}`);
+
+          // T2: cosh(ℓ/2) と cos(pi/n)/sin(α/2)
+          const lhs = Math.cosh(data.edgeLength / 2);
+          const rhs = Math.cos(Math.PI / data.n) / Math.sin(data.alpha / 2);
+          report(`T2: relation cosh(ℓ/2) vs cos(pi/n)/sin(α/2)  => diff=${Math.abs(lhs - rhs).toExponential(2)}`);
+
+          // T3: edgeLengthFromRho と hypDist の一致
+          const ellByRho = edgeLengthFromRho(data.n, data.rho);
+          const ellByPair = hypDist(data.vertices[0], data.vertices[1]);
+          report(`T3: edgeLengthFromRho vs hypDist  => diff=${Math.abs(ellByRho - ellByPair).toExponential(2)}`);
+
+          // T4: 全組合せの直交円 直交条件（内部検証用に独自再生成）
+          let pass4 = 0, total4 = 0;
+          for (let i = 0; i < data.vertices.length; i++) {
+            for (let j = i + 1; j < data.vertices.length; j++) {
+              try {
+                const C = orthCircleThrough(data.vertices[i], data.vertices[j]);
+                const cond = nearly((C.center.x**2 + C.center.y**2) - C.radius**2, 1.0, 1e-8);
+                if (cond) pass4++;
+                total4++;
+              } catch (_) { /* スキップ */ }
+            }
+          }
+          report(`T4: all-pairs orthogonality checks  => ${pass4}/${total4} (skipped退化あり)`);
+
+          // T5: q 指定時の α=2π/q と qα=2π、T6: 双曲タイル条件 (1/n+1/q<1/2)
+          if (typeof q === 'number' && isFinite(q) && q >= 3) {
+            const aGoal = (2*Math.PI)/q;
+            report(`T5a: alpha vs 2π/q => diff=${Math.abs(data.alpha - aGoal).toExponential(2)}`);
+            report(`T5b: q*alpha vs 2π => diff=${Math.abs(q*data.alpha - 2*Math.PI).toExponential(2)}`);
+            const cond = (1/n + 1/q) < 0.5;
+            report(`T6: tiling condition 1/n + 1/q < 1/2 => ${cond ? 'OK' : 'NG'}`);
+            // T8: 同値条件の確認 (n-2)(q-2) > 4
+            const prod = (n - 2) * (q - 2);
+            const cond2 = prod > 4;
+            report(`T8: equivalence check (n-2)(q-2) > 4 => ${cond2 ? 'OK' : 'NG'} (LHS=${prod.toFixed(4)})`);
+          }
+
+          // T7: n 入力の境界（n>=3）
+          report(`T7: n>=3 => ${n>=3 ? 'OK' : 'NG'}`);
+
+          // T9: 数値安定性（極端な n に対する α の範囲チェック）
+          try {
+            const dHi = buildRegularHyperbolicNGon(50, { alpha: 2*Math.PI/7 });
+            const hiOk = dHi.alpha > 0 && dHi.alpha < Math.PI;
+            report(`T9: stability for n=50, alpha~2π/7 => ${hiOk ? 'OK' : 'NG'}`);
+          } catch (e) {
+            report(`T9: stability for n=50 failed: ${e.message || e}`);
+          }
+
+          report("Tests completed.");
+        } catch (e) {
+          report(`テスト失敗: ${e.message || e}`);
+        }
+      }
+
+      // ===== イベント設定（要素存在を確認してから） =====
+      const nEl = $('n'); if (nEl) nEl.addEventListener('input', () => { const v = Number(nEl.value || 3); if (v >= 3) draw(); });
+      const qEl = $('q'); if (qEl) qEl.addEventListener('input', () => { const qv = Number(qEl.value || 0); if (qv >= 3) draw(); });
+      const drawBtn = $('draw'); if (drawBtn) drawBtn.addEventListener('click', draw);
+      const toggleBtn = $('toggle'); if (toggleBtn) toggleBtn.addEventListener('click', () => {
+        if (state.showCircles && state.showEdges && state.showVertices) {
+          state.showCircles = true; state.showEdges = true; state.showVertices = false;
+        } else if (state.showCircles && state.showEdges && !state.showVertices) {
+          state.showCircles = true; state.showEdges = false; state.showVertices = true;
+        } else if (state.showCircles && !state.showEdges && state.showVertices) {
+          state.showCircles = false; state.showEdges = true; state.showVertices = true;
+        } else {
+          state.showCircles = true; state.showEdges = true; state.showVertices = true;
+        }
+        draw();
+      });
+      const testsBtn = $('runtests'); if (testsBtn) testsBtn.addEventListener('click', runTests);
+
+      ['n','q'].forEach(id => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter') draw(); });
+      });
+
+      window.addEventListener('resize', draw);
+
+      // 初期描画 & テスト
+      draw();
+      runTests();
+    });
+  </script>
+</body>
+</html>
