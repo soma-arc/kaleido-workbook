@@ -1,4 +1,5 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
+import { buildHyperbolicRegularNgon } from "@/geom/polygon/hyperbolicRegular";
 import type { Geodesic } from "@/geom/primitives/geodesic";
 import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
@@ -39,6 +40,12 @@ export type HyperbolicScene = SceneBase & {
         faces: TriangleFace[];
         edges: GeodesicPrimitive[];
     };
+};
+
+export type HyperbolicRegularNgonSceneParams = {
+    n: number;
+    q: number;
+    rotation?: number;
 };
 
 export type EuclideanScene = SceneBase & {
@@ -89,6 +96,20 @@ export function buildHyperbolicScene(
             faces,
             edges: tileEdges,
         },
+        textures: options.textures ?? [],
+    };
+}
+
+export function buildHyperbolicRegularNgonScene(
+    params: HyperbolicRegularNgonSceneParams,
+    vp: Viewport,
+    options: { textures?: SceneTextureLayer[] } = {},
+): HyperbolicScene {
+    const polygon = buildHyperbolicRegularNgon(params);
+    return {
+        geometry: GEOMETRY_KIND.hyperbolic,
+        disk: unitDiskSpec(vp),
+        renderGeodesics: polygon.geodesics,
         textures: options.textures ?? [],
     };
 }

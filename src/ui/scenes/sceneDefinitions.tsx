@@ -7,6 +7,7 @@ import { euclideanHalfPlanesScene } from "@/scenes/euclidean/half-planes";
 import { euclideanHingeScene } from "@/scenes/euclidean/hinge";
 import { euclideanMultiPlaneScene } from "@/scenes/euclidean/multi-plane";
 import { euclideanSingleHalfPlaneScene } from "@/scenes/euclidean/single-half-plane";
+import { hyperbolicRegularNgonScene } from "@/scenes/hyperbolic/regular-ngon";
 import { hyperbolicTilingScene } from "@/scenes/hyperbolic/tiling";
 import { hyperbolicTripleReflectionScene } from "@/scenes/hyperbolic/tiling-333";
 import { hyperbolicTripleFamilyScene } from "@/scenes/hyperbolic/tiling-triple-family";
@@ -23,6 +24,10 @@ type SceneDefinitionEntry = SceneDefinitionInput & { key: SceneAlias };
 
 const HYPERBOLIC_TILING_SCENE: SceneDefinitionEntry = {
     ...hyperbolicTilingScene,
+};
+
+const HYPERBOLIC_REGULAR_NGON_SCENE: SceneDefinitionEntry = {
+    ...hyperbolicRegularNgonScene,
 };
 
 const HYPERBOLIC_TRIPLE_REFLECTION_SCENE: SceneDefinitionEntry = {
@@ -71,6 +76,7 @@ const SPHERICAL_TETRAHEDRON_SCENE: SceneDefinitionEntry = {
 
 type SceneAlias =
     | "hyperbolicTiling"
+    | "hyperbolicRegularNgon"
     | "hyperbolicTripleFamily"
     | "hyperbolicTripleReflection"
     | "debugTexture"
@@ -85,6 +91,7 @@ type SceneAlias =
 
 const BASE_SCENE_INPUTS: SceneDefinitionEntry[] = [
     HYPERBOLIC_TILING_SCENE,
+    HYPERBOLIC_REGULAR_NGON_SCENE,
     HYPERBOLIC_TRIPLE_FAMILY_SCENE,
     HYPERBOLIC_TRIPLE_REFLECTION_SCENE,
     EUCLIDEAN_DEBUG_TEXTURE_SCENE,
