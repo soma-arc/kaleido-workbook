@@ -1,6 +1,6 @@
 export * from "@/geom/core/math";
 export * from "@/geom/core/types";
-
+export * from "@/geom/polygon/hyperbolicRegular";
 export * from "@/geom/primitives/circle";
 export * from "@/geom/primitives/geodesic";
 export * from "@/geom/primitives/halfPlane";
