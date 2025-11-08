@@ -19,6 +19,7 @@ import fragmentShaderSourceTemplate from "@/render/webgl/shaders/hyperbolicTripl
 import { createTextureManager, type TextureManager } from "@/render/webgl/textureManager";
 import { MAX_TEXTURE_SLOTS } from "@/render/webgl/textures";
 import type { HyperbolicTripleReflectionUniforms } from "@/ui/scenes/types";
+import { HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID } from "../tiling-triple-family";
 import {
     HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
     HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
@@ -257,6 +258,11 @@ function createPipeline(
 
 registerSceneWebGLPipeline(
     HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID,
+    HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
+    createPipeline,
+);
+registerSceneWebGLPipeline(
+    HYPERBOLIC_TRIPLE_FAMILY_SCENE_ID,
     HYPERBOLIC_TRIPLE_REFLECTION_PIPELINE_ID,
     createPipeline,
 );

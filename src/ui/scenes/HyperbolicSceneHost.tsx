@@ -1,16 +1,9 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { getCanvasPixelRatio } from "@/render/canvas";
 import type { GeometryRenderRequest, ViewportModifier } from "@/render/engine";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
-import { HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID } from "@/scenes/hyperbolic/tiling-333";
-import {
-    HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS,
-    HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-    HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
-} from "@/scenes/hyperbolic/tiling-333/constants";
-import type { HyperbolicTiling333ControlsProps } from "@/scenes/hyperbolic/tiling-333/ui/Controls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
@@ -23,6 +16,7 @@ import type {
     SceneDefinition,
     SceneId,
 } from "@/ui/scenes/types";
+import { useHyperbolicBindingForScene } from "./hyperbolicBindings";
 import {
     createDefaultEmbedOverlay,
     resolveSceneControls,
@@ -53,9 +47,16 @@ export function HyperbolicSceneHost({
     const textureInput = useTextureInput();
     const sliderId = useId();
     const triangleSliderId = `${sliderId}-triangle`;
-    const [maxReflections, setMaxReflections] = useState(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
-
-    const isReflectionScene = scene.id === HYPERBOLIC_TRIPLE_REFLECTION_SCENE_ID;
+    const createId = useCallback((suffix: string) => `${sliderId}-${suffix}`, [sliderId]);
+    const binding = useHyperbolicBindingForScene(scene, {
+        scene,
+        triangle,
+        sliderId,
+        triangleSliderId,
+        createId,
+    });
+    const bindingUniforms = binding?.uniforms as HyperbolicTripleReflectionUniforms | undefined;
+    const paramsOverride = binding?.paramsOverride;
 
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
@@ -89,25 +90,11 @@ export function HyperbolicSceneHost({
         [],
     );
 
-    useEffect(() => {
-        if (isReflectionScene) {
-            setMaxReflections(HYPERBOLIC_TILING_333_DEFAULT_REFLECTIONS);
-        }
-    }, [isReflectionScene]);
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
     useEffect(() => {
         resetPanZoom();
         panDragRef.current = null;
     }, [scene.id, resetPanZoom]);
-
-    const handleMaxReflectionsChange = useCallback((next: number) => {
-        const clamped = Math.min(
-            HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-            Math.max(HYPERBOLIC_TILING_333_MIN_REFLECTIONS, Math.round(next)),
-        );
-        setMaxReflections(clamped);
-    }, []);
 
     const renderHyperbolicScene = useCallback(
         (viewportModifierOverride?: ViewportModifier) => {
@@ -119,9 +106,10 @@ export function HyperbolicSceneHost({
             if (!engine || !canvas || !ready) {
                 return;
             }
+            const params = paramsOverride ?? scene.fixedHyperbolicParams ?? triangle.params;
             const request: GeometryRenderRequest = {
                 geometry: GEOMETRY_KIND.hyperbolic,
-                params: scene.fixedHyperbolicParams ?? triangle.params,
+                params,
                 scene,
                 textures: textureInput.textures,
                 viewportModifier: viewportModifierOverride
@@ -130,22 +118,20 @@ export function HyperbolicSceneHost({
                       ? panZoomModifierRef.current
                       : undefined,
             };
-            if (isReflectionScene) {
-                request.sceneUniforms = {
-                    uMaxReflections: maxReflections,
-                } satisfies HyperbolicTripleReflectionUniforms;
+            if (bindingUniforms) {
+                request.sceneUniforms = bindingUniforms;
             }
             engine.render(request);
         },
         [
             scene,
             triangle,
+            paramsOverride,
             textureInput.textures,
             ready,
             renderEngineRef,
             canvasRef,
-            isReflectionScene,
-            maxReflections,
+            bindingUniforms,
             panZoomModifierRef,
         ],
     );
@@ -306,49 +292,43 @@ export function HyperbolicSceneHost({
         </>
     );
 
-    const reflectionControls = useMemo<HyperbolicTiling333ControlsProps | undefined>(() => {
-        if (!isReflectionScene) {
-            return undefined;
-        }
-        return {
-            sliderId,
-            min: HYPERBOLIC_TILING_333_MIN_REFLECTIONS,
-            max: HYPERBOLIC_TILING_333_MAX_REFLECTIONS,
-            step: 1,
-            value: maxReflections,
-            onChange: handleMaxReflectionsChange,
-        };
-    }, [isReflectionScene, sliderId, maxReflections, handleMaxReflectionsChange]);
-
-    const sceneControlsExtras = useMemo(() => {
-        const extras: SceneContextExtras = {
+    const baseControlsExtras = useMemo<SceneContextExtras>(
+        () => ({
             triangle,
             textureInput,
             triangleSliderId,
-        };
-        if (reflectionControls) {
-            extras.reflectionControls = reflectionControls;
+        }),
+        [triangle, textureInput, triangleSliderId],
+    );
+
+    const controlsExtras = useMemo<SceneContextExtras>(() => {
+        if (!binding?.controlsExtras) {
+            return baseControlsExtras;
         }
-        return extras;
-    }, [triangle, textureInput, triangleSliderId, reflectionControls]);
+        return { ...baseControlsExtras, ...binding.controlsExtras };
+    }, [baseControlsExtras, binding?.controlsExtras]);
 
     const controls = resolveSceneControls({
         scene,
         renderBackend: renderMode,
         defaultControls,
-        extras: sceneControlsExtras,
+        extras: controlsExtras,
     });
 
-    const overlayExtras = useMemo(() => {
-        const extras: SceneContextExtras = {
+    const baseOverlayExtras = useMemo<SceneContextExtras>(
+        () => ({
             triangle,
             triangleSliderId,
-        };
-        if (reflectionControls) {
-            extras.reflectionControls = reflectionControls;
+        }),
+        [triangle, triangleSliderId],
+    );
+
+    const overlayExtras = useMemo<SceneContextExtras>(() => {
+        if (!binding?.overlayExtras) {
+            return baseOverlayExtras;
         }
-        return extras;
-    }, [triangle, triangleSliderId, reflectionControls]);
+        return { ...baseOverlayExtras, ...binding.overlayExtras };
+    }, [baseOverlayExtras, binding?.overlayExtras]);
 
     const defaultOverlay = useMemo(
         () =>
