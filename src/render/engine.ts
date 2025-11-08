@@ -3,7 +3,11 @@ import type { HalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import type { TilingParams } from "@/geom/triangle/tiling";
 import type { CircleInversionState } from "@/ui/scenes/circleInversionConfig";
-import type { SceneDefinition } from "@/ui/scenes/types";
+import type {
+    HyperbolicParamsOverride,
+    HyperbolicSceneFactoryContext,
+    SceneDefinition,
+} from "@/ui/scenes/types";
 import { attachResize, setCanvasDPR } from "./canvas";
 import {
     type CanvasTileRenderOptions,
@@ -41,7 +45,8 @@ type RenderRequestBase = {
 export type GeometryRenderRequest =
     | ({
           geometry: typeof GEOMETRY_KIND.hyperbolic;
-          params: TilingParams;
+          params?: TilingParams;
+          hyperbolicParams?: HyperbolicParamsOverride;
       } & RenderRequestBase)
     | ({
           geometry: typeof GEOMETRY_KIND.euclidean;
@@ -77,6 +82,37 @@ function extractSceneTextures(layers?: TextureLayer[]): SceneTextureLayer[] {
         transform: layer.transform,
         opacity: layer.opacity,
     }));
+}
+
+type HyperbolicRenderRequest = Extract<
+    GeometryRenderRequest,
+    { geometry: typeof GEOMETRY_KIND.hyperbolic }
+>;
+
+function buildHyperbolicRenderScene(
+    request: HyperbolicRenderRequest,
+    viewport: Viewport,
+    textures: SceneTextureLayer[],
+): RenderScene {
+    const sceneDefinition = request.scene;
+    const override = request.hyperbolicParams;
+    if (sceneDefinition?.hyperbolicSceneFactory) {
+        if (!override) {
+            throw new Error("Missing hyperbolic parameters for custom scene factory");
+        }
+        const context: HyperbolicSceneFactoryContext = {
+            viewport,
+            textures,
+            params: override,
+            scene: sceneDefinition,
+        };
+        return sceneDefinition.hyperbolicSceneFactory(context);
+    }
+    const triangleParams = override?.kind === "triangle" ? override.params : request.params;
+    if (!triangleParams) {
+        throw new Error("Hyperbolic triangle parameters are required");
+    }
+    return buildHyperbolicScene(triangleParams, viewport, { textures });
 }
 
 /**
@@ -126,13 +162,14 @@ export function createRenderEngine(
         const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
         try {
-            scene =
-                request.geometry === GEOMETRY_KIND.hyperbolic
-                    ? buildHyperbolicScene(request.params, viewport, { textures: sceneTextures })
-                    : buildEuclideanScene(request.halfPlanes, viewport, {
-                          textures: sceneTextures,
-                          inversion: request.inversion,
-                      });
+            if (request.geometry === GEOMETRY_KIND.hyperbolic) {
+                scene = buildHyperbolicRenderScene(request, viewport, sceneTextures);
+            } else {
+                scene = buildEuclideanScene(request.halfPlanes, viewport, {
+                    textures: sceneTextures,
+                    inversion: request.inversion,
+                });
+            }
         } catch (error) {
             console.error("[RenderEngine] Failed to build scene", error);
             ctx.clearRect(0, 0, canvas.width, canvas.height);

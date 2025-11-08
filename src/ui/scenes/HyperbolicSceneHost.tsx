@@ -12,6 +12,7 @@ import { usePanZoomState } from "@/ui/hooks/usePanZoomState";
 import { useRenderEngineWithCanvas } from "@/ui/hooks/useRenderEngine";
 import { useTextureInput } from "@/ui/hooks/useTextureSource";
 import type {
+    HyperbolicParamsOverride,
     HyperbolicTripleReflectionUniforms,
     SceneDefinition,
     SceneId,
@@ -56,7 +57,16 @@ export function HyperbolicSceneHost({
         createId,
     });
     const bindingUniforms = binding?.uniforms as HyperbolicTripleReflectionUniforms | undefined;
-    const paramsOverride = binding?.paramsOverride;
+    const hyperbolicParams = useMemo<HyperbolicParamsOverride>(() => {
+        if (binding?.paramsOverride) {
+            return binding.paramsOverride;
+        }
+        if (scene.fixedHyperbolicParams) {
+            return { kind: "triangle", params: scene.fixedHyperbolicParams };
+        }
+        return { kind: "triangle", params: triangle.params };
+    }, [binding?.paramsOverride, scene.fixedHyperbolicParams, triangle.params]);
+    const suspendRender = binding?.suspendRender ?? false;
 
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
@@ -106,10 +116,17 @@ export function HyperbolicSceneHost({
             if (!engine || !canvas || !ready) {
                 return;
             }
-            const params = paramsOverride ?? scene.fixedHyperbolicParams ?? triangle.params;
+            if (suspendRender) {
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                return;
+            }
             const request: GeometryRenderRequest = {
                 geometry: GEOMETRY_KIND.hyperbolic,
-                params,
+                params: hyperbolicParams.kind === "triangle" ? hyperbolicParams.params : undefined,
+                hyperbolicParams,
                 scene,
                 textures: textureInput.textures,
                 viewportModifier: viewportModifierOverride
@@ -125,14 +142,14 @@ export function HyperbolicSceneHost({
         },
         [
             scene,
-            triangle,
-            paramsOverride,
+            hyperbolicParams,
             textureInput.textures,
             ready,
             renderEngineRef,
             canvasRef,
             bindingUniforms,
             panZoomModifierRef,
+            suspendRender,
         ],
     );
 

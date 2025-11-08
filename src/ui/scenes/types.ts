@@ -8,6 +8,9 @@ import type {
 import type { RegularPolygonOptions } from "@/geom/primitives/regularPolygon";
 import type { SphericalSceneState } from "@/geom/spherical/types";
 import type { TilingParams } from "@/geom/triangle/tiling";
+import type { HyperbolicRegularNgonSceneParams, HyperbolicScene } from "@/render/scene";
+import type { Viewport } from "@/render/viewport";
+import type { SceneTextureLayer } from "@/render/webgl/textures";
 import type { CircleInversionSceneConfig } from "./circleInversionConfig";
 
 export type FacingMirrorSceneConfig = {
@@ -38,6 +41,10 @@ export type TextureRectangleConfig = {
     halfExtents: { x: number; y: number };
     rotation?: number;
 };
+
+export type HyperbolicParamsOverride =
+    | { kind: "triangle"; params: TilingParams }
+    | ({ kind: "regularNgon" } & HyperbolicRegularNgonSceneParams);
 
 export interface SceneDefinition {
     id: SceneId;
@@ -96,6 +103,10 @@ export interface SceneDefinition {
      * defaultControls を受け取り、必要なら追加 UI を組み合わせて返せる。
      */
     controlsFactory?: (context: SceneControlsContext) => ReactNode;
+    /**
+     * ハイパーボリックシーン描画時に既定の三角タイル以外の構成を利用したい場合に指定する。
+     */
+    hyperbolicSceneFactory?: (context: HyperbolicSceneFactoryContext) => HyperbolicScene;
 }
 
 export type SceneUniforms = Record<string, unknown>;
@@ -155,4 +166,11 @@ export type SceneControlsContext = {
     renderBackend: "canvas" | "hybrid";
     defaultControls: ReactNode;
     extras?: SceneContextExtras;
+};
+
+export type HyperbolicSceneFactoryContext = {
+    viewport: Viewport;
+    textures: SceneTextureLayer[];
+    params: HyperbolicParamsOverride;
+    scene: SceneDefinition;
 };

@@ -47,7 +47,7 @@ pnpm ci             # biome ci + typecheck + test
 
 | Parameter | 値の例 | 説明 |
 |-----------|--------|------|
-| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `hyperbolic-tiling-333`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`, `spherical-tetrahedron`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
+| `scene`   | `euclidean-hinge` | 起動時に選択するシーン ID。`SCENE_IDS`（`hyperbolic-tiling`, `hyperbolic-regular-ngon`, `hyperbolic-tiling-333`, `euclidean-half-planes`, `euclidean-hinge`, `euclidean-regular-square`, `euclidean-regular-pentagon`, `spherical-tetrahedron`）のいずれか。無効値の場合は既定シーンにフォールバックします。 |
 | `embed`   | `1` / `true` | 埋め込みモードを有効化。16:9 レイアウトに切り替わり、コントロール UI を非表示にします。その他の値、未指定の場合は通常モードで表示します。 |
 
 - URL 例: `https://<host>/?scene=euclidean-hinge&embed=1`
@@ -89,6 +89,13 @@ Marp `theme: default` + `class: invert` などダーク系スライドに調和�
 - WebGL シェーダで反射回数を追跡し、`euclideanReflection` シーンと同様のパレットで彩色します。最大反射ステップは Uniform (`uMaxReflections`) で制御できます。
 - `buildHyperbolicTriangle(3,3,3)` は双曲条件を満たさないため `console.warn` を出力しますが、計算したジオデシックをそのまま返すため、描画は継続します。
 - このシーンではハイパーボリック三角形パラメータフォームやデプススライダは表示されません（固定パラメータで描画します）。
+
+### Scene: Hyperbolic Regular n-gon (`hyperbolic-regular-ngon`)
+
+- `(n, q)` スライダで正 {n, q} ポリゴンを指定し、双曲条件 `(n-2)(q-2) > 4` を満たす組み合わせのみを描画します。
+- ジオメトリ計算は `buildHyperbolicRegularNgon`（ρ 求解 → 頂点配置 → 辺ジオデシック生成）で行い、WebGL パイプライン `webgl-hyperbolic-regular-ngon` が塗りつぶしと輪郭描画を担当します。
+- 条件を満たさない場合はキャンバス描画をスキップし、Embed オーバーレイ内の `aria-live` メッセージで警告を表示します。
+- Storybook `Scenes/Hyperbolic Regular n-gon` から操作手順とアクセシビリティの確認が可能です。
 
 ### Git Hooks（husky + lint-staged）
 - pre-commit: 変更ファイルに対して `biome check --write` を実行し、自動整形と静的検査を行います。その後、プロジェクト全体に対して `biome ci` を実行します。
