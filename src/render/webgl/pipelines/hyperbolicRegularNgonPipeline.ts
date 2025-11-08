@@ -22,6 +22,7 @@ const DEFAULT_LINE_COLOR = [0.95, 0.98, 1.0] as const;
 const DEFAULT_UNIT_CIRCLE_COLOR = [1, 1, 1] as const;
 const LINE_WIDTH = 1.2;
 const LINE_FEATHER = 0.9;
+const REGULAR_NGON_REFLECTIONS = 48;
 
 class HyperbolicRegularNgonPipeline implements WebGLPipelineInstance {
     private readonly gl: WebGL2RenderingContext;
@@ -70,6 +71,7 @@ class HyperbolicRegularNgonPipeline implements WebGLPipelineInstance {
         gl.uniform3f(this.uniforms.lineColor, ...DEFAULT_LINE_COLOR);
         gl.uniform3f(this.uniforms.fillColor, ...DEFAULT_FILL_COLOR);
         gl.uniform3f(this.uniforms.unitCircleColor, ...DEFAULT_UNIT_CIRCLE_COLOR);
+        gl.uniform1i(this.uniforms.maxReflections, REGULAR_NGON_REFLECTIONS);
         gl.uniform1iv(this.uniforms.textureSamplers, this.textureManager.getUnits());
         gl.uniform1i(this.uniforms.textureCount, MAX_TEXTURE_SLOTS);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
@@ -138,6 +140,7 @@ type UniformLocations = {
     lineColor: WebGLUniformLocation;
     fillColor: WebGLUniformLocation;
     unitCircleColor: WebGLUniformLocation;
+    maxReflections: WebGLUniformLocation;
     textureEnabled: WebGLUniformLocation;
     textureOffset: WebGLUniformLocation;
     textureScale: WebGLUniformLocation;
@@ -205,6 +208,7 @@ function resolveUniformLocations(
         lineColor: getUniformLocation(gl, program, "uLineColor"),
         fillColor: getUniformLocation(gl, program, "uFillColor"),
         unitCircleColor: getUniformLocation(gl, program, "uUnitCircleColor"),
+        maxReflections: getUniformLocation(gl, program, "uMaxReflections"),
         textureEnabled: getUniformLocation(gl, program, "uTextureEnabled[0]"),
         textureOffset: getUniformLocation(gl, program, "uTextureOffset[0]"),
         textureScale: getUniformLocation(gl, program, "uTextureScale[0]"),
