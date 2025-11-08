@@ -155,9 +155,13 @@ function buildEdgeGeodesics(vertices: Vec2[], interior: Vec2): OrientedGeodesic[
 }
 
 function orientedGeodesicBetween(p: Vec2, q: Vec2, interior: Vec2): OrientedGeodesic {
+    const circle = solveOrthogonalCircle(p, q);
+    if (circle) {
+        return orientedCircleFromSolution(circle.center, circle.radius, interior);
+    }
     const geodesic = geodesicThroughPoints(p, q);
     if (geodesic.kind === GEODESIC_KIND.circle) {
-        return orientedCircleFromGeodesic(geodesic, interior);
+        return orientedCircleFromSolution(geodesic.c, geodesic.r, interior);
     }
     if (geodesic.kind === GEODESIC_KIND.diameter) {
         return orientedLineFromGeodesic(geodesic, interior);
@@ -165,18 +169,19 @@ function orientedGeodesicBetween(p: Vec2, q: Vec2, interior: Vec2): OrientedGeod
     throw new Error("Unsupported geodesic kind for hyperbolic n-gon edge");
 }
 
-function orientedCircleFromGeodesic(geodesic: Geodesic, interior: Vec2): OrientedGeodesic {
-    if (geodesic.kind !== GEODESIC_KIND.circle) {
-        throw new Error("Expected circle geodesic");
-    }
-    const dx = interior.x - geodesic.c.x;
-    const dy = interior.y - geodesic.c.y;
+function orientedCircleFromSolution(
+    center: Vec2,
+    radius: number,
+    interior: Vec2,
+): OrientedGeodesic {
+    const dx = interior.x - center.x;
+    const dy = interior.y - center.y;
     const distance = Math.hypot(dx, dy);
-    const orientation: 1 | -1 = distance <= geodesic.r ? 1 : -1;
+    const orientation: 1 | -1 = distance <= radius ? -1 : 1;
     return {
         kind: "circle",
-        center: { x: geodesic.c.x, y: geodesic.c.y },
-        radius: geodesic.r,
+        center: { x: center.x, y: center.y },
+        radius,
         orientation,
     };
 }
@@ -187,11 +192,31 @@ function orientedLineFromGeodesic(geodesic: Geodesic, interior: Vec2): OrientedG
     }
     const normal = normalizeVector({ x: -geodesic.dir.y, y: geodesic.dir.x });
     const signed = normal.x * interior.x + normal.y * interior.y;
-    const orientedNormal = signed >= 0 ? normal : { x: -normal.x, y: -normal.y };
+    const orientedNormal = signed <= 0 ? normal : { x: -normal.x, y: -normal.y };
     return {
         kind: "line",
         anchor: { x: 0, y: 0 },
         normal: orientedNormal,
+    };
+}
+
+function solveOrthogonalCircle(p: Vec2, q: Vec2): { center: Vec2; radius: number } | null {
+    const a = p.x;
+    const b = p.y;
+    const c = q.x;
+    const d = q.y;
+    const rhs1 = 0.5 * (1 + a * a + b * b);
+    const rhs2 = 0.5 * (1 + c * c + d * d);
+    const det = a * d - b * c;
+    if (Math.abs(det) < 1e-12) {
+        return null;
+    }
+    const cx = (rhs1 * d - rhs2 * b) / det;
+    const cy = (-rhs1 * c + rhs2 * a) / det;
+    const radiusSq = Math.max(0, cx * cx + cy * cy - 1);
+    return {
+        center: { x: cx, y: cy },
+        radius: Math.sqrt(radiusSq),
     };
 }
 

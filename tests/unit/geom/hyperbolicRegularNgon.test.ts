@@ -4,6 +4,7 @@ import {
     isHyperbolicNgonFeasible,
     solveHyperbolicVertexRadius,
 } from "@/geom/polygon/hyperbolicRegular";
+import { orientedGeodesicSignedDistance } from "@/geom/primitives/orientedGeodesic";
 
 describe("hyperbolic regular n-gon geometry", () => {
     it("rejects infeasible input", () => {
@@ -35,6 +36,23 @@ describe("hyperbolic regular n-gon geometry", () => {
                 const normalLength = Math.hypot(boundary.normal.x, boundary.normal.y);
                 expect(normalLength).toBeCloseTo(1, 12);
             }
+        }
+        const barycenter = result.vertices.reduce(
+            (acc, v) => ({ x: acc.x + v.x, y: acc.y + v.y }),
+            { x: 0, y: 0 },
+        );
+        barycenter.x /= result.vertices.length;
+        barycenter.y /= result.vertices.length;
+        for (let i = 0; i < result.geodesics.length; i += 1) {
+            const boundary = result.geodesics[i];
+            const innerDistance = orientedGeodesicSignedDistance(boundary, barycenter);
+            expect(innerDistance).toBeGreaterThan(0);
+            const vCurrent = result.vertices[i];
+            const vNext = result.vertices[(i + 1) % result.vertices.length];
+            const vertexDistanceCurrent = orientedGeodesicSignedDistance(boundary, vCurrent);
+            const vertexDistanceNext = orientedGeodesicSignedDistance(boundary, vNext);
+            expect(vertexDistanceCurrent).toBeCloseTo(0, 10);
+            expect(vertexDistanceNext).toBeCloseTo(0, 10);
         }
     });
 });
