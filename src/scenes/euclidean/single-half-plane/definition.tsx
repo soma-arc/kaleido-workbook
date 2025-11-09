@@ -26,7 +26,7 @@ export const euclideanSingleHalfPlaneScene = {
     geometry: GEOMETRY_KIND.euclidean,
     variant: "single-half-plane",
     description: "One adjustable half-plane represented with draggable handles.",
-    supportsHandles: false,
+    supportsHandles: true,
     editable: true,
     supportsPanZoom: false,
     defaultHandleSpacing: 0.75,

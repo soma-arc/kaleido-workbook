@@ -176,7 +176,7 @@ describe("EuclideanSceneHost pan", () => {
         cleanup();
     });
 
-    it("updates pan offsets in the same vertical direction as the drag", () => {
+    it("does not pan when the scene disables pan/zoom", () => {
         const canvas = container.querySelector<HTMLCanvasElement>("canvas");
         if (!canvas) {
             throw new Error("canvas not found");
@@ -205,6 +205,6 @@ describe("EuclideanSceneHost pan", () => {
             dispatchPointerEvent(canvas, "pointermove", { clientX: 200, clientY: 240 });
         });
 
-        expect(panByMock).toHaveBeenCalledWith(0, -40);
+        expect(panByMock).not.toHaveBeenCalled();
     });
 });
