@@ -25,6 +25,7 @@ import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
+import { computeHingeAngles } from "@/scenes/euclidean/hinge/math";
 import { DepthControls } from "@/ui/components/DepthControls";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import {
@@ -726,6 +727,12 @@ export function EuclideanSceneHost({
     }, [scene.id, resetPanZoom]);
 
     const currentControlPoints = handleControls?.points ?? null;
+    const hingeAngles = useMemo(() => {
+        if (scene.variant !== "hinge") {
+            return undefined;
+        }
+        return computeHingeAngles(currentControlPoints);
+    }, [scene.variant, currentControlPoints]);
     const allowPlaneDrag = scene.allowPlaneDrag !== false;
     const activeHandle =
         drag?.type === "handle"
@@ -1729,6 +1736,7 @@ export function EuclideanSceneHost({
                 setSnapEnabled: handleOverlaySnapToggle,
             },
             multiPlaneControls: controlsExtras.multiPlaneControls,
+            hingeOverlay: hingeAngles,
         }),
         [
             showHandles,
@@ -1739,6 +1747,7 @@ export function EuclideanSceneHost({
             snapEnabled,
             handleOverlaySnapToggle,
             controlsExtras.multiPlaneControls,
+            hingeAngles,
         ],
     );
 

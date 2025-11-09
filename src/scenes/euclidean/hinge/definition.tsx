@@ -4,6 +4,8 @@ import { normalizeHalfPlane } from "@/geom/primitives/halfPlane";
 import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
 import { EUCLIDEAN_HALF_PLANE_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
+import type { HingePlaneAngles } from "./math";
+import { HingeAnglesOverlay } from "./ui/Overlay";
 
 export const EUCLIDEAN_HINGE_SCENE_KEY = "euclideanHinge" as const;
 
@@ -43,15 +45,19 @@ export const euclideanHingeScene = {
     description: "Two mirrors share a fixed hinge; drag the free endpoints to rotate them.",
     supportsHandles: true,
     editable: true,
-    supportsPanZoom: true,
+    supportsPanZoom: false,
     allowPlaneDrag: false,
     defaultTexturePresetId: "cat-fish-run",
-    embedOverlayDefaultVisible: false,
+    embedOverlayDefaultVisible: true,
+    embedOverlayFactory: ({ extras }) => {
+        const context = (extras as { hingeOverlay?: HingePlaneAngles }) ?? {};
+        return <HingeAnglesOverlay data={context.hingeOverlay} />;
+    },
     initialHalfPlanes: HINGE_HALF_PLANES.map((plane) => normalizeHalfPlane(plane)),
     textureRectangle: {
         enabled: true,
         center: { x: 0, y: -0.5 },
-        halfExtents: { x: 0.3, y: 0.3 },
+        halfExtents: { x: 0.2, y: 0.2 },
         rotation: 0,
     },
     renderPipelineId: EUCLIDEAN_HALF_PLANE_PIPELINE_ID,
