@@ -82,7 +82,7 @@ export const euclideanCircleInversionScene = {
     description: "Inverts a draggable rectangle across a fixed circle using the WebGL pipeline.",
     supportsHandles: true,
     editable: true,
-    supportsPanZoom: true,
+    supportsPanZoom: false,
     defaultHandleSpacing: 1.2,
     defaultTexturePresetId: "cat-fish-run",
     embedOverlayDefaultVisible: false,

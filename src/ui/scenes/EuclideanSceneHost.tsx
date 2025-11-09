@@ -272,9 +272,15 @@ export function EuclideanSceneHost({
     const latestEuclideanPlanesRef = useRef<HalfPlane[] | null>(null);
     const [editableHalfPlanes, setEditableHalfPlanes] = useState<HalfPlane[] | null>(null);
     const [drag, setDrag] = useState<DragState | null>(null);
+    const dragRef = useRef<DragState | null>(null);
+    const setDragState = useCallback((next: DragState | null) => {
+        dragRef.current = next;
+        setDrag(next);
+    }, []);
     const [showHandles, setShowHandles] = useState(false);
     const [handleSpacing, setHandleSpacing] = useState(HANDLE_DEFAULT_SPACING);
     const [handleControls, setHandleControls] = useState<HandleControlsState | null>(null);
+    const [handleCursor, setHandleCursor] = useState<string | undefined>(undefined);
     const [circleInversionState, setCircleInversionState] = useState<CircleInversionState | null>(
         () => (scene.inversionConfig ? cloneCircleInversionState(scene.inversionConfig) : null),
     );
@@ -571,7 +577,7 @@ export function EuclideanSceneHost({
 
     useEffect(() => {
         setEditableHalfPlanes(null);
-        setDrag(null);
+        setDragState(null);
         if (scene.geometry !== GEOMETRY_KIND.euclidean) {
             setHandleControls(null);
             latestEuclideanPlanesRef.current = null;
@@ -608,6 +614,7 @@ export function EuclideanSceneHost({
         scene.geometry,
         scene.initialControlPoints,
         recomputePlanesFromControls,
+        setDragState,
     ]);
 
     const computeBaseViewport = useCallback((canvas: HTMLCanvasElement): Viewport => {
@@ -719,6 +726,15 @@ export function EuclideanSceneHost({
         enabled: scene.textureRectangle?.enabled ?? false,
         getWorldPoint: projectPointerToWorld,
     });
+
+    const applyHandleCursor = useCallback((value: string | undefined) => {
+        setHandleCursor((prev) => (prev === value ? prev : value));
+    }, []);
+    useEffect(() => {
+        if (!scene.supportsHandles || !showHandles) {
+            applyHandleCursor(undefined);
+        }
+    }, [scene.supportsHandles, showHandles, applyHandleCursor]);
     const textureRectangle = textureRectangleInteraction.rect;
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
@@ -738,6 +754,41 @@ export function EuclideanSceneHost({
         drag?.type === "handle"
             ? { planeIndex: drag.planeIndex, pointIndex: drag.pointIndex }
             : null;
+
+    const updateHandleHoverCursor = useCallback(
+        (event: React.PointerEvent<HTMLCanvasElement>) => {
+            if (
+                scene.geometry !== GEOMETRY_KIND.euclidean ||
+                !scene.supportsHandles ||
+                !showHandles ||
+                !currentControlPoints ||
+                currentControlPoints.length === 0
+            ) {
+                applyHandleCursor(undefined);
+                return;
+            }
+            const canvas = event.currentTarget;
+            const viewport = computeViewport(canvas);
+            const screen = getPointer(event);
+            const ratio = getCanvasPixelRatio(canvas);
+            const hit = hitTestControlPoints(
+                currentControlPoints,
+                viewport,
+                screen,
+                HANDLE_HIT_TOLERANCE_PX * ratio,
+            );
+            applyHandleCursor(hit ? "grab" : undefined);
+        },
+        [
+            scene.geometry,
+            scene.supportsHandles,
+            showHandles,
+            currentControlPoints,
+            computeViewport,
+            getPointer,
+            applyHandleCursor,
+        ],
+    );
 
     const renderEuclideanScene = useCallback(
         (
@@ -901,7 +952,9 @@ export function EuclideanSceneHost({
     }, [params, scene, scene.fixedHyperbolicParams, textureInput.textures, renderEngineRef]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) return;
+        if (scene.geometry !== GEOMETRY_KIND.euclidean || !normalizedHalfPlanes) {
+            return;
+        }
         const canvas = canvasRef.current ?? e.currentTarget;
         if (!canvas) {
             return;
@@ -946,7 +999,7 @@ export function EuclideanSceneHost({
                 );
                 setEditableHalfPlanes(nextPlanes);
                 setHandleControls({ spacing: handleSpacing, points: nextPoints });
-                setDrag({
+                setDragState({
                     type: "handle",
                     pointerId: e.pointerId,
                     planeIndex: hit.planeIndex,
@@ -954,6 +1007,7 @@ export function EuclideanSceneHost({
                     controlPointId: draggedControlPointId,
                 });
                 renderEuclideanScene(nextPlanes, nextPoints, hit);
+                applyHandleCursor("grabbing");
                 return;
             }
         }
@@ -984,17 +1038,20 @@ export function EuclideanSceneHost({
                 x: worldPoint.x - rect.center.x,
                 y: worldPoint.y - rect.center.y,
             };
-            setDrag({
+            setDragState({
                 type: "overlay",
                 pointerId: e.pointerId,
                 target: overlayTarget,
                 offset,
             });
+            applyHandleCursor(undefined);
             return;
         }
 
         // テクスチャ矩形（制御点より低優先）
-        if (textureRectangleInteraction.onPointerDown(e)) {
+        const capturedTexture = textureRectangleInteraction.onPointerDown(e);
+        if (capturedTexture) {
+            applyHandleCursor(undefined);
             return;
         }
 
@@ -1039,7 +1096,7 @@ export function EuclideanSceneHost({
                     });
                 }
                 renderEuclideanScene(updatedPlanes);
-                setDrag({
+                setDragState({
                     type: "plane",
                     pointerId: e.pointerId,
                     index: idx,
@@ -1047,6 +1104,7 @@ export function EuclideanSceneHost({
                     startScreen: screen,
                     normal: unit.normal,
                 });
+                applyHandleCursor(undefined);
                 return;
             }
         }
@@ -1058,32 +1116,42 @@ export function EuclideanSceneHost({
                 // ignore
             }
             e.preventDefault();
-            setDrag({
+            setDragState({
                 type: "pan",
                 pointerId: e.pointerId,
                 last: screen,
             });
+            applyHandleCursor(undefined);
         }
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-        // 既存のドラッグ中はテクスチャ矩形の判定をスキップ
-        if (!drag) {
+        const currentDrag = dragRef.current;
+        if (!currentDrag) {
+            if (scene.geometry === GEOMETRY_KIND.euclidean) {
+                updateHandleHoverCursor(e);
+            } else {
+                applyHandleCursor(undefined);
+            }
             if (textureRectangleInteraction.onPointerMove(e)) {
                 return;
             }
+            return;
         }
-        if (!drag || scene.geometry !== GEOMETRY_KIND.euclidean) return;
+        if (currentDrag.type !== "handle") {
+            applyHandleCursor(undefined);
+        }
+        if (scene.geometry !== GEOMETRY_KIND.euclidean) return;
         const canvas = e.currentTarget;
         const viewport = computeViewport(canvas);
 
-        if (drag.type === "plane") {
+        if (currentDrag.type === "plane") {
             const cur = getPointer(e);
             const nextOffset = nextOffsetOnDrag(
-                drag.normal,
-                drag.startOffset,
+                currentDrag.normal,
+                currentDrag.startOffset,
                 viewport,
-                drag.startScreen,
+                currentDrag.startScreen,
                 cur,
             );
             let updatedPlanes: HalfPlane[] | null = null;
@@ -1092,7 +1160,7 @@ export function EuclideanSceneHost({
                     (plane) => normalizeHalfPlane(plane),
                 );
                 updatedPlanes = basePlanes.map((plane, idx) =>
-                    idx === drag.index ? planeWithOffset(plane, nextOffset) : plane,
+                    idx === currentDrag.index ? planeWithOffset(plane, nextOffset) : plane,
                 );
                 return updatedPlanes;
             });
@@ -1111,7 +1179,7 @@ export function EuclideanSceneHost({
                         return { spacing: handleSpacing, points };
                     }
                     const points = prev.points.map((pts, idx) => {
-                        if (idx !== drag.index || !pts) {
+                        if (idx !== currentDrag.index || !pts) {
                             return pts;
                         }
                         const derived = derivePointsFromHalfPlane(
@@ -1125,16 +1193,16 @@ export function EuclideanSceneHost({
                 });
             }
             renderEuclideanScene(resolvedPlanes, nextPointsForRender, {
-                planeIndex: drag.index,
+                planeIndex: currentDrag.index,
                 pointIndex: 0,
             });
             return;
         }
 
-        if (drag.type === "pan") {
+        if (currentDrag.type === "pan") {
             const pointer = getPointer(e);
-            const deltaX = pointer.x - drag.last.x;
-            const deltaY = pointer.y - drag.last.y;
+            const deltaX = pointer.x - currentDrag.last.x;
+            const deltaY = pointer.y - currentDrag.last.y;
             if (deltaX === 0 && deltaY === 0) {
                 return;
             }
@@ -1146,7 +1214,7 @@ export function EuclideanSceneHost({
                 offsetY: currentModifier.offsetY - deltaY,
             };
             panCanvasBy(deltaX, -deltaY);
-            setDrag({ type: "pan", pointerId: drag.pointerId, last: pointer });
+            setDragState({ type: "pan", pointerId: currentDrag.pointerId, last: pointer });
             const planesForRender =
                 latestEuclideanPlanesRef.current ??
                 normalizedHalfPlanes ??
@@ -1162,7 +1230,7 @@ export function EuclideanSceneHost({
             return;
         }
 
-        if (drag.type === "overlay") {
+        if (currentDrag.type === "overlay") {
             const pointer = getPointer(e);
             const worldPoint = screenToWorld(viewport, pointer);
             const baseState =
@@ -1174,10 +1242,10 @@ export function EuclideanSceneHost({
             }
             const updatedState = updateCircleInversionRectangleCenter(
                 baseState,
-                drag.target.rectangle,
+                currentDrag.target.rectangle,
                 {
-                    x: worldPoint.x - drag.offset.x,
-                    y: worldPoint.y - drag.offset.y,
+                    x: worldPoint.x - currentDrag.offset.x,
+                    y: worldPoint.y - currentDrag.offset.y,
                 },
             );
             let stateForRender = baseState;
@@ -1194,6 +1262,7 @@ export function EuclideanSceneHost({
         }
 
         // handle drag
+        applyHandleCursor("grabbing");
         const screenPointer = getPointer(e);
         const world = screenToWorld(viewport, screenPointer);
         let nextPoints: HalfPlaneControlPoints[] | null = null;
@@ -1202,8 +1271,8 @@ export function EuclideanSceneHost({
             if (!prev) return prev;
             const updatedPoints = updateControlPoint(
                 prev.points,
-                drag.planeIndex,
-                drag.pointIndex,
+                currentDrag.planeIndex,
+                currentDrag.pointIndex,
                 world,
             );
             if (updatedPoints === prev.points) {
@@ -1225,8 +1294,8 @@ export function EuclideanSceneHost({
             updatedPlanes = recomputePlanesFromControls(
                 basePlanes,
                 nextPoints,
-                drag.controlPointId,
-                drag.planeIndex,
+                currentDrag.controlPointId,
+                currentDrag.planeIndex,
             );
             return updatedPlanes;
         });
@@ -1251,8 +1320,8 @@ export function EuclideanSceneHost({
             updatedPlanes,
             nextPoints,
             {
-                planeIndex: drag.planeIndex,
-                pointIndex: drag.pointIndex,
+                planeIndex: currentDrag.planeIndex,
+                pointIndex: currentDrag.pointIndex,
             },
             overrideInversion ?? null,
         );
@@ -1268,21 +1337,30 @@ export function EuclideanSceneHost({
         } else if (textureRectangleInteraction.onPointerUp(e)) {
             return;
         }
-        if (drag) {
+        const currentDrag = dragRef.current;
+        if (currentDrag) {
             try {
-                e.currentTarget.releasePointerCapture(drag.pointerId);
+                e.currentTarget.releasePointerCapture(currentDrag.pointerId);
             } catch {
                 // ignore
             }
         }
-        setDrag(null);
+        setDragState(null);
         if (scene.geometry === GEOMETRY_KIND.euclidean) {
+            updateHandleHoverCursor(e);
             const planes = latestEuclideanPlanesRef.current ?? normalizedHalfPlanes ?? null;
             if (planes) {
                 renderEuclideanScene(planes, currentControlPoints, null);
             }
+        } else {
+            applyHandleCursor(undefined);
         }
     };
+
+    const handlePointerLeave = useCallback(() => {
+        applyHandleCursor(undefined);
+        textureRectangleInteraction.onPointerLeave();
+    }, [applyHandleCursor, textureRectangleInteraction]);
 
     const handleWheelCore = useCallback(
         (event: WheelEvent) => {
@@ -1810,10 +1888,11 @@ export function EuclideanSceneHost({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUpOrCancel}
                 onPointerCancel={handlePointerUpOrCancel}
-                onPointerLeave={textureRectangleInteraction.onPointerLeave}
+                onPointerLeave={handlePointerLeave}
                 style={{
                     ...STAGE_CANVAS_BASE_STYLE,
                     cursor:
+                        handleCursor ??
                         textureRectangleInteraction.cursor ??
                         (scene.supportsPanZoom
                             ? "grab"
