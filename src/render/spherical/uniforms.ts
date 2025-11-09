@@ -1,5 +1,5 @@
 import type { SphericalTriangle } from "@/geom/spherical/types";
-import { crossVec3, dotVec3, isUnitVec3 } from "@/geom/spherical/types";
+import { crossVec3, dotVec3, isUnitVec3, normalizeVec3 } from "@/geom/spherical/types";
 import type { SphericalOrbitCamera } from "./camera";
 
 export type ProjectionParams = {
@@ -30,6 +30,29 @@ export function packSphericalTriangleVertices(triangle: SphericalTriangle): Floa
         buffer[offset] = vertex.x;
         buffer[offset + 1] = vertex.y;
         buffer[offset + 2] = vertex.z;
+    });
+    return buffer;
+}
+
+/**
+ * 球面三角形の各辺を規定する「内向き」平面法線をパックする。
+ * 返却値のインデックスは頂点順に対応し、`triangle.vertices[i]` と
+ * `triangle.vertices[(i + 1) % 3]` を通る大円の法線ベクトルを格納する。
+ */
+export function packSphericalTrianglePlanes(triangle: SphericalTriangle): Float32Array {
+    const buffer = new Float32Array(9);
+    triangle.vertices.forEach((vertex, index) => {
+        const next = triangle.vertices[(index + 1) % 3];
+        const opposite = triangle.vertices[(index + 2) % 3];
+        let normal = crossVec3(vertex, next);
+        if (dotVec3(normal, opposite) < 0) {
+            normal = { x: -normal.x, y: -normal.y, z: -normal.z };
+        }
+        const unit = normalizeVec3(normal);
+        const offset = index * 3;
+        buffer[offset] = unit.x;
+        buffer[offset + 1] = unit.y;
+        buffer[offset + 2] = unit.z;
     });
     return buffer;
 }

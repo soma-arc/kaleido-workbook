@@ -1,6 +1,6 @@
 import type { SphericalTriangle } from "@/geom/spherical/types";
 import { crossVec3, normalizeVec3 } from "@/geom/spherical/types";
-import { packSphericalTriangleVertices } from "@/render/spherical/uniforms";
+import { packSphericalTrianglePlanes } from "@/render/spherical/uniforms";
 import vertexShaderSource from "../webgl/shaders/geodesic.vert?raw";
 import type { SphericalOrbitCamera } from "./camera";
 import fragmentShaderSource from "./shaders/spherical.frag?raw";
@@ -10,10 +10,32 @@ type ViewportSize = {
     height: number;
 };
 
+export type RgbColor = {
+    r: number;
+    g: number;
+    b: number;
+};
+
+export type SphericalReflectionSettings = {
+    maxReflections?: number;
+    boundaryFeather?: number;
+    tileBaseColor?: RgbColor;
+    tileAccentColor?: RgbColor;
+};
+
+export type RequiredSphericalReflectionSettings = Required<SphericalReflectionSettings>;
+
+export const DEFAULT_SPHERICAL_REFLECTION_SETTINGS: RequiredSphericalReflectionSettings = {
+    maxReflections: 24,
+    boundaryFeather: 0.02,
+    tileBaseColor: { r: 0.94, g: 0.52, b: 0.36 },
+    tileAccentColor: { r: 0.18, g: 0.23, b: 0.42 },
+};
+
 export type SphericalRenderSettings = {
     samples: number;
     fovY?: number;
-};
+} & SphericalReflectionSettings;
 
 export type SphericalRenderParams = {
     triangle: SphericalTriangle;
@@ -36,15 +58,19 @@ type UniformLocations = {
     cameraForward: WebGLUniformLocation;
     cameraRight: WebGLUniformLocation;
     cameraUp: WebGLUniformLocation;
-    triangleVertices: WebGLUniformLocation;
+    trianglePlanes: WebGLUniformLocation;
     lightDirection: WebGLUniformLocation;
-    triangleColor: WebGLUniformLocation;
     baseColor: WebGLUniformLocation;
     backgroundColor: WebGLUniformLocation;
+    maxReflections: WebGLUniformLocation;
+    boundaryFeather: WebGLUniformLocation;
+    tileBaseColor: WebGLUniformLocation;
+    tileAccentColor: WebGLUniformLocation;
 };
 
 const DEFAULT_FOVY = Math.PI / 4;
 const MAX_SAMPLES = 8;
+const MAX_SHADER_REFLECTIONS = 48;
 
 export function createSphericalRenderer(canvas: HTMLCanvasElement): SphericalRenderer {
     const gl = canvas.getContext("webgl2", {
@@ -104,7 +130,6 @@ function createRealRenderer(
     gl.disable(gl.CULL_FACE);
 
     const defaultLight = normalizeVec3({ x: 0.3, y: 0.6, z: 0.75 });
-    const triangleColor = new Float32Array([0.94, 0.52, 0.36]);
     const baseColor = new Float32Array([0.18, 0.23, 0.42]);
     const backgroundColor = new Float32Array([0.02, 0.03, 0.06]);
 
@@ -116,6 +141,7 @@ function createRealRenderer(
             const samples = clampSamples(settings.samples ?? 1);
             const fovY = settings.fovY ?? DEFAULT_FOVY;
             const tanHalfFov = Math.tan(fovY / 2);
+            const reflection = resolveReflectionSettings(settings);
 
             gl.viewport(0, 0, width, height);
             gl.useProgram(program);
@@ -140,12 +166,25 @@ function createRealRenderer(
             gl.uniform3f(uniforms.cameraRight, right.x, right.y, right.z);
             gl.uniform3f(uniforms.cameraUp, up.x, up.y, up.z);
 
-            const packedVertices = packSphericalTriangleVertices(triangle);
-            gl.uniform3fv(uniforms.triangleVertices, packedVertices);
+            const packedPlanes = packSphericalTrianglePlanes(triangle);
+            gl.uniform3fv(uniforms.trianglePlanes, packedPlanes);
             gl.uniform3f(uniforms.lightDirection, defaultLight.x, defaultLight.y, defaultLight.z);
-            gl.uniform3fv(uniforms.triangleColor, triangleColor);
             gl.uniform3fv(uniforms.baseColor, baseColor);
             gl.uniform3fv(uniforms.backgroundColor, backgroundColor);
+            gl.uniform1i(uniforms.maxReflections, reflection.maxReflections);
+            gl.uniform1f(uniforms.boundaryFeather, reflection.boundaryFeather);
+            gl.uniform3f(
+                uniforms.tileBaseColor,
+                reflection.tileBaseColor.r,
+                reflection.tileBaseColor.g,
+                reflection.tileBaseColor.b,
+            );
+            gl.uniform3f(
+                uniforms.tileAccentColor,
+                reflection.tileAccentColor.r,
+                reflection.tileAccentColor.g,
+                reflection.tileAccentColor.b,
+            );
 
             gl.bindVertexArray(vao);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -228,11 +267,14 @@ function resolveUniformLocations(
         cameraForward: getUniformLocation(gl, program, "uCameraForward"),
         cameraRight: getUniformLocation(gl, program, "uCameraRight"),
         cameraUp: getUniformLocation(gl, program, "uCameraUp"),
-        triangleVertices: getUniformLocation(gl, program, "uTriangleVertices[0]"),
+        trianglePlanes: getUniformLocation(gl, program, "uTrianglePlanes[0]"),
         lightDirection: getUniformLocation(gl, program, "uLightDirection"),
-        triangleColor: getUniformLocation(gl, program, "uTriangleColor"),
         baseColor: getUniformLocation(gl, program, "uSphereBaseColor"),
         backgroundColor: getUniformLocation(gl, program, "uBackgroundColor"),
+        maxReflections: getUniformLocation(gl, program, "uMaxReflections"),
+        boundaryFeather: getUniformLocation(gl, program, "uBoundaryFeather"),
+        tileBaseColor: getUniformLocation(gl, program, "uTileBaseColor"),
+        tileAccentColor: getUniformLocation(gl, program, "uTileAccentColor"),
     };
 }
 
@@ -251,4 +293,29 @@ function getUniformLocation(
 function clampSamples(samples: number): number {
     const value = Number.isFinite(samples) ? Math.round(samples) : 1;
     return Math.min(Math.max(value, 1), MAX_SAMPLES);
+}
+
+function resolveReflectionSettings(
+    settings: SphericalRenderSettings,
+): RequiredSphericalReflectionSettings {
+    const resolved = {
+        ...DEFAULT_SPHERICAL_REFLECTION_SETTINGS,
+        maxReflections: clampToShaderLimit(settings.maxReflections),
+        boundaryFeather:
+            settings.boundaryFeather ?? DEFAULT_SPHERICAL_REFLECTION_SETTINGS.boundaryFeather,
+        tileBaseColor:
+            settings.tileBaseColor ?? DEFAULT_SPHERICAL_REFLECTION_SETTINGS.tileBaseColor,
+        tileAccentColor:
+            settings.tileAccentColor ?? DEFAULT_SPHERICAL_REFLECTION_SETTINGS.tileAccentColor,
+    };
+    resolved.boundaryFeather = Math.max(resolved.boundaryFeather, 0.0001);
+    return resolved;
+}
+
+function clampToShaderLimit(value?: number): number {
+    if (!Number.isFinite(value)) {
+        return DEFAULT_SPHERICAL_REFLECTION_SETTINGS.maxReflections;
+    }
+    const integer = Math.max(0, Math.round(value as number));
+    return Math.min(integer, MAX_SHADER_REFLECTIONS);
 }

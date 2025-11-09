@@ -8,6 +8,7 @@ import {
     type SphericalVertex,
 } from "@/geom/spherical/types";
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
+import { DEFAULT_SPHERICAL_REFLECTION_SETTINGS } from "@/render/spherical/renderer";
 import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
 import "@/render/webgl/pipelines/sphericalPipeline";
 import { PresetSelector } from "@/ui/components/PresetSelector";
@@ -170,7 +171,10 @@ export function SphericalSceneHost({
             geometry: GEOMETRY_KIND.spherical,
             state,
             camera: cameraRef.current,
-            settings: { samples },
+            settings: {
+                samples,
+                ...DEFAULT_SPHERICAL_REFLECTION_SETTINGS,
+            },
         } as const;
         pipeline.render({
             sceneDefinition: scene,
