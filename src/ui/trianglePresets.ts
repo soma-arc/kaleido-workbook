@@ -185,7 +185,12 @@ const PRESET_GROUPS_BY_MODE: Record<GeometryMode, TrianglePresetGroup[]> = {
 
 export const DEFAULT_HYPERBOLIC_PRESET = HYPERBOLIC_GROUPS[0].presets[0];
 export const DEFAULT_EUCLIDEAN_PRESET = EUCLIDEAN_GROUPS[0].presets[0];
-export const DEFAULT_SPHERICAL_PRESET = SPHERICAL_GROUPS[0].presets[0];
+const DEFAULT_SPHERICAL_PRESET_ID = "sph-226";
+
+export const DEFAULT_SPHERICAL_PRESET =
+    [...SPHERICAL_GROUPS.flatMap((group) => group.presets)].find(
+        (preset) => preset.id === DEFAULT_SPHERICAL_PRESET_ID,
+    ) ?? SPHERICAL_GROUPS[0].presets[0];
 
 export function getPresetGroupsForGeometry(mode: GeometryMode): readonly TrianglePresetGroup[] {
     return PRESET_GROUPS_BY_MODE[mode];

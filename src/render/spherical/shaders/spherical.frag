@@ -2,6 +2,7 @@
 precision highp float;
 
 const float GAMMA = 2.2;
+const float AMBIENT_FACTOR = 0.15;
 
 in vec2 vFragCoord;
 out vec4 outColor;
@@ -81,11 +82,6 @@ vec3 reflectAcrossPlane(vec3 point, vec3 planeNormal) {
     return point - 2.0 * projection * planeNormal;
 }
 
-vec3 palette(float t) {
-    vec3 phase = vec3(0.0, 2.0943951, 4.1887902);
-    return 0.55 + 0.45 * cos(TAU * t + phase);
-}
-
 ReflectionResult foldIntoTriangle(vec3 point) {
     vec3 current = normalize(point);
     float minAbsDistance = 1e9;
@@ -131,25 +127,30 @@ ReflectionResult foldIntoTriangle(vec3 point) {
     return result;
 }
 
+vec3 hsvUnitColor(float hue) {
+    vec3 shifted = fract(hue + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0));
+    return clamp(abs(shifted * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+}
+
 vec3 shadeSurface(vec3 surfaceNormal, ReflectionResult fold) {
-    vec3 ambient = vec3(0.05, 0.06, 0.08);
     vec3 lightDir = normalize(uLightDirection);
-    float diffuse = max(dot(surfaceNormal, lightDir), 0.0);
+    float diffuseFactor = max(dot(surfaceNormal, lightDir), 0.0);
     if (!fold.inside || fold.hitLimit) {
-        vec3 base = mix(uSphereBaseColor * 0.6, uSphereBaseColor, diffuse);
-        return clamp(base + ambient, 0.0, 1.0);
+        vec3 ambient = uSphereBaseColor * AMBIENT_FACTOR;
+        vec3 diffuse = uSphereBaseColor * diffuseFactor;
+        return clamp(ambient + diffuse, 0.0, 1.0);
     }
 
-    float hue = float(fold.reflections) * 0.16180339;
-    vec3 paletteColor = palette(hue);
     float feather = max(uBoundaryFeather, 1e-4);
     float edgeBlend = smoothstep(0.0, feather, fold.minAbsDistance);
-    vec3 edgeColor = mix(uTileAccentColor, vec3(1.0), 0.15);
-    vec3 tileBody = mix(uTileBaseColor, paletteColor, 1.0);
-    vec3 tileColor = mix(edgeColor, tileBody, edgeBlend);
-    vec3 litTile = clamp(tileColor + vec3(diffuse * 1.0, 0.0, 1.0);
-    vec3 shaded = mix(tileColor, litTile, diffuse);
-    return clamp(shaded + ambient, 0.0, 1.0);
+    float hue = float(fold.reflections) * 0.16180339;
+    vec3 paletteColor = hsvUnitColor(hue);
+    vec3 baseMat = mix(uTileBaseColor, paletteColor, 0.6);
+    vec3 edgeColor = mix(uTileAccentColor, vec3(1.0), 0.1);
+    vec3 matColor = mix(edgeColor, baseMat, edgeBlend);
+    vec3 ambient = matColor * AMBIENT_FACTOR;
+    vec3 diffuse = matColor * diffuseFactor;
+    return clamp(ambient + diffuse, 0.0, 1.0);
 }
 
 vec3 renderSample(vec2 fragCoord) {

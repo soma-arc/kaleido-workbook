@@ -1,6 +1,6 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import { createRightDihedralTriangle } from "@/geom/spherical/polyhedra";
 import {
     normalizeVec3,
     type SphericalSceneState,
@@ -63,11 +63,18 @@ function initialStateFromScene(scene: SceneDefinition): SphericalSceneState {
     if (scene.initialSphericalState) {
         return {
             triangle: cloneTriangle(scene.initialSphericalState.triangle),
-            handles: { ...scene.initialSphericalState.handles },
+            handles: { ...(scene.initialSphericalState.handles ?? {}) },
+        };
+    }
+    const presetState = DEFAULT_SPHERICAL_PRESET.spherical?.buildState();
+    if (presetState) {
+        return {
+            triangle: cloneTriangle(presetState.triangle),
+            handles: { ...(presetState.handles ?? {}) },
         };
     }
     return {
-        triangle: createRegularTetrahedronTriangle(),
+        triangle: cloneTriangle(createRightDihedralTriangle(6)),
         handles: {},
     };
 }

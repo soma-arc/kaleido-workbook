@@ -1,5 +1,5 @@
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import { createRightDihedralTriangle } from "@/geom/spherical/polyhedra";
 import { SPHERICAL_PIPELINE_ID } from "@/render/webgl/pipelines/pipelineIds";
 import type { SceneDefinitionInput } from "@/ui/scenes/types";
 
@@ -14,7 +14,7 @@ export const sphericalTetrahedronScene = {
     supportsHandles: true,
     editable: true,
     initialSphericalState: {
-        triangle: createRegularTetrahedronTriangle(0),
+        triangle: createRightDihedralTriangle(6),
         handles: {},
     },
     embedOverlayDefaultVisible: false,
