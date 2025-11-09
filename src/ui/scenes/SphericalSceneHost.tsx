@@ -1,6 +1,6 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrahedron";
+import { createRightDihedralTriangle } from "@/geom/spherical/polyhedra";
 import {
     normalizeVec3,
     type SphericalSceneState,
@@ -8,6 +8,7 @@ import {
     type SphericalVertex,
 } from "@/geom/spherical/types";
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
+import { DEFAULT_SPHERICAL_REFLECTION_SETTINGS } from "@/render/spherical/renderer";
 import { resolveWebGLPipeline, type WebGLPipelineInstance } from "@/render/webgl/pipelineRegistry";
 import "@/render/webgl/pipelines/sphericalPipeline";
 import { PresetSelector } from "@/ui/components/PresetSelector";
@@ -62,11 +63,18 @@ function initialStateFromScene(scene: SceneDefinition): SphericalSceneState {
     if (scene.initialSphericalState) {
         return {
             triangle: cloneTriangle(scene.initialSphericalState.triangle),
-            handles: { ...scene.initialSphericalState.handles },
+            handles: { ...(scene.initialSphericalState.handles ?? {}) },
+        };
+    }
+    const presetState = DEFAULT_SPHERICAL_PRESET.spherical?.buildState();
+    if (presetState) {
+        return {
+            triangle: cloneTriangle(presetState.triangle),
+            handles: { ...(presetState.handles ?? {}) },
         };
     }
     return {
-        triangle: createRegularTetrahedronTriangle(),
+        triangle: cloneTriangle(createRightDihedralTriangle(6)),
         handles: {},
     };
 }
@@ -170,7 +178,10 @@ export function SphericalSceneHost({
             geometry: GEOMETRY_KIND.spherical,
             state,
             camera: cameraRef.current,
-            settings: { samples },
+            settings: {
+                samples,
+                ...DEFAULT_SPHERICAL_REFLECTION_SETTINGS,
+            },
         } as const;
         pipeline.render({
             sceneDefinition: scene,

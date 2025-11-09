@@ -3,6 +3,7 @@ import { createRegularTetrahedronTriangle } from "@/geom/spherical/regularTetrah
 import { SphericalOrbitCamera } from "@/render/spherical/camera";
 import {
     buildCameraUniforms,
+    packSphericalTrianglePlanes,
     packSphericalTriangleVertices,
     validateSphericalTriangleVertices,
 } from "@/render/spherical/uniforms";
@@ -23,6 +24,27 @@ describe("packSphericalTriangleVertices", () => {
         expect(packed).toHaveLength(9);
         expect(packed[0]).toBeCloseTo(triangle.vertices[0].x, 6);
         expect(packed[8]).toBeCloseTo(triangle.vertices[2].z, 6);
+    });
+});
+
+describe("packSphericalTrianglePlanes", () => {
+    it("generates inward-facing unit normals for each edge", () => {
+        const triangle = createRegularTetrahedronTriangle();
+        const packed = packSphericalTrianglePlanes(triangle);
+        expect(packed).toBeInstanceOf(Float32Array);
+        expect(packed).toHaveLength(9);
+        triangle.vertices.forEach((_vertex, index) => {
+            const normal = {
+                x: packed[index * 3 + 0],
+                y: packed[index * 3 + 1],
+                z: packed[index * 3 + 2],
+            };
+            const opposite = triangle.vertices[(index + 2) % 3];
+            const dot = normal.x * opposite.x + normal.y * opposite.y + normal.z * opposite.z;
+            expect(dot).toBeGreaterThan(0);
+            const length = Math.hypot(normal.x, normal.y, normal.z);
+            expect(length).toBeCloseTo(1, 6);
+        });
     });
 });
 
