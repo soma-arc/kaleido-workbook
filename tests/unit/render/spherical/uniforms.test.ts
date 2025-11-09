@@ -33,7 +33,7 @@ describe("packSphericalTrianglePlanes", () => {
         const packed = packSphericalTrianglePlanes(triangle);
         expect(packed).toBeInstanceOf(Float32Array);
         expect(packed).toHaveLength(9);
-        triangle.vertices.forEach((vertex, index) => {
+        triangle.vertices.forEach((_vertex, index) => {
             const normal = {
                 x: packed[index * 3 + 0],
                 y: packed[index * 3 + 1],
