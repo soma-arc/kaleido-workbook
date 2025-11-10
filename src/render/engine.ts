@@ -157,7 +157,6 @@ export function createRenderEngine(
         const viewport = request.viewportModifier
             ? applyViewportModifier(baseViewport, request.viewportModifier)
             : baseViewport;
-        console.log(viewport);
         const textures = request.textures ?? [];
         const sceneTextures = extractSceneTextures(textures);
         let scene: RenderScene;
