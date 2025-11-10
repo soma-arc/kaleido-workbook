@@ -1,8 +1,18 @@
 import type { Vec2 } from "@/geom/core/types";
 import { GEOMETRY_KIND } from "@/geom/core/types";
-import { type InvertedLineImage, invertLineInCircle } from "@/geom/transforms/inversion";
+import type { HalfPlaneControlPoints } from "@/geom/primitives/halfPlaneControls";
+import {
+    type InvertedLineImage,
+    invertInCircle,
+    invertLineInCircle,
+} from "@/geom/transforms/inversion";
 import { SCENE_IDS } from "@/ui/scenes";
 import type { CircleInversionState } from "@/ui/scenes/circleInversionConfig";
+import {
+    buildControlPointUniforms,
+    type ControlPoint as RenderControlPoint,
+    SHAPE_CIRCLE,
+} from "../controlPointUniforms";
 import {
     registerSceneWebGLPipeline,
     type WebGLPipelineInstance,
@@ -14,21 +24,29 @@ import { createTextureManager, type TextureManager } from "../textureManager";
 import { EUCLIDEAN_CIRCLE_INVERSION_PIPELINE_ID } from "./pipelineIds";
 import { getUniformLocation } from "./uniformUtils";
 
-const RECT_COLOR = [0.231, 0.514, 0.918, 0.75] as const;
-const INVERTED_COLOR = [0.976, 0.545, 0.259, 0.72] as const;
+const PRIMARY_RECT_COLOR = [0.9490196078, 0.4980392157, 0.4980392157, 0.75] as const;
+const SECONDARY_RECT_COLOR = [0.9490196078, 0.4980392157, 0.4980392157, 0.65] as const;
 const CIRCLE_COLOR = [0.95, 0.98, 1.0, 0.9] as const;
-const SECONDARY_RECT_COLOR = [0.184, 0.733, 0.647, 0.65] as const;
-const SECONDARY_INVERTED_COLOR = [0.992, 0.862, 0.098, 0.6] as const;
 
 const RECT_FEATHER_PX = 1.5;
 const CIRCLE_STROKE_WIDTH_PX = 2.0;
 const CIRCLE_FEATHER_PX = 1.2;
 const SECONDARY_RECT_FEATHER_PX = 1.5;
-const LINE_COLOR = [0.94, 0.94, 0.98, 0.85] as const;
-const INVERTED_LINE_COLOR = [0.18, 0.76, 0.86, 0.75] as const;
+const LINE_COLOR = [241 / 255, 178 / 255, 74 / 255, 0.85] as const;
+const INVERTED_LINE_COLOR = [241 / 255, 178 / 255, 74 / 255, 0.85] as const;
 const LINE_STROKE_WIDTH_PX = 2.0;
 const LINE_FEATHER_PX = 1.1;
 const DEFAULT_TEXTURE_ASPECT = 1;
+const LINE_START_POINT_COLOR = [0.992, 0.525, 0.255, 0.95] as const;
+const LINE_END_POINT_COLOR = [0.184, 0.733, 0.965, 0.95] as const;
+const CENTER_POINT_COLOR = [0.94, 0.94, 0.94, 0.9] as const;
+const CONTROL_POINT_STROKE_COLOR = [0.08, 0.08, 0.08, 1.0] as const;
+const INVERTED_POINT_ALPHA = 0.7;
+const CONTROL_POINT_RADIUS_PX = 8;
+const CONTROL_POINT_STROKE_WIDTH_PX = 2;
+const MAX_CONTROL_POINTS = 16;
+const CIRCLE_LINE_START_ID = "circle-line-start";
+const CIRCLE_LINE_END_ID = "circle-line-end";
 
 export type CircleInversionLineUniforms = {
     start: Vec2;
@@ -135,11 +153,11 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
 
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(this.program);
-        gl.uniform4f(this.uniforms.rectColor, ...RECT_COLOR);
-        gl.uniform4f(this.uniforms.invertedColor, ...INVERTED_COLOR);
+        gl.uniform4f(this.uniforms.rectColor, ...PRIMARY_RECT_COLOR);
+        gl.uniform4f(this.uniforms.invertedColor, ...PRIMARY_RECT_COLOR);
         gl.uniform4f(this.uniforms.circleColor, ...CIRCLE_COLOR);
         gl.uniform4f(this.uniforms.secondaryRectColor, ...SECONDARY_RECT_COLOR);
-        gl.uniform4f(this.uniforms.secondaryInvertedColor, ...SECONDARY_INVERTED_COLOR);
+        gl.uniform4f(this.uniforms.secondaryInvertedColor, ...SECONDARY_RECT_COLOR);
         gl.uniform4f(this.uniforms.lineColor, ...LINE_COLOR);
         gl.uniform4f(this.uniforms.invertedLineColor, ...INVERTED_LINE_COLOR);
         gl.uniform1f(this.uniforms.rectFeatherPx, RECT_FEATHER_PX);
@@ -163,6 +181,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
         gl.uniform1i(this.uniforms.showReferenceLine, 1);
         gl.uniform1i(this.uniforms.showInvertedLine, 1);
         gl.uniform1i(this.uniforms.invertedLineIsCircle, 0);
+        gl.uniform1i(this.uniforms.controlPointCount, 0);
         // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API invocation outside React components.
         gl.useProgram(null);
     }
@@ -173,6 +192,7 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
         viewport,
         canvas,
         textures,
+        halfPlaneControlPoints,
     }: WebGLPipelineRenderContext): void {
         if (renderScene.geometry !== GEOMETRY_KIND.euclidean) {
             return;
@@ -309,6 +329,25 @@ class EuclideanCircleInversionPipeline implements WebGLPipelineInstance {
             gl.uniform1f(this.uniforms.textureAspect, textureAspect);
         }
 
+        const controlPointMarkers = buildCircleInversionControlPoints(
+            halfPlaneControlPoints,
+            resolvedState,
+        );
+        const controlPointUniforms = buildControlPointUniforms(
+            controlPointMarkers,
+            MAX_CONTROL_POINTS,
+        );
+        gl.uniform1i(this.uniforms.controlPointCount, controlPointUniforms.count);
+        gl.uniform2fv(this.uniforms.controlPointPositions, controlPointUniforms.positions);
+        gl.uniform1fv(this.uniforms.controlPointRadiiPx, controlPointUniforms.radiiPx);
+        gl.uniform4fv(this.uniforms.controlPointFillColors, controlPointUniforms.fillColors);
+        gl.uniform4fv(this.uniforms.controlPointStrokeColors, controlPointUniforms.strokeColors);
+        gl.uniform1fv(
+            this.uniforms.controlPointStrokeWidthsPx,
+            controlPointUniforms.strokeWidthsPx,
+        );
+        gl.uniform1iv(this.uniforms.controlPointShapes, controlPointUniforms.shapes);
+
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.bindVertexArray(this.vao);
@@ -373,7 +412,96 @@ type UniformLocations = {
     textureScale: WebGLUniformLocation;
     textureRotation: WebGLUniformLocation;
     textureOpacity: WebGLUniformLocation;
+    controlPointCount: WebGLUniformLocation;
+    controlPointPositions: WebGLUniformLocation;
+    controlPointRadiiPx: WebGLUniformLocation;
+    controlPointFillColors: WebGLUniformLocation;
+    controlPointStrokeColors: WebGLUniformLocation;
+    controlPointStrokeWidthsPx: WebGLUniformLocation;
+    controlPointShapes: WebGLUniformLocation;
 };
+
+type RgbaColor = readonly [number, number, number, number];
+type HalfPlaneHandlePoint = HalfPlaneControlPoints[number];
+
+function buildCircleInversionControlPoints(
+    halfPlaneControlPoints: HalfPlaneControlPoints[] | null | undefined,
+    inversion: CircleInversionState,
+): RenderControlPoint[] {
+    const markers: RenderControlPoint[] = [];
+    const circle = {
+        c: { x: inversion.fixedCircle.center.x, y: inversion.fixedCircle.center.y },
+        r: inversion.fixedCircle.radius,
+    };
+
+    const startPoint = findControlPointById(halfPlaneControlPoints, CIRCLE_LINE_START_ID);
+    if (startPoint) {
+        markers.push(createCircleMarker(startPoint, LINE_START_POINT_COLOR, 1));
+        markers.push(
+            createCircleMarker(
+                invertInCircle(startPoint, circle),
+                LINE_START_POINT_COLOR,
+                INVERTED_POINT_ALPHA,
+            ),
+        );
+    }
+
+    const endPoint = findControlPointById(halfPlaneControlPoints, CIRCLE_LINE_END_ID);
+    if (endPoint) {
+        markers.push(createCircleMarker(endPoint, LINE_END_POINT_COLOR, 1));
+        markers.push(
+            createCircleMarker(
+                invertInCircle(endPoint, circle),
+                LINE_END_POINT_COLOR,
+                INVERTED_POINT_ALPHA,
+            ),
+        );
+    }
+
+    markers.push(createCircleMarker(circle.c, CENTER_POINT_COLOR, 1));
+
+    return markers;
+}
+
+function findControlPointById(
+    halfPlaneControlPoints: HalfPlaneControlPoints[] | null | undefined,
+    id: string,
+): HalfPlaneHandlePoint | null {
+    if (!halfPlaneControlPoints) {
+        return null;
+    }
+    for (const pair of halfPlaneControlPoints) {
+        if (!pair) {
+            continue;
+        }
+        for (const point of pair) {
+            if (point && point.id === id) {
+                return point;
+            }
+        }
+    }
+    return null;
+}
+
+function createCircleMarker(
+    position: Vec2,
+    color: RgbaColor,
+    alphaScale: number,
+): RenderControlPoint {
+    return {
+        position: { x: position.x, y: position.y },
+        radiusPx: CONTROL_POINT_RADIUS_PX,
+        fillColor: toColor(color, alphaScale),
+        strokeColor: toColor(CONTROL_POINT_STROKE_COLOR, 1),
+        strokeWidthPx: CONTROL_POINT_STROKE_WIDTH_PX,
+        shape: SHAPE_CIRCLE,
+    };
+}
+
+function toColor(color: RgbaColor, alphaScale: number): RenderControlPoint["fillColor"] {
+    const clampedAlpha = Math.min(Math.max(color[3] * alphaScale, 0), 1);
+    return { r: color[0], g: color[1], b: color[2], a: clampedAlpha };
+}
 
 function resolveInversionState(
     config: CircleInversionState | undefined,
@@ -519,6 +647,17 @@ function resolveUniformLocations(
         textureScale: getUniformLocation(gl, program, "uTextureScale"),
         textureRotation: getUniformLocation(gl, program, "uTextureRotation"),
         textureOpacity: getUniformLocation(gl, program, "uTextureOpacity"),
+        controlPointCount: getUniformLocation(gl, program, "uControlPointCount"),
+        controlPointPositions: getUniformLocation(gl, program, "uControlPointPositions[0]"),
+        controlPointRadiiPx: getUniformLocation(gl, program, "uControlPointRadiiPx[0]"),
+        controlPointFillColors: getUniformLocation(gl, program, "uControlPointFillColors[0]"),
+        controlPointStrokeColors: getUniformLocation(gl, program, "uControlPointStrokeColors[0]"),
+        controlPointStrokeWidthsPx: getUniformLocation(
+            gl,
+            program,
+            "uControlPointStrokeWidthsPx[0]",
+        ),
+        controlPointShapes: getUniformLocation(gl, program, "uControlPointShapes[0]"),
     };
 }
 
