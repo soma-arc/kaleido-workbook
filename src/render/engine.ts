@@ -182,6 +182,7 @@ export function createRenderEngine(
         let handleOverlay: HalfPlaneHandleOverlay | null = null;
         if (hasWebGLOutput) {
             canvasStyle.tileStroke = "rgba(0,0,0,0)";
+            canvasStyle.diskStroke = "rgba(0,0,0,0)";
         }
 
         // Canvas2D handle overlay is only used when WebGL control points are not available
