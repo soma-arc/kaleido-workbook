@@ -1,4 +1,4 @@
-# Hyperbolic Triple Family Overlay — Implementation Plan v0.2
+# Hyperbolic Triple Family Overlay — Implementation Plan v0.3
 
 ## 背景と目的
 - 既存 `hyperbolic-tiling-333` シーンは (3,3,3) 固定で反射回数スライダを提供する。
@@ -64,6 +64,36 @@
 1. Scene 定義とホスト改修（0.5d）
 2. オーバーレイ UI 実装（0.5d）
 3. Storybook とドキュメント整理（0.25d）
+
+## 追加計画 v0.3: r = ∞（理想頂点）対応
+
+### 背景
+- `HyperbolicTripleFamilyOverlay` のスライダは `HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R = 30` へハードクランプしており、`maxRepresentsInfinity` / `onInfinityToggle` を渡していないため、理想頂点を選択できない。
+- `hyperbolic-tiling-333` シーンでは `createTriangleSliderProps` が `triangle.idealVertexEnabled` と `triangle.setIdealVertex` を用い、最大値を ∞ として扱っている。Triple Family でも同じ設計パターンを流用できる。
+
+### ゴール
+- ファミリー各種で `r = Infinity` を UI から選択でき、`triangle.applyDirectTriple` および `HyperbolicParamsOverride` に ∞ が反映される。
+- 無限選択時はスライダラベルに `∞` を表示し、解除すると最後の有限 `r` に戻る。
+
+### 実装ステップ
+1. **状態管理の拡張（`src/ui/scenes/hyperbolicBindings.ts`）**  
+   - `useHyperbolicTripleFamilyBinding` に `const [idealVertex, setIdealVertex] = useState(false);` を追加。`handleSliderChange` では最大値近傍を選んだ際に `setIdealVertex(true)` を呼び、その他の値に動いたら `false` へ戻す。  
+   - `triangle.applyDirectTriple` 呼び出し前に `idealVertex` を見て `r = Number.POSITIVE_INFINITY` を渡す。有限モードへ戻る際は現在の `clampFamilyR` 値を使用。
+2. **スライダ props 更新**  
+   - `overlayControls.rSlider` に `maxRepresentsInfinity: true`, `infinitySelected: idealVertex`, `onInfinityToggle: setIdealVertex` を渡す。  
+   - `value` は `idealVertex` のときも直前の有限値を保持し、実際の表示はコンポーネント側で `∞` になる（`HyperbolicTiling333TriangleSlider` のロジックをそのまま利用）。
+3. **制約関数の調整**  
+   - `clampFamilyR` は有限値にのみ適用し、∞ 選択時はスキップできるよう `handleSliderChange` 内で切り替え。`HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R` は UI 最大値として維持しつつ、「最大値を選ぶ = 理想頂点」の仕様を明記するコメントを追加。
+4. **派生値の同期**  
+   - `paramsOverride`・`uniforms` は現状通りで良いが、`paramsOverride.params.r` に `idealVertex ? Number.POSITIVE_INFINITY : clampFamilyR(rValue)` をセット。  
+   - `useEffect` で `triangle.applyDirectTriple` を呼ぶ際も同じ分岐を適用し、ホストとシーンの両方が常に一致するようにする。
+5. **検証**  
+   - `hyperbolic-tiling-333` と同じ操作感になっているか手動確認（最大値までドラッグ → ラベルが `Triangle r: ∞`、再度下げると有限値へ戻る）。  
+   - 可能であれば Storybook の Triple Family ストーリーを追加し、`play` 関数で最大値ドラッグ → 理想頂点トグルが反映されることを確認（将来タスクとして TODO 化可）。
+
+### ドキュメント/タスクメモ
+- `plan/hyperbolic-triple-family-overlay.md`（本書）に本計画を記載済み。実装 Issue では `hyperbolic-tiling-333` シーンのスライダ設定を参照する旨を明記する。  
+- 完了時に README へ「Triple Family でも理想頂点を選択できる」旨を追記するか、もしくは Storybook Docs の KNOWN LIMITS を更新する。
 
 ---
 

@@ -142,9 +142,17 @@ export function useHyperbolicTripleFamilyBinding(
     active: boolean,
 ): HyperbolicBindingResult {
     const { createId, triangle } = context;
+    const {
+        applyDirectTriple,
+        setIdealVertex,
+        idealVertexEnabled,
+        params: triangleParams,
+    } = triangle;
     const [family, setFamily] = useState<{ p: number; q: number }>({ p: 3, q: 3 });
     const [rValue, setRValue] = useState<number>(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
     const sliderId = useMemo(() => createId("family-reflections"), [createId]);
+    const clampedSliderValue = clampFamilyR(rValue);
+    const resolvedFamilyR = idealVertexEnabled ? Number.POSITIVE_INFINITY : clampedSliderValue;
 
     useEffect(() => {
         if (!active) {
@@ -152,23 +160,28 @@ export function useHyperbolicTripleFamilyBinding(
         }
         setFamily({ p: 3, q: 3 });
         setRValue(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
-    }, [active]);
+        setIdealVertex(false);
+    }, [active, setIdealVertex]);
 
     useEffect(() => {
         if (!active) {
             return;
         }
-        triangle.applyDirectTriple({
+        applyDirectTriple({
             p: family.p,
             q: family.q,
-            r: clampFamilyR(rValue),
+            r: resolvedFamilyR,
         });
-    }, [active, family, rValue, triangle]);
+    }, [active, applyDirectTriple, family, resolvedFamilyR]);
 
-    const handleFamilyChange = useCallback((next: { p: number; q: number }) => {
-        setFamily(next);
-        setRValue(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
-    }, []);
+    const handleFamilyChange = useCallback(
+        (next: { p: number; q: number }) => {
+            setFamily(next);
+            setRValue(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
+            setIdealVertex(false);
+        },
+        [setIdealVertex],
+    );
 
     const handleSliderChange = useCallback((next: number) => {
         setRValue((prev) => {
@@ -176,6 +189,13 @@ export function useHyperbolicTripleFamilyBinding(
             return prev === snapped ? prev : snapped;
         });
     }, []);
+
+    const handleInfinityToggle = useCallback(
+        (enabled: boolean) => {
+            setIdealVertex(enabled);
+        },
+        [setIdealVertex],
+    );
 
     const overlayControls: HyperbolicTripleFamilyOverlayProps | undefined = useMemo(() => {
         if (!active) {
@@ -189,11 +209,23 @@ export function useHyperbolicTripleFamilyBinding(
                 min: HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R,
                 max: HYPERBOLIC_TILING_TRIPLE_FAMILY_MAX_R,
                 step: HYPERBOLIC_TILING_TRIPLE_FAMILY_STEP,
-                value: clampFamilyR(rValue),
+                value: clampedSliderValue,
                 onChange: handleSliderChange,
+                maxRepresentsInfinity: true,
+                infinitySelected: idealVertexEnabled,
+                onInfinityToggle: handleInfinityToggle,
             },
         };
-    }, [active, family, handleFamilyChange, handleSliderChange, rValue, sliderId]);
+    }, [
+        active,
+        clampedSliderValue,
+        family,
+        handleFamilyChange,
+        handleInfinityToggle,
+        handleSliderChange,
+        sliderId,
+        idealVertexEnabled,
+    ]);
 
     const uniforms: HyperbolicTripleReflectionUniforms = useMemo(
         () => ({ uMaxReflections: HYPERBOLIC_TILING_TRIPLE_FAMILY_REFLECTIONS }),
@@ -206,11 +238,11 @@ export function useHyperbolicTripleFamilyBinding(
             params: {
                 p: family.p,
                 q: family.q,
-                r: clampFamilyR(rValue),
-                depth: triangle.params.depth,
+                r: resolvedFamilyR,
+                depth: triangleParams.depth,
             },
         }),
-        [family, rValue, triangle.params.depth],
+        [family, resolvedFamilyR, triangleParams.depth],
     );
 
     if (!active) {
