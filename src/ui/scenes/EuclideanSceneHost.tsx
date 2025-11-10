@@ -790,6 +790,37 @@ export function EuclideanSceneHost({
         ],
     );
 
+    const updateCircleInversionOverlayCursor = useCallback(
+        (event: React.PointerEvent<HTMLCanvasElement>): boolean => {
+            if (scene.geometry !== GEOMETRY_KIND.euclidean || !scene.inversionConfig) {
+                return false;
+            }
+            const canvas = event.currentTarget;
+            const viewport = computeViewport(canvas);
+            const screen = getPointer(event);
+            const worldPoint = screenToWorld(viewport, screen);
+            const target = hitTestCircleInversionRectangles(effectiveCircleInversion, worldPoint);
+            if (target) {
+                applyHandleCursor("grab");
+                return true;
+            }
+            if (!scene.supportsHandles || !showHandles) {
+                applyHandleCursor(undefined);
+            }
+            return false;
+        },
+        [
+            scene.geometry,
+            scene.inversionConfig,
+            scene.supportsHandles,
+            showHandles,
+            computeViewport,
+            getPointer,
+            effectiveCircleInversion,
+            applyHandleCursor,
+        ],
+    );
+
     const renderEuclideanScene = useCallback(
         (
             planes: HalfPlane[],
@@ -1044,7 +1075,7 @@ export function EuclideanSceneHost({
                 target: overlayTarget,
                 offset,
             });
-            applyHandleCursor(undefined);
+            applyHandleCursor("grabbing");
             return;
         }
 
@@ -1129,7 +1160,10 @@ export function EuclideanSceneHost({
         const currentDrag = dragRef.current;
         if (!currentDrag) {
             if (scene.geometry === GEOMETRY_KIND.euclidean) {
-                updateHandleHoverCursor(e);
+                const overlayHandled = updateCircleInversionOverlayCursor(e);
+                if (!overlayHandled) {
+                    updateHandleHoverCursor(e);
+                }
             } else {
                 applyHandleCursor(undefined);
             }
@@ -1231,6 +1265,7 @@ export function EuclideanSceneHost({
         }
 
         if (currentDrag.type === "overlay") {
+            applyHandleCursor("grabbing");
             const pointer = getPointer(e);
             const worldPoint = screenToWorld(viewport, pointer);
             const baseState =
@@ -1347,7 +1382,10 @@ export function EuclideanSceneHost({
         }
         setDragState(null);
         if (scene.geometry === GEOMETRY_KIND.euclidean) {
-            updateHandleHoverCursor(e);
+            const overlayHandled = updateCircleInversionOverlayCursor(e);
+            if (!overlayHandled) {
+                updateHandleHoverCursor(e);
+            }
             const planes = latestEuclideanPlanesRef.current ?? normalizedHalfPlanes ?? null;
             if (planes) {
                 renderEuclideanScene(planes, currentControlPoints, null);
