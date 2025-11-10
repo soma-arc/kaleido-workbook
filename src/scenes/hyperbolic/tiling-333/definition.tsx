@@ -51,17 +51,25 @@ export const hyperbolicTripleReflectionScene = {
                   triangleSliderId?: string;
               }
             | undefined;
-        const triangleSlider = createTriangleSliderProps(
-            context?.triangle,
-            context?.triangleSliderId,
-        );
-        if (!context?.reflectionControls && !triangleSlider) {
+        const triangleState = context?.triangle;
+        const triangleSlider =
+            triangleState && !triangleState.idealVertexEnabled
+                ? createTriangleSliderProps(triangleState, context?.triangleSliderId)
+                : undefined;
+        const idealToggle = triangleState?.setIdealVertex
+            ? {
+                  enabled: triangleState.idealVertexEnabled,
+                  onToggle: () => triangleState.setIdealVertex(!triangleState.idealVertexEnabled),
+              }
+            : undefined;
+        if (!context?.reflectionControls && !triangleSlider && !idealToggle) {
             return controls ?? undefined;
         }
         return (
             <HyperbolicTiling333OverlayControls
                 reflectionControls={context?.reflectionControls}
                 triangleSlider={triangleSlider}
+                idealToggle={idealToggle}
             />
         );
     },

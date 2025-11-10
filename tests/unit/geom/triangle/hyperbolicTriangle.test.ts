@@ -49,4 +49,14 @@ describe("geom/triangle/hyperbolicTriangle", () => {
     it("throws when 1/p+1/q+1/r > 1", () => {
         expect(() => buildHyperbolicTriangle(2.1, 2.1, 2.1)).toThrowError();
     });
+
+    it("supports ideal vertices when allowIdeal is true", () => {
+        const tri = buildHyperbolicTriangle(3, 3, Number.POSITIVE_INFINITY, { allowIdeal: true });
+        expect(tri.boundaries).toHaveLength(3);
+        expect(tri.angles[2]).toBeLessThan(1e-3);
+    });
+
+    it("rejects ideal vertices when allowIdeal is false", () => {
+        expect(() => buildHyperbolicTriangle(3, 3, Number.POSITIVE_INFINITY)).toThrow();
+    });
 });

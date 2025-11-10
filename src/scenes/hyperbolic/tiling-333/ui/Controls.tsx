@@ -23,9 +23,15 @@ export type HyperbolicTiling333TriangleSliderProps = {
     onChange: (next: number) => void;
 };
 
+type HyperbolicIdealToggleProps = {
+    enabled: boolean;
+    onToggle: () => void;
+};
+
 export type HyperbolicTiling333OverlayControlsProps = {
     reflectionControls?: HyperbolicTiling333ControlsProps;
     triangleSlider?: HyperbolicTiling333TriangleSliderProps;
+    idealToggle?: HyperbolicIdealToggleProps;
 };
 
 const PANEL_CONTAINER_STYLE = { display: "grid", gap: "4px" } as const;
@@ -33,10 +39,18 @@ const OVERLAY_CONTAINER_STYLE = { display: "grid", gap: "6px", minWidth: 200 } a
 const PANEL_LABEL_STYLE = { fontWeight: 600 } as const;
 const OVERLAY_LABEL_STYLE = { fontWeight: 600, fontSize: "0.9rem" } as const;
 const OVERLAY_SECTION_STYLE = { display: "grid", gap: "8px" } as const;
+const IDEAL_BUTTON_STYLE = {
+    padding: "6px 10px",
+    borderRadius: 6,
+    border: "1px solid rgba(148, 163, 184, 0.6)",
+    background: "rgba(30, 41, 59, 0.85)",
+    color: "#e2e8f0",
+    cursor: "pointer",
+} as const;
 
 function formatRValue(value: number): string {
     if (!Number.isFinite(value)) {
-        return "-";
+        return "∞";
     }
     if (Math.abs(value - Math.round(value)) < 1e-6) {
         return `${Math.round(value)}`;
@@ -86,13 +100,30 @@ export function HyperbolicTiling333Controls({
 export function HyperbolicTiling333OverlayControls(
     props: HyperbolicTiling333OverlayControlsProps,
 ): JSX.Element {
-    const { reflectionControls, triangleSlider } = props;
-    if (!reflectionControls && !triangleSlider) {
+    const { reflectionControls, triangleSlider, idealToggle } = props;
+    if (!reflectionControls && !triangleSlider && !idealToggle) {
         return <div />;
     }
     return (
         <div style={OVERLAY_SECTION_STYLE}>
-            {triangleSlider ? <HyperbolicTiling333TriangleSlider {...triangleSlider} /> : null}
+            {triangleSlider ? (
+                <>
+                    <HyperbolicTiling333TriangleSlider {...triangleSlider} />
+                    {idealToggle ? (
+                        <button
+                            type="button"
+                            style={IDEAL_BUTTON_STYLE}
+                            onClick={idealToggle.onToggle}
+                        >
+                            {idealToggle.enabled ? "r = ∞ を解除" : "r = ∞ を適用"}
+                        </button>
+                    ) : null}
+                </>
+            ) : idealToggle ? (
+                <button type="button" style={IDEAL_BUTTON_STYLE} onClick={idealToggle.onToggle}>
+                    {idealToggle.enabled ? "r = ∞ を解除" : "r = ∞ を適用"}
+                </button>
+            ) : null}
             {reflectionControls ? (
                 <HyperbolicTiling333Controls {...reflectionControls} variant="overlay" />
             ) : null}

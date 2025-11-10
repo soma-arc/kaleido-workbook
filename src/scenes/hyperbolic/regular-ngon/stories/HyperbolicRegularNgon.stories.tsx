@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { expect } from "@storybook/test";
 import { fireEvent, within } from "@storybook/testing-library";
 import { useMemo } from "react";
-import { useTriangleParams } from "@/ui/hooks/useTriangleParams";
+import { useHyperbolicTriangleState } from "@/ui/hooks/useHyperbolicTriangleState";
 import { SCENE_IDS } from "@/ui/scenes";
 import { HyperbolicSceneHost } from "@/ui/scenes/HyperbolicSceneHost";
 import { useSceneRegistry } from "@/ui/scenes/useSceneRegistry";
@@ -22,11 +22,10 @@ function HyperbolicRegularNgonDemo(): JSX.Element {
         return match;
     }, [scenes]);
 
-    const triangleParams = useTriangleParams({
+    const triangleParams = useHyperbolicTriangleState({
         initialParams: DEFAULT_TRIANGLE,
         triangleNMax: TRIANGLE_N_MAX,
         depthRange: DEPTH_RANGE,
-        initialGeometryMode: scene.geometry,
     });
 
     return (

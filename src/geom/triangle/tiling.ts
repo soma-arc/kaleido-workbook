@@ -13,6 +13,7 @@ export function buildTiling(params: TilingParams): {
         params.p,
         params.q,
         params.r,
+        { allowIdeal: true },
     );
     const { faces, stats } = expandHyperbolicTriangleGroup(base, params.depth);
     return { base, faces, stats: { depth: stats.depth, total: faces.length } };
