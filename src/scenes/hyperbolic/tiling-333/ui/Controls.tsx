@@ -21,17 +21,14 @@ export type HyperbolicTiling333TriangleSliderProps = {
     step: number;
     value: number;
     onChange: (next: number) => void;
-};
-
-type HyperbolicIdealToggleProps = {
-    enabled: boolean;
-    onToggle: () => void;
+    maxRepresentsInfinity?: boolean;
+    infinitySelected?: boolean;
+    onInfinityToggle?: (enabled: boolean) => void;
 };
 
 export type HyperbolicTiling333OverlayControlsProps = {
     reflectionControls?: HyperbolicTiling333ControlsProps;
     triangleSlider?: HyperbolicTiling333TriangleSliderProps;
-    idealToggle?: HyperbolicIdealToggleProps;
 };
 
 const PANEL_CONTAINER_STYLE = { display: "grid", gap: "4px" } as const;
@@ -39,16 +36,11 @@ const OVERLAY_CONTAINER_STYLE = { display: "grid", gap: "6px", minWidth: 200 } a
 const PANEL_LABEL_STYLE = { fontWeight: 600 } as const;
 const OVERLAY_LABEL_STYLE = { fontWeight: 600, fontSize: "0.9rem" } as const;
 const OVERLAY_SECTION_STYLE = { display: "grid", gap: "8px" } as const;
-const IDEAL_BUTTON_STYLE = {
-    padding: "6px 10px",
-    borderRadius: 6,
-    border: "1px solid rgba(148, 163, 184, 0.6)",
-    background: "rgba(30, 41, 59, 0.85)",
-    color: "#e2e8f0",
-    cursor: "pointer",
-} as const;
 
-function formatRValue(value: number): string {
+function formatRValue(value: number, infinitySelected = false): string {
+    if (infinitySelected) {
+        return "∞";
+    }
     if (!Number.isFinite(value)) {
         return "∞";
     }
@@ -100,30 +92,13 @@ export function HyperbolicTiling333Controls({
 export function HyperbolicTiling333OverlayControls(
     props: HyperbolicTiling333OverlayControlsProps,
 ): JSX.Element {
-    const { reflectionControls, triangleSlider, idealToggle } = props;
-    if (!reflectionControls && !triangleSlider && !idealToggle) {
+    const { reflectionControls, triangleSlider } = props;
+    if (!reflectionControls && !triangleSlider) {
         return <div />;
     }
     return (
         <div style={OVERLAY_SECTION_STYLE}>
-            {triangleSlider ? (
-                <>
-                    <HyperbolicTiling333TriangleSlider {...triangleSlider} />
-                    {idealToggle ? (
-                        <button
-                            type="button"
-                            style={IDEAL_BUTTON_STYLE}
-                            onClick={idealToggle.onToggle}
-                        >
-                            {idealToggle.enabled ? "r = ∞ を解除" : "r = ∞ を適用"}
-                        </button>
-                    ) : null}
-                </>
-            ) : idealToggle ? (
-                <button type="button" style={IDEAL_BUTTON_STYLE} onClick={idealToggle.onToggle}>
-                    {idealToggle.enabled ? "r = ∞ を解除" : "r = ∞ を適用"}
-                </button>
-            ) : null}
+            {triangleSlider ? <HyperbolicTiling333TriangleSlider {...triangleSlider} /> : null}
             {reflectionControls ? (
                 <HyperbolicTiling333Controls {...reflectionControls} variant="overlay" />
             ) : null}
@@ -138,10 +113,23 @@ export function HyperbolicTiling333TriangleSlider({
     step,
     value,
     onChange,
+    maxRepresentsInfinity = false,
+    infinitySelected = false,
+    onInfinityToggle,
 }: HyperbolicTiling333TriangleSliderProps): JSX.Element {
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const nextValue = Number(event.target.value);
         if (Number.isFinite(nextValue)) {
+            if (maxRepresentsInfinity) {
+                const nearInfinity = nextValue >= max - 1e-6;
+                if (nearInfinity) {
+                    onInfinityToggle?.(true);
+                    return;
+                }
+                if (infinitySelected) {
+                    onInfinityToggle?.(false);
+                }
+            }
             onChange(nextValue);
         }
     };
@@ -149,7 +137,7 @@ export function HyperbolicTiling333TriangleSlider({
     return (
         <div style={OVERLAY_CONTAINER_STYLE}>
             <label htmlFor={sliderId} style={OVERLAY_LABEL_STYLE}>
-                {`Triangle r: ${formatRValue(value)}`}
+                {`Triangle r: ${formatRValue(value, infinitySelected && maxRepresentsInfinity)}`}
             </label>
             <input
                 id={sliderId}
@@ -157,12 +145,17 @@ export function HyperbolicTiling333TriangleSlider({
                 min={min}
                 max={max}
                 step={step}
-                value={value}
+                value={infinitySelected && maxRepresentsInfinity ? max : value}
                 onChange={handleChange}
                 aria-valuemin={min}
                 aria-valuemax={max}
-                aria-valuenow={value}
+                aria-valuenow={infinitySelected && maxRepresentsInfinity ? max : value}
             />
+            {maxRepresentsInfinity ? (
+                <span style={{ fontSize: "0.8rem", color: "#cbd5f5" }}>
+                    スライダ最大値 = ∞ (ideal vertex)
+                </span>
+            ) : null}
         </div>
     );
 }
