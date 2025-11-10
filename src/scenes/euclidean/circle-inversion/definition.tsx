@@ -15,8 +15,8 @@ const CIRCLE_INVERSION_LINE_HALF_PLANE = [
 
 const CIRCLE_INVERSION_LINE_CONTROL_POINTS: HalfPlaneControlPoints[] = [
     [
-        { id: "circle-line-start", x: -0.6, y: 0, fixed: false },
-        { id: "circle-line-end", x: 0.6, y: 0.2, fixed: false },
+        { id: "circle-line-start", x: -1.2, y: 0.3, fixed: false },
+        { id: "circle-line-end", x: -0.6, y: -0.7, fixed: false },
     ],
 ];
 
@@ -26,8 +26,8 @@ const CIRCLE_INVERSION_CONFIG: CircleInversionSceneConfig = {
         radius: 0.6,
     },
     line: {
-        start: { x: -0.6, y: 0 },
-        end: { x: 0.6, y: 0.2 },
+        start: { x: -1.2, y: 0.3 },
+        end: { x: -0.6, y: -0.7 },
     },
     rectangle: {
         center: { x: 0.3, y: 0 },
