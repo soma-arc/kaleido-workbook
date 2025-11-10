@@ -119,6 +119,10 @@ const clampFamilyR = (value: number): number => {
     );
 };
 
+type TripleFamily = { p: number; q: number };
+
+const DEFAULT_TRIPLE_FAMILY: TripleFamily = { p: 3, q: 3 };
+
 const clampRegularNgonN = (value: number): number => {
     const rounded = Math.round(value);
     return Math.min(
@@ -137,6 +141,19 @@ const clampRegularNgonQ = (value: number): number => {
 
 const isHyperbolicNgonValid = (n: number, q: number): boolean => (n - 2) * (q - 2) > 4;
 
+const getTripleFamilyInitialR = ({ p, q }: TripleFamily): number => {
+    if (p === 3 && q === 3) {
+        return 4;
+    }
+    if (p === 2 && q === 4) {
+        return 5;
+    }
+    if (p === 2 && q === 3) {
+        return 7;
+    }
+    return HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R;
+};
+
 export function useHyperbolicTripleFamilyBinding(
     context: BindingContext,
     active: boolean,
@@ -148,8 +165,8 @@ export function useHyperbolicTripleFamilyBinding(
         idealVertexEnabled,
         params: triangleParams,
     } = triangle;
-    const [family, setFamily] = useState<{ p: number; q: number }>({ p: 3, q: 3 });
-    const [rValue, setRValue] = useState<number>(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
+    const [family, setFamily] = useState<TripleFamily>(DEFAULT_TRIPLE_FAMILY);
+    const [rValue, setRValue] = useState<number>(getTripleFamilyInitialR(DEFAULT_TRIPLE_FAMILY));
     const sliderId = useMemo(() => createId("family-reflections"), [createId]);
     const clampedSliderValue = clampFamilyR(rValue);
     const resolvedFamilyR = idealVertexEnabled ? Number.POSITIVE_INFINITY : clampedSliderValue;
@@ -158,8 +175,8 @@ export function useHyperbolicTripleFamilyBinding(
         if (!active) {
             return;
         }
-        setFamily({ p: 3, q: 3 });
-        setRValue(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
+        setFamily(DEFAULT_TRIPLE_FAMILY);
+        setRValue(getTripleFamilyInitialR(DEFAULT_TRIPLE_FAMILY));
         setIdealVertex(false);
     }, [active, setIdealVertex]);
 
@@ -177,7 +194,7 @@ export function useHyperbolicTripleFamilyBinding(
     const handleFamilyChange = useCallback(
         (next: { p: number; q: number }) => {
             setFamily(next);
-            setRValue(HYPERBOLIC_TILING_TRIPLE_FAMILY_MIN_R);
+            setRValue(getTripleFamilyInitialR(next));
             setIdealVertex(false);
         },
         [setIdealVertex],
