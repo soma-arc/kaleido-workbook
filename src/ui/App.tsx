@@ -63,6 +63,7 @@ export function App(): JSX.Element {
         initialParams: HYPERBOLIC_INITIAL_PARAMS,
         triangleNMax: TRIANGLE_N_MAX,
         depthRange: DEPTH_RANGE,
+        allowIdeal: true,
     });
 
     const triangleParams = useTriangleParams({

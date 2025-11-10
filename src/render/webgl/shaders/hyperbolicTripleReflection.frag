@@ -171,8 +171,9 @@ TileData shadeTiles(const vec2 worldPoint, float tileMask) {
         }
     }
 
+    bool hasTile = (reflections > 0) || insideFundamental;
     vec3 bodyColor = vec3(0.0);
-    if (reflections > 0 || insideFundamental) {
+    if (hasTile) {
         float hue = fract(float(reflections) * 0.16180339);
         vec3 wavePalette = palette(hue);
         vec3 baseTone = normalize(uFillColor + vec3(1e-6));
@@ -188,6 +189,10 @@ TileData shadeTiles(const vec2 worldPoint, float tileMask) {
     vec3 fillBlend = mix(bodyColor, textureColor.rgb, textureColor.a);
 
     float fillAlpha = hitReflectionLimit ? 0.0 : 0.9 * tileMask;
+    if (!hasTile) {
+        fillAlpha = 0.0;
+        bodyColor = vec3(0.0);
+    }
 
     TileData data;
     data.color = fillBlend;
@@ -276,9 +281,8 @@ void main() {
     float unitCircleAlpha = 1.0 - smoothstep(uLineWidth - uFeather, uLineWidth + uFeather, unitCirclePx);
 
     vec3 finalColor = mix(fillBlend, uLineColor, edgeAlpha);
-    //finalColor = mix(finalColor, vec3(1.0), unitCircleAlpha);
 
-    float finalAlpha = max(max(textureColor.a, edgeAlpha), unitCircleAlpha);
+    float finalAlpha = max(textureColor.a, edgeAlpha);
     finalAlpha = max(finalAlpha, tile.alpha);
     vec4 color = vec4(finalColor, finalAlpha);
 

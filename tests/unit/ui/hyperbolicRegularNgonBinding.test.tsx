@@ -21,6 +21,8 @@ const mockTriangleState: HyperbolicTriangleState = {
     rStep: 1,
     applyDirectTriple: () => undefined,
     updateDepth: () => undefined,
+    idealVertexEnabled: false,
+    setIdealVertex: () => undefined,
 };
 
 type HookHarness = {

@@ -201,7 +201,8 @@ TileData shadeTiles(vec2 worldPoint, float tileMask) {
 
     // 色：順序非依存64bit ID を hue に写像
     vec3 bodyColor = vec3(0.0);
-    if (reflections > 0 || insideFundamental) {
+    bool hasTile = (reflections > 0) || insideFundamental;
+    if (hasTile) {
         float hue = hashToHue(tileId);
         vec3 wavePalette = palette(hue);
         vec3 baseTone = normalize(uFillColor + vec3(1e-6));
@@ -214,6 +215,10 @@ TileData shadeTiles(vec2 worldPoint, float tileMask) {
     tex.a *= tileMask;
     vec3 fill  = mix(bodyColor, tex.rgb, tex.a);
     float alpha = hitLimit ? 0.0 : max(tex.a, 0.85 * tileMask);
+    if (!hasTile || uMaxReflections == 0) {
+        alpha = 0.0;
+        fill = vec3(0.0);
+    }
 
     TileData t;
     t.color = fill;

@@ -240,13 +240,25 @@ function scaleHalfPlane(plane: HalfPlane, factor: number): HalfPlane {
  * buildHyperbolicTriangle
  * Construct a canonical (p,q,r) hyperbolic triangle primitive set.
  */
+const IDEAL_R_EFFECTIVE = 1_000_000;
+
+type BuildHyperbolicTriangleOptions = {
+    allowIdeal?: boolean;
+};
+
 export function buildHyperbolicTriangle(
     p: number,
     q: number,
     r: number,
+    options: BuildHyperbolicTriangleOptions = {},
 ): HyperbolicTrianglePrimitives {
     if (!(p > 1 && q > 1 && r > 1)) {
         throw new Error("Invalid (p,q,r) for hyperbolic triangle");
+    }
+    const allowIdeal = options.allowIdeal ?? false;
+    const isIdealVertex = !Number.isFinite(r);
+    if (isIdealVertex && !allowIdeal) {
+        throw new Error("Ideal vertices are not allowed (set allowIdeal option to true)");
     }
     const sumWithoutR = 1 / p + 1 / q;
     if (sumWithoutR >= 1 - SUM_TOL) {
@@ -255,7 +267,7 @@ export function buildHyperbolicTriangle(
         );
     }
 
-    const hyperbolicConstraint = sumWithoutR + 1 / r;
+    const hyperbolicConstraint = sumWithoutR + (isIdealVertex ? 0 : 1 / r);
     if (hyperbolicConstraint > 1 + SUM_TOL) {
         throw new Error(
             `[HyperbolicTriangle] (p,q,r)=(${p},${q},${r}) violates hyperbolic constraint (1/p + 1/q + 1/r >= 1)`,
@@ -264,7 +276,8 @@ export function buildHyperbolicTriangle(
 
     const alpha = Math.PI / p;
     const beta = Math.PI / q;
-    const gamma = Math.PI / r;
+    const effectiveR = isIdealVertex ? IDEAL_R_EFFECTIVE : r;
+    const gamma = Math.PI / effectiveR;
 
     const { a, b, c: sideC } = sidesFromAnglesHyperbolic(alpha, beta, gamma);
 

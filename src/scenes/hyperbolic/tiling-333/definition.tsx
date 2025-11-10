@@ -93,7 +93,10 @@ function createTriangleSliderProps(
         min,
         max,
         step: Math.max(step, 0.01),
-        value: clamp(triangle.rSliderValue),
+        value: triangle.idealVertexEnabled ? max : clamp(triangle.rSliderValue),
         onChange: handleChange,
+        maxRepresentsInfinity: true,
+        infinitySelected: triangle.idealVertexEnabled,
+        onInfinityToggle: triangle.setIdealVertex,
     };
 }
