@@ -216,7 +216,7 @@ void main() {
 
     vec2 tracePoint = worldPoint;
     int reflections = 0;
-    const int MAX_REFLECTION_STEPS = 10;
+    const int MAX_REFLECTION_STEPS = 100;
 
     for (int step = 0; step < MAX_REFLECTION_STEPS; ++step) {
         bool reflected = false;
