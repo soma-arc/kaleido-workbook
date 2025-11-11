@@ -26,6 +26,7 @@ import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
 import { computeHingeAngles } from "@/scenes/euclidean/hinge/math";
+import { EUCLIDEAN_MULTI_PLANE_SCENE_KEY } from "@/scenes/euclidean/multi-plane/definition";
 import { DepthControls } from "@/ui/components/DepthControls";
 import { HalfPlaneHandleControls } from "@/ui/components/HalfPlaneHandleControls";
 import {
@@ -736,13 +737,28 @@ export function EuclideanSceneHost({
         }
     }, [scene.supportsHandles, showHandles, applyHandleCursor]);
     const textureRectangle = textureRectangleInteraction.rect;
+    const currentControlPoints = handleControls?.points ?? null;
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
     useEffect(() => {
         resetPanZoom();
+        if (scene.key !== EUCLIDEAN_MULTI_PLANE_SCENE_KEY) {
+            return;
+        }
+        const canvasElement = canvasRef.current;
+        if (!canvasElement) {
+            return;
+        }
+        const focus = {
+            x: (canvasElement.width || canvasElement.clientWidth || 0) / 2,
+            y: (canvasElement.height || canvasElement.clientHeight || 0) / 2,
+        };
+        zoomCanvasAt(focus, 0.2);
+        const planesForRender =
+            latestEuclideanPlanesRef.current ?? normalizedHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
+        renderEuclideanScene(planesForRender, currentControlPoints);
     }, [scene.id, resetPanZoom]);
 
-    const currentControlPoints = handleControls?.points ?? null;
     const hingeAngles = useMemo(() => {
         if (scene.variant !== "hinge") {
             return undefined;
