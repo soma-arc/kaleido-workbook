@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useMemo, useRef } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { GEOMETRY_KIND } from "@/geom/core/types";
 import { getCanvasPixelRatio } from "@/render/canvas";
-import type { GeometryRenderRequest, ViewportModifier } from "@/render/engine";
+import { cropToCenteredSquare } from "@/render/crop";
+import type { CaptureRequestKind, GeometryRenderRequest, ViewportModifier } from "@/render/engine";
+import { exportPNG } from "@/render/export";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
+import {
+    ImageExportControls,
+    type ImageExportMode,
+    type ImageExportStatus,
+} from "@/ui/components/ImageExportControls";
 import { ModeControls } from "@/ui/components/ModeControls";
 import { StageCanvas } from "@/ui/components/StageCanvas";
 import { TexturePicker } from "@/ui/components/texture/TexturePicker";
@@ -17,6 +24,7 @@ import type {
     SceneDefinition,
     SceneId,
 } from "@/ui/scenes/types";
+import { downloadDataUrl } from "@/ui/utils/download";
 import { useHyperbolicBindingForScene } from "./hyperbolicBindings";
 import {
     createDefaultEmbedOverlay,
@@ -26,6 +34,26 @@ import {
     STAGE_CANVAS_BASE_STYLE,
 } from "./layouts";
 import type { SceneContextExtras } from "./types";
+
+const MODE_TO_CAPTURE_KIND: Record<ImageExportMode, CaptureRequestKind> = {
+    composite: "composite",
+    webgl: "webgl",
+    "square-composite": "composite",
+    "square-webgl": "webgl",
+} as const;
+
+const SQUARE_MODES: ReadonlySet<ImageExportMode> = new Set(["square-composite", "square-webgl"]);
+
+function pad(value: number): string {
+    return value.toString().padStart(2, "0");
+}
+
+function buildFilename(mode: ImageExportMode): string {
+    const now = new Date();
+    const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    return `hp-capture-${mode}-${datePart}-${timePart}.png`;
+}
 
 export type HyperbolicSceneHostProps = {
     scene: SceneDefinition;
@@ -67,6 +95,8 @@ export function HyperbolicSceneHost({
         return { kind: "triangle", params: triangle.params };
     }, [binding?.paramsOverride, scene.fixedHyperbolicParams, triangle.params]);
     const suspendRender = binding?.suspendRender ?? false;
+    const [exportMode, setExportMode] = useState<ImageExportMode>("composite");
+    const [exportStatus, setExportStatus] = useState<ImageExportStatus>(null);
 
     const panZoomLimits = useMemo(() => ({ minScale: 0.25, maxScale: 8 }), []);
     const computeBaseViewport = useCallback((canvasElement: HTMLCanvasElement) => {
@@ -156,6 +186,52 @@ export function HyperbolicSceneHost({
     useEffect(() => {
         renderHyperbolicScene();
     }, [renderHyperbolicScene]);
+
+    const handleExportImage = useCallback(() => {
+        const engine = renderEngineRef.current;
+        if (!engine) {
+            setExportStatus({ tone: "error", message: "レンダーエンジンの初期化を待っています。" });
+            return;
+        }
+        const primaryKind = MODE_TO_CAPTURE_KIND[exportMode];
+        let resolvedMode: ImageExportMode = exportMode;
+        let canvasForExport = engine.capture(primaryKind);
+        let usedKind: CaptureRequestKind = primaryKind;
+        if (!canvasForExport && primaryKind === "webgl") {
+            canvasForExport = engine.capture("composite");
+            if (canvasForExport) {
+                usedKind = "composite";
+                resolvedMode = SQUARE_MODES.has(exportMode) ? "square-composite" : "composite";
+            }
+        }
+        if (!canvasForExport) {
+            setExportStatus({ tone: "error", message: "保存用の描画を取得できませんでした。" });
+            return;
+        }
+        if (SQUARE_MODES.has(resolvedMode)) {
+            canvasForExport = cropToCenteredSquare(canvasForExport);
+        }
+        const dataUrl = exportPNG(canvasForExport);
+        const filename = buildFilename(resolvedMode);
+        const success = downloadDataUrl(filename, dataUrl);
+        if (!success) {
+            setExportStatus({ tone: "error", message: "ダウンロード操作を開始できませんでした。" });
+            return;
+        }
+        if (usedKind !== primaryKind) {
+            setExportStatus({
+                tone: "warning",
+                message: "WebGL が無効化されていたため、Canvas 合成で保存しました。",
+            });
+        } else {
+            setExportStatus({ tone: "info", message: `${filename} を保存しました。` });
+        }
+    }, [exportMode, renderEngineRef]);
+
+    const handleExportModeChange = useCallback((mode: ImageExportMode) => {
+        setExportMode(mode);
+        setExportStatus(null);
+    }, []);
 
     const handlePointerDown = useCallback(
         (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -305,6 +381,13 @@ export function HyperbolicSceneHost({
                 onSelectFile={(file) => textureInput.loadFile(TEXTURE_SLOTS.base, file)}
                 onSelectPreset={(id) => textureInput.loadPreset(TEXTURE_SLOTS.base, id)}
                 onClear={() => textureInput.disable(TEXTURE_SLOTS.base)}
+            />
+            <ImageExportControls
+                mode={exportMode}
+                onModeChange={handleExportModeChange}
+                onExport={handleExportImage}
+                disabled={!ready}
+                status={exportStatus}
             />
         </>
     );
