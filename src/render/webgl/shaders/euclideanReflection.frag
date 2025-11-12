@@ -134,7 +134,14 @@ vec4 renderControlPoint(vec2 worldPoint, int index) {
 vec3 palette(float t) {
     const float TAU = 6.2831853;
     vec3 phase = vec3(0.0, 2.0943951, 4.1887902);
-    return 0.55 + 0.45 * cos(TAU * t + phase);
+    // 彩度を上げるため、基準値を下げて振幅を上げる
+    return 0.5 + 0.5 * cos(TAU * t + phase);
+}
+
+// HSV変換による彩度強調関数
+vec3 saturate(vec3 rgb, float amount) {
+    float gray = dot(rgb, vec3(0.299, 0.587, 0.114));
+    return mix(vec3(gray), rgb, amount);
 }
 
 mat2 rotationMatrix(float angle) {
@@ -251,7 +258,10 @@ void main() {
         float hue = fract(refNorm * 0.16180339);
         vec3 wavePalette = palette(hue);
         vec3 baseTone = normalize(uFillColor + vec3(1e-6));
-        bodyColor = mix(baseTone, wavePalette, 0.65);
+        // ミックス比率を上げて、彩度を強調
+        bodyColor = mix(baseTone, wavePalette, 0.85);
+        // 彩度を1.1倍に強調（微調整）
+        bodyColor = saturate(bodyColor, 1.1);
     } else {
         bodyColor = vec3(0);
     }
