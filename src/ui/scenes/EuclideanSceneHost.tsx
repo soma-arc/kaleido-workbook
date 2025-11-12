@@ -25,6 +25,7 @@ import { exportPNG } from "@/render/export";
 import type { Viewport } from "@/render/viewport";
 import { screenToWorld } from "@/render/viewport";
 import { TEXTURE_SLOTS } from "@/render/webgl/textures";
+import { EUCLIDEAN_HALF_PLANES_SCENE_KEY } from "@/scenes/euclidean/half-planes/definition";
 import { computeHingeAngles } from "@/scenes/euclidean/hinge/math";
 import { EUCLIDEAN_MULTI_PLANE_SCENE_KEY } from "@/scenes/euclidean/multi-plane/definition";
 import { DepthControls } from "@/ui/components/DepthControls";
@@ -742,22 +743,34 @@ export function EuclideanSceneHost({
     // biome-ignore lint/correctness/useExhaustiveDependencies: reset pan/zoom whenever scene switches
     useEffect(() => {
         resetPanZoom();
-        if (scene.key !== EUCLIDEAN_MULTI_PLANE_SCENE_KEY) {
-            return;
+        // 初期ズームを適用するシーンとその倍率
+        let initialZoomFactor: number | null = null;
+        if (scene.key === EUCLIDEAN_MULTI_PLANE_SCENE_KEY) {
+            initialZoomFactor = 0.2;
+        } else if (scene.key === EUCLIDEAN_HALF_PLANES_SCENE_KEY) {
+            initialZoomFactor = 0.5;
         }
-        const canvasElement = canvasRef.current;
-        if (!canvasElement) {
-            return;
+
+        if (initialZoomFactor !== null) {
+            const canvasElement = canvasRef.current;
+            if (!canvasElement) {
+                return;
+            }
+            // まず現在のcanvasに基づいてviewportを計算し、baseViewportRefを更新する
+            computeViewport(canvasElement);
+            // その後、キャンバスの中心座標でズームを適用
+            const focus = {
+                x: (canvasElement.width || canvasElement.clientWidth || 0) / 2,
+                y: (canvasElement.height || canvasElement.clientHeight || 0) / 2,
+            };
+            zoomCanvasAt(focus, initialZoomFactor);
+            const planesForRender =
+                latestEuclideanPlanesRef.current ??
+                normalizedHalfPlanes ??
+                DEFAULT_EUCLIDEAN_PLANES;
+            renderEuclideanScene(planesForRender, currentControlPoints);
         }
-        const focus = {
-            x: (canvasElement.width || canvasElement.clientWidth || 0) / 2,
-            y: (canvasElement.height || canvasElement.clientHeight || 0) / 2,
-        };
-        zoomCanvasAt(focus, 0.2);
-        const planesForRender =
-            latestEuclideanPlanesRef.current ?? normalizedHalfPlanes ?? DEFAULT_EUCLIDEAN_PLANES;
-        renderEuclideanScene(planesForRender, currentControlPoints);
-    }, [scene.id, resetPanZoom]);
+    }, [scene.id, resetPanZoom, computeViewport]);
 
     const hingeAngles = useMemo(() => {
         if (scene.variant !== "hinge") {
